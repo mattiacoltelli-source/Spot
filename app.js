@@ -19,6 +19,11 @@ const placeLon = document.getElementById("placeLon");
 const resultsGrid = document.getElementById("resultsGrid");
 const resultsCount = document.getElementById("resultsCount");
 
+let map;
+let markers = [];
+
+initMap();
+
 searchBtn.addEventListener("click", handleSearch);
 
 exampleBtn.addEventListener("click", () => {
@@ -26,9 +31,20 @@ exampleBtn.addEventListener("click", () => {
   handleSearch();
 });
 
-cityInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") handleSearch();
+cityInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") handleSearch();
 });
+
+function initMap() {
+
+  map = L.map("map").setView([41.9, 12.49], 5);
+
+  L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    { attribution: "© OpenStreetMap" }
+  ).addTo(map);
+
+}
 
 async function handleSearch() {
 
@@ -45,33 +61,25 @@ async function handleSearch() {
 
     const location = await geocodePlace(query);
 
-    if (!location) {
-      throw new Error("Città non trovata.");
-    }
-
     showLocation(location);
+
+    map.setView([location.lat, location.lon], 12);
 
     setStatus("loading", "Cerco spot fotografici...");
 
     const spots = await fetchNearbySpots(location.lat, location.lon);
 
-    if (!spots.length) {
-      setStatus("error", "Nessuno spot trovato.");
-      renderEmpty("Nessuno spot trovato.");
-      return;
-    }
-
     renderSpots(spots);
 
-    setStatus("success", `Trovati ${spots.length} spot.`);
+    renderMarkers(spots);
+
+    setStatus("success", `${spots.length} spot trovati`);
 
   } catch (error) {
 
     console.error(error);
 
     setStatus("error", "Errore nel recupero degli spot da OpenTripMap.");
-
-    renderEmpty("Si è verificato un errore.");
 
   }
 
@@ -86,7 +94,7 @@ async function geocodePlace(query) {
 
   const data = await response.json();
 
-  if (!data.length) return null;
+  if (!data.length) throw new Error("Città non trovata");
 
   const item = data[0];
 
@@ -101,14 +109,13 @@ async function geocodePlace(query) {
 async function fetchNearbySpots(lat, lon) {
 
   const radius = 10000;
-  const limit = 20;
 
   const url =
     `${CONFIG.OPENTRIPMAP_BASE_URL}/radius` +
     `?radius=${radius}` +
     `&lon=${lon}` +
     `&lat=${lat}` +
-    `&limit=${limit}` +
+    `&limit=30` +
     `&format=json` +
     `&apikey=${CONFIG.OPENTRIPMAP_API_KEY}`;
 
@@ -121,6 +128,31 @@ async function fetchNearbySpots(lat, lon) {
   const data = await response.json();
 
   return data.filter(item => item.name && item.point);
+
+}
+
+function renderMarkers(spots) {
+
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+
+  spots.forEach(spot => {
+
+    const lat = spot.point.lat;
+    const lon = spot.point.lon;
+
+    const marker = L.marker([lat, lon]).addTo(map);
+
+    marker.bindPopup(
+      `<b>${spot.name}</b><br>
+      <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">
+      Apri in Google Maps
+      </a>`
+    );
+
+    markers.push(marker);
+
+  });
 
 }
 
@@ -152,30 +184,16 @@ function renderSpots(spots) {
 
   resultsGrid.innerHTML = spots.map(spot => {
 
-    const name = spot.name || "Spot";
-
     const lat = spot.point.lat;
     const lon = spot.point.lon;
 
     return `
       <div class="spot-card">
-        <h3>${name}</h3>
+        <h3>${spot.name}</h3>
         <p>${lat.toFixed(4)}, ${lon.toFixed(4)}</p>
       </div>
     `;
 
   }).join("");
-
-}
-
-function renderEmpty(message) {
-
-  resultsCount.textContent = "0 risultati";
-
-  resultsGrid.innerHTML = `
-    <div class="empty-state">
-      ${message}
-    </div>
-  `;
 
 }
