@@ -13,7 +13,14 @@ const placeLon = document.getElementById("placeLon");
 const resultsGrid = document.getElementById("resultsGrid");
 const resultsCount = document.getElementById("resultsCount");
 
-const APP_VERSION = "lite-1";
+const activeFilterLabel = document.getElementById("activeFilterLabel");
+const filterButtons = document.querySelectorAll(".filter-btn");
+
+const APP_VERSION = "lite-2";
+
+let allSpots = [];
+let currentFilter = "all";
+let currentLocation = null;
 
 searchBtn.addEventListener("click", handleSearch);
 
@@ -26,6 +33,14 @@ cityInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     handleSearch();
   }
+});
+
+filterButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    currentFilter = button.dataset.filter;
+    updateFilterButtons();
+    applyFilterAndRender();
+  });
 });
 
 setStatus("idle", `Pronto (${APP_VERSION})`);
@@ -52,32 +67,42 @@ async function handleSearch() {
       throw new Error("Città non trovata.");
     }
 
+    currentLocation = location;
     showLocation(location);
+
     setStatus("idle", "Cerco spot vicini...");
 
     const spots = await fetchNearbySpots(location.lat, location.lon);
 
     if (!spots.length) {
+      allSpots = [];
       setStatus("error", "Nessuno spot trovato.");
       renderEmpty("Non ho trovato spot utili in quest'area.");
       return;
     }
 
-    const enrichedSpots = spots
-      .map((spot) => ({
-        ...spot,
-        distanceKm: calculateDistanceKm(
-          location.lat,
-          location.lon,
-          spot.lat,
-          spot.lon
-        )
-      }))
-      .sort((a, b) => a.distanceKm - b.distanceKm)
-      .slice(0, 12);
+    allSpots = spots
+      .map((spot) => {
+        const sun = calculateSunTimes(new Date(), spot.lat, spot.lon);
 
-    renderSpots(enrichedSpots);
-    setStatus("ok", `${enrichedSpots.length} spot trovati`);
+        return {
+          ...spot,
+          distanceKm: calculateDistanceKm(
+            location.lat,
+            location.lon,
+            spot.lat,
+            spot.lon
+          ),
+          sunrise: formatTime(sun.sunrise),
+          sunset: formatTime(sun.sunset),
+          goldenHour: formatTime(sun.goldenHour)
+        };
+      })
+      .sort((a, b) => a.distanceKm - b.distanceKm)
+      .slice(0, 20);
+
+    applyFilterAndRender();
+    setStatus("ok", `${allSpots.length} spot trovati`);
   } catch (error) {
     console.error(error);
     setStatus("error", error.message || "Errore nella ricerca.");
@@ -176,11 +201,11 @@ async function fetchNearbySpots(lat, lon) {
 }
 
 function pickCategory(tags = {}) {
-  if (tags.amenity === "viewpoint") return "Viewpoint";
-  if (tags.natural) return "Natura";
-  if (tags.historic) return "Storico";
-  if (tags.tourism) return "Turismo";
-  return "Spot";
+  if (tags.amenity === "viewpoint") return "viewpoint";
+  if (tags.natural) return "natura";
+  if (tags.historic) return "storico";
+  if (tags.tourism) return "turismo";
+  return "spot";
 }
 
 function dedupeSpots(spots) {
@@ -192,6 +217,44 @@ function dedupeSpots(spots) {
     seen.add(key);
     return true;
   });
+}
+
+function applyFilterAndRender() {
+  const filtered =
+    currentFilter === "all"
+      ? allSpots
+      : allSpots.filter((spot) => spot.category === currentFilter);
+
+  activeFilterLabel.textContent = humanizeFilter(currentFilter);
+
+  if (!filtered.length) {
+    resultsCount.textContent = "0 risultati";
+    renderEmpty("Nessuno spot per questo filtro.");
+    return;
+  }
+
+  renderSpots(filtered);
+}
+
+function updateFilterButtons() {
+  filterButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.filter === currentFilter);
+  });
+}
+
+function humanizeFilter(filter) {
+  switch (filter) {
+    case "natura":
+      return "Natura";
+    case "storico":
+      return "Storico";
+    case "viewpoint":
+      return "Viewpoint";
+    case "turismo":
+      return "Turismo";
+    default:
+      return "Tutti";
+  }
 }
 
 function setStatus(type, text) {
@@ -231,27 +294,57 @@ function renderSpots(spots) {
   resultsGrid.innerHTML = spots.map((spot) => {
     return `
       <article class="spot-card">
-        <div class="spot-title">${escapeHtml(spot.name)}</div>
-        <div class="spot-coords">${escapeHtml(spot.category)} • ${spot.distanceKm.toFixed(1)} km</div>
-        <div class="spot-coords">${spot.lat.toFixed(4)}, ${spot.lon.toFixed(4)}</div>
-        <button onclick="openInMaps(${spot.lat}, ${spot.lon})">Apri in Google Maps</button>
+        <div class="spot-header">
+          <div class="spot-title">${escapeHtml(spot.name)}</div>
+          <div class="spot-category">${escapeHtml(humanizeFilter(spot.category))}</div>
+        </div>
+
+        <div class="spot-subline">
+          ${spot.distanceKm.toFixed(1)} km dal centro
+        </div>
+
+        <div class="spot-grid">
+          <div class="spot-box">
+            <div class="spot-box-label">Coordinate</div>
+            <div class="spot-box-value">${spot.lat.toFixed(4)}, ${spot.lon.toFixed(4)}</div>
+          </div>
+
+          <div class="spot-box">
+            <div class="spot-box-label">Alba</div>
+            <div class="spot-box-value">${spot.sunrise}</div>
+          </div>
+
+          <div class="spot-box">
+            <div class="spot-box-label">Tramonto</div>
+            <div class="spot-box-value">${spot.sunset}</div>
+          </div>
+
+          <div class="spot-box">
+            <div class="spot-box-label">Golden hour</div>
+            <div class="spot-box-value">${spot.goldenHour}</div>
+          </div>
+        </div>
+
+        <div class="spot-actions">
+          <a class="spot-link" href="${buildGoogleMapsLink(spot.lat, spot.lon)}" target="_blank" rel="noopener noreferrer">
+            Apri in Google Maps
+          </a>
+        </div>
       </article>
     `;
   }).join("");
 }
 
 function renderEmpty(message) {
-  resultsCount.textContent = "0 risultati";
   resultsGrid.innerHTML = `
     <div class="spot-card">
-      <div class="spot-coords">${escapeHtml(message)}</div>
+      <div class="spot-subline">${escapeHtml(message)}</div>
     </div>
   `;
 }
 
-function openInMaps(lat, lon) {
-  const url = `https://www.google.com/maps?q=${lat},${lon}`;
-  window.open(url, "_blank");
+function buildGoogleMapsLink(lat, lon) {
+  return `https://www.google.com/maps?q=${lat},${lon}`;
 }
 
 function calculateDistanceKm(lat1, lon1, lat2, lon2) {
@@ -269,6 +362,69 @@ function calculateDistanceKm(lat1, lon1, lat2, lon2) {
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return earthRadiusKm * c;
+}
+
+function formatTime(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "--:--";
+  const h = String(date.getHours()).padStart(2, "0");
+  const m = String(date.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
+}
+
+function calculateSunTimes(date, lat, lon) {
+  const rad = Math.PI / 180;
+  const dayMs = 86400000;
+  const J1970 = 2440588;
+  const J2000 = 2451545;
+
+  const toJulian = (dateObj) => dateObj.getTime() / dayMs - 0.5 + J1970;
+  const fromJulian = (j) => new Date((j + 0.5 - J1970) * dayMs);
+  const toDays = (dateObj) => toJulian(dateObj) - J2000;
+
+  const e = rad * 23.4397;
+
+  const solarMeanAnomaly = (d) => rad * (357.5291 + 0.98560028 * d);
+  const eclipticLongitude = (M) => {
+    const C = rad * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M));
+    const P = rad * 102.9372;
+    return M + C + P + Math.PI;
+  };
+
+  const declination = (L) => Math.asin(Math.sin(L) * Math.sin(e));
+  const julianCycle = (d, lw) => Math.round(d - 0.0009 - lw / (2 * Math.PI));
+  const approxTransit = (Ht, lw, n) => 0.0009 + (Ht + lw) / (2 * Math.PI) + n;
+  const solarTransitJ = (ds, M, L) => J2000 + ds + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * L);
+  const hourAngle = (h, phi, d) =>
+    Math.acos((Math.sin(h) - Math.sin(phi) * Math.sin(d)) / (Math.cos(phi) * Math.cos(d)));
+
+  const observerAngle = -0.833 * rad;
+  const goldenAngle = 6 * rad * -1;
+
+  const lw = rad * -lon;
+  const phi = rad * lat;
+  const d = toDays(date);
+
+  const n = julianCycle(d, lw);
+  const ds = approxTransit(0, lw, n);
+  const M = solarMeanAnomaly(ds);
+  const L = eclipticLongitude(M);
+  const dec = declination(L);
+  const Jnoon = solarTransitJ(ds, M, L);
+
+  const wSunrise = hourAngle(observerAngle, phi, dec);
+  const aSunrise = approxTransit(wSunrise, lw, n);
+  const Jset = solarTransitJ(aSunrise, M, L);
+  const Jrise = Jnoon - (Jset - Jnoon);
+
+  const wGolden = hourAngle(goldenAngle, phi, dec);
+  const aGolden = approxTransit(wGolden, lw, n);
+  const JgoldenSet = solarTransitJ(aGolden, M, L);
+
+  return {
+    sunrise: fromJulian(Jrise),
+    sunset: fromJulian(Jset),
+    goldenHour: fromJulian(JgoldenSet)
+  };
 }
 
 function escapeHtml(value) {
