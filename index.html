@@ -1,79 +1,187 @@
 <!doctype html>
 <html lang="it">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>PhotoSpot Planner</title>
-  <meta name="theme-color" content="#0b1220" />
-  <link rel="stylesheet" href="style.css?v=4" />
+
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+
+<title>PhotoSpot Planner</title>
+
+<meta name="theme-color" content="#0b1220"/>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<link rel="stylesheet" href="style.css?v=5"/>
+
 </head>
+
+
 <body>
-  <div class="app-shell">
-    <header class="hero">
-      <div class="hero-overlay"></div>
-      <div class="hero-content">
-        <p class="eyebrow">Travel Photo App</p>
-        <h1>PhotoSpot Planner</h1>
-        <p class="hero-text">
-          Cerca una città e trova i primi spot panoramici, naturali e fotogenici nelle vicinanze.
-        </p>
 
-        <div class="search-box">
-          <input
-            id="cityInput"
-            type="text"
-            placeholder="Scrivi una città, ad esempio Firenze"
-            autocomplete="off"
-          />
-          <button id="searchBtn">Cerca</button>
-        </div>
+<div class="app-shell">
 
-        <div class="quick-actions">
-          <button id="exampleBtn" class="secondary-btn">Usa esempio</button>
-        </div>
-      </div>
-    </header>
+<header class="hero">
 
-    <main class="main-content">
-      <section class="status-card">
-        <div class="status-top">
-          <h2>Stato ricerca</h2>
-          <span id="statusBadge" class="badge idle">In attesa</span>
-        </div>
-        <p id="statusText" class="status-text">
-          Inserisci una città e premi Cerca.
-        </p>
-      </section>
+<div class="hero-overlay"></div>
 
-      <section id="locationCard" class="info-card hidden">
-        <h3>Luogo trovato</h3>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="label">Nome</span>
-            <span id="placeName">-</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Latitudine</span>
-            <span id="placeLat">-</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Longitudine</span>
-            <span id="placeLon">-</span>
-          </div>
-        </div>
-      </section>
+<div class="hero-content">
 
-      <section class="results-section">
-        <div class="section-head">
-          <h2>Spot trovati</h2>
-          <span id="resultsCount" class="results-count">0 risultati</span>
-        </div>
+<p class="eyebrow">Travel Photo App</p>
 
-        <div id="resultsGrid" class="results-grid"></div>
-      </section>
-    </main>
-  </div>
+<h1>PhotoSpot Planner</h1>
 
-  <script src="app.js?v=4"></script>
+<p class="hero-text">
+Cerca una città e trova i primi spot panoramici, naturali e fotogenici nelle vicinanze.
+</p>
+
+
+<div class="search-box">
+
+<input
+id="cityInput"
+type="text"
+placeholder="Scrivi una città, ad esempio Firenze"
+autocomplete="off"
+/>
+
+<button id="searchBtn">
+Cerca
+</button>
+
+</div>
+
+
+<div class="quick-actions">
+
+<button id="exampleBtn" class="secondary-btn">
+Usa esempio
+</button>
+
+</div>
+
+</div>
+
+</header>
+
+
+<main class="main-content">
+
+
+<section class="status-card">
+
+<div class="status-top">
+
+<h2>Stato ricerca</h2>
+
+<span id="statusBadge" class="badge idle">
+In attesa
+</span>
+
+</div>
+
+<p id="statusText" class="status-text">
+Inserisci una città e premi Cerca.
+</p>
+
+</section>
+
+
+
+<section id="locationCard" class="info-card hidden">
+
+<h3>Luogo trovato</h3>
+
+<div class="info-grid">
+
+<div class="info-item">
+
+<span class="label">
+Nome
+</span>
+
+<span id="placeName">
+-
+</span>
+
+</div>
+
+
+<div class="info-item">
+
+<span class="label">
+Latitudine
+</span>
+
+<span id="placeLat">
+-
+</span>
+
+</div>
+
+
+<div class="info-item">
+
+<span class="label">
+Longitudine
+</span>
+
+<span id="placeLon">
+-
+</span>
+
+</div>
+
+</div>
+
+</section>
+
+
+
+<section class="map-section">
+
+<div class="section-head">
+
+<h2>Mappa spot</h2>
+
+<span id="mapHint" class="results-count">
+Cerca una città
+</span>
+
+</div>
+
+<div id="map" class="map-box"></div>
+
+</section>
+
+
+
+<section class="results-section">
+
+<div class="section-head">
+
+<h2>Spot trovati</h2>
+
+<span id="resultsCount" class="results-count">
+0 risultati
+</span>
+
+</div>
+
+<div id="resultsGrid" class="results-grid"></div>
+
+</section>
+
+
+</main>
+
+</div>
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="app.js?v=5"></script>
+
+
 </body>
 </html>
