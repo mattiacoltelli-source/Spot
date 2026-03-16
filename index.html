@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>PhotoSpot Planner Lite</title>
+  <title>PhotoSpot Planner Lite+</title>
   <meta name="theme-color" content="#0b1220" />
-  <link rel="stylesheet" href="style.css?v=lite2" />
+  <link rel="stylesheet" href="style.css?v=lite3" />
 </head>
 <body>
   <div class="app-shell">
@@ -16,7 +16,7 @@
         <p class="eyebrow">Travel Photo App</p>
         <h1>PhotoSpot Planner</h1>
         <p class="hero-text">
-          Cerca una città e trova spot panoramici, naturali e fotogenici con orari migliori per fotografarli.
+          Cerca una città e trova spot panoramici, naturali e fotogenici con i momenti migliori per fotografarli.
         </p>
 
         <div class="search-box">
@@ -43,6 +43,16 @@
         </div>
         <p id="statusText" class="status-text">
           Inserisci una città e premi Cerca.
+        </p>
+      </section>
+
+      <section id="photographerCard" class="photographer-card hidden">
+        <div class="section-head">
+          <h2>Modalità fotografo</h2>
+          <span id="photographerBadge" class="mini-badge">Analisi</span>
+        </div>
+        <p id="photographerText" class="status-text">
+          Nessuna analisi disponibile.
         </p>
       </section>
 
@@ -79,6 +89,16 @@
           <button class="filter-btn" data-filter="storico">Storico</button>
           <button class="filter-btn" data-filter="viewpoint">Viewpoint</button>
           <button class="filter-btn" data-filter="turismo">Turismo</button>
+          <button class="filter-btn" data-filter="favorites">Preferiti</button>
+        </div>
+
+        <div class="sort-row">
+          <label for="sortSelect" class="sort-label">Ordina per</label>
+          <select id="sortSelect" class="sort-select">
+            <option value="distance">Distanza</option>
+            <option value="golden">Golden hour</option>
+            <option value="name">Nome</option>
+          </select>
         </div>
       </section>
 
@@ -93,6 +113,6 @@
     </main>
   </div>
 
-  <script src="app.js?v=lite2"></script>
+  <script src="app.js?v=lite3"></script>
 </body>
 </html>

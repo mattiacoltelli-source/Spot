@@ -5,6 +5,10 @@ const exampleBtn = document.getElementById("exampleBtn");
 const statusBadge = document.getElementById("statusBadge");
 const statusText = document.getElementById("statusText");
 
+const photographerCard = document.getElementById("photographerCard");
+const photographerBadge = document.getElementById("photographerBadge");
+const photographerText = document.getElementById("photographerText");
+
 const locationCard = document.getElementById("locationCard");
 const placeName = document.getElementById("placeName");
 const placeLat = document.getElementById("placeLat");
@@ -15,12 +19,14 @@ const resultsCount = document.getElementById("resultsCount");
 
 const activeFilterLabel = document.getElementById("activeFilterLabel");
 const filterButtons = document.querySelectorAll(".filter-btn");
+const sortSelect = document.getElementById("sortSelect");
 
-const APP_VERSION = "lite-2";
+const APP_VERSION = "lite-3";
 
 let allSpots = [];
 let currentFilter = "all";
 let currentLocation = null;
+let favoriteKeys = loadFavorites();
 
 searchBtn.addEventListener("click", handleSearch);
 
@@ -43,8 +49,14 @@ filterButtons.forEach((button) => {
   });
 });
 
+sortSelect.addEventListener("change", () => {
+  applyFilterAndRender();
+});
+
 setStatus("idle", `Pronto (${APP_VERSION})`);
 renderEmpty('Inserisci una città oppure premi "Usa esempio".');
+updateFilterButtons();
+updatePhotographerCard(null);
 
 async function handleSearch() {
   const query = cityInput.value.trim();
@@ -53,6 +65,7 @@ async function handleSearch() {
     setStatus("error", "Inserisci una città.");
     renderEmpty("Scrivi una città per iniziare.");
     hideLocation();
+    updatePhotographerCard(null);
     return;
   }
 
@@ -78,6 +91,7 @@ async function handleSearch() {
       allSpots = [];
       setStatus("error", "Nessuno spot trovato.");
       renderEmpty("Non ho trovato spot utili in quest'area.");
+      updatePhotographerCard(null);
       return;
     }
 
@@ -95,19 +109,24 @@ async function handleSearch() {
           ),
           sunrise: formatTime(sun.sunrise),
           sunset: formatTime(sun.sunset),
-          goldenHour: formatTime(sun.goldenHour)
+          goldenHour: formatTime(sun.goldenHour),
+          goldenMinutes: diffMinutesFromNow(sun.goldenHour),
+          favoriteKey: buildSpotKey(spot)
         };
       })
       .sort((a, b) => a.distanceKm - b.distanceKm)
       .slice(0, 20);
 
     applyFilterAndRender();
+    updatePhotographerInsights();
+
     setStatus("ok", `${allSpots.length} spot trovati`);
   } catch (error) {
     console.error(error);
     setStatus("error", error.message || "Errore nella ricerca.");
     renderEmpty("Si è verificato un errore. Riprova.");
     hideLocation();
+    updatePhotographerCard(null);
   }
 }
 
@@ -220,10 +239,22 @@ function dedupeSpots(spots) {
 }
 
 function applyFilterAndRender() {
-  const filtered =
+  let filtered =
     currentFilter === "all"
-      ? allSpots
+      ? [...allSpots]
+      : currentFilter === "favorites"
+      ? allSpots.filter((spot) => favoriteKeys.includes(spot.favoriteKey))
       : allSpots.filter((spot) => spot.category === currentFilter);
+
+  const sortBy = sortSelect.value;
+
+  if (sortBy === "name") {
+    filtered.sort((a, b) => a.name.localeCompare(b.name, "it"));
+  } else if (sortBy === "golden") {
+    filtered.sort((a, b) => normalizeGoldenScore(a.goldenMinutes) - normalizeGoldenScore(b.goldenMinutes));
+  } else {
+    filtered.sort((a, b) => a.distanceKm - b.distanceKm);
+  }
 
   activeFilterLabel.textContent = humanizeFilter(currentFilter);
 
@@ -234,6 +265,12 @@ function applyFilterAndRender() {
   }
 
   renderSpots(filtered);
+}
+
+function normalizeGoldenScore(minutes) {
+  if (!isFinite(minutes)) return 999999;
+  if (minutes < 0) return 500000 + Math.abs(minutes);
+  return minutes;
 }
 
 function updateFilterButtons() {
@@ -252,9 +289,53 @@ function humanizeFilter(filter) {
       return "Viewpoint";
     case "turismo":
       return "Turismo";
+    case "favorites":
+      return "Preferiti";
     default:
       return "Tutti";
   }
+}
+
+function updatePhotographerInsights() {
+  if (!allSpots.length) {
+    updatePhotographerCard(null);
+    return;
+  }
+
+  const upcoming = [...allSpots]
+    .filter((spot) => isFinite(spot.goldenMinutes) && spot.goldenMinutes >= 0)
+    .sort((a, b) => a.goldenMinutes - b.goldenMinutes);
+
+  if (!upcoming.length) {
+    updatePhotographerCard({
+      badge: "Info",
+      text: "Per oggi la golden hour utile è già passata. Puoi comunque esplorare gli spot e salvare i preferiti."
+    });
+    return;
+  }
+
+  const bestNow = upcoming.slice(0, 3);
+  const first = bestNow[0];
+
+  const spotNames = bestNow.map((spot) => spot.name).join(" • ");
+
+  updatePhotographerCard({
+    badge: "Ora",
+    text: `Golden hour tra ${first.goldenMinutes} min. Spot consigliati adesso: ${spotNames}.`
+  });
+}
+
+function updatePhotographerCard(data) {
+  if (!data) {
+    photographerCard.classList.add("hidden");
+    photographerBadge.textContent = "Analisi";
+    photographerText.textContent = "Nessuna analisi disponibile.";
+    return;
+  }
+
+  photographerCard.classList.remove("hidden");
+  photographerBadge.textContent = data.badge;
+  photographerText.textContent = data.text;
 }
 
 function setStatus(type, text) {
@@ -292,15 +373,17 @@ function renderSpots(spots) {
   resultsCount.textContent = `${spots.length} risultati`;
 
   resultsGrid.innerHTML = spots.map((spot) => {
+    const isFav = favoriteKeys.includes(spot.favoriteKey);
+
     return `
       <article class="spot-card">
         <div class="spot-header">
-          <div class="spot-title">${escapeHtml(spot.name)}</div>
-          <div class="spot-category">${escapeHtml(humanizeFilter(spot.category))}</div>
-        </div>
+          <div class="spot-title-wrap">
+            <div class="spot-title">${escapeHtml(spot.name)}</div>
+            <div class="spot-subline">${spot.distanceKm.toFixed(1)} km dal centro</div>
+          </div>
 
-        <div class="spot-subline">
-          ${spot.distanceKm.toFixed(1)} km dal centro
+          <div class="spot-category">${escapeHtml(humanizeFilter(spot.category))}</div>
         </div>
 
         <div class="spot-grid">
@@ -327,8 +410,16 @@ function renderSpots(spots) {
 
         <div class="spot-actions">
           <a class="spot-link" href="${buildGoogleMapsLink(spot.lat, spot.lon)}" target="_blank" rel="noopener noreferrer">
-            Apri in Google Maps
+            Apri in Maps
           </a>
+
+          <a class="spot-link secondary" href="${buildNavigationLink(spot.lat, spot.lon)}" target="_blank" rel="noopener noreferrer">
+            Naviga
+          </a>
+
+          <button class="favorite-btn ${isFav ? "active" : ""}" onclick="toggleFavorite('${escapeForJs(spot.favoriteKey)}')">
+            ${isFav ? "❤️ Salvato" : "🤍 Salva"}
+          </button>
         </div>
       </article>
     `;
@@ -345,6 +436,41 @@ function renderEmpty(message) {
 
 function buildGoogleMapsLink(lat, lon) {
   return `https://www.google.com/maps?q=${lat},${lon}`;
+}
+
+function buildNavigationLink(lat, lon) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+}
+
+function buildSpotKey(spot) {
+  return `${spot.name}|${spot.lat.toFixed(4)}|${spot.lon.toFixed(4)}`;
+}
+
+function toggleFavorite(key) {
+  if (favoriteKeys.includes(key)) {
+    favoriteKeys = favoriteKeys.filter((item) => item !== key);
+  } else {
+    favoriteKeys.push(key);
+  }
+
+  saveFavorites(favoriteKeys);
+  applyFilterAndRender();
+}
+
+window.toggleFavorite = toggleFavorite;
+
+function loadFavorites() {
+  try {
+    const raw = localStorage.getItem("photospot-favorites");
+    const parsed = JSON.parse(raw || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFavorites(list) {
+  localStorage.setItem("photospot-favorites", JSON.stringify(list));
 }
 
 function calculateDistanceKm(lat1, lon1, lat2, lon2) {
@@ -369,6 +495,12 @@ function formatTime(date) {
   const h = String(date.getHours()).padStart(2, "0");
   const m = String(date.getMinutes()).padStart(2, "0");
   return `${h}:${m}`;
+}
+
+function diffMinutesFromNow(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return NaN;
+  const diffMs = date.getTime() - Date.now();
+  return Math.round(diffMs / 60000);
 }
 
 function calculateSunTimes(date, lat, lon) {
@@ -434,4 +566,10 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function escapeForJs(value) {
+  return String(value)
+    .replaceAll("\\", "\\\\")
+    .replaceAll("'", "\\'");
 }
