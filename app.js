@@ -22,8 +22,9 @@ const activeFilterLabel = document.getElementById("activeFilterLabel");
 const filterButtons = document.querySelectorAll(".filter-btn");
 const sortSelect = document.getElementById("sortSelect");
 const mapStatus = document.getElementById("mapStatus");
+const zoomAllBtn = document.getElementById("zoomAllBtn");
 
-const APP_VERSION = "pro-1";
+const APP_VERSION = "pro-2";
 
 let allSpots = [];
 let currentFilter = "all";
@@ -44,6 +45,7 @@ const FALLBACK_IMAGES = {
 
 searchBtn.addEventListener("click", handleSearch);
 geoBtn.addEventListener("click", handleGeolocation);
+zoomAllBtn.addEventListener("click", zoomAllMarkers);
 
 exampleBtn.addEventListener("click", () => {
   cityInput.value = "Bologna";
@@ -51,9 +53,7 @@ exampleBtn.addEventListener("click", () => {
 });
 
 cityInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    handleSearch();
-  }
+  if (event.key === "Enter") handleSearch();
 });
 
 filterButtons.forEach((button) => {
@@ -124,7 +124,6 @@ function handleGeolocation() {
           lat: position.coords.latitude,
           lon: position.coords.longitude
         };
-
         await runSearchFlow(location);
       } catch (error) {
         console.error(error);
@@ -164,18 +163,13 @@ async function runSearchFlow(location) {
     return;
   }
 
-  const enriched = spots
+  allSpots = spots
     .map((spot) => {
       const sun = calculateSunTimes(new Date(), spot.lat, spot.lon);
 
       return {
         ...spot,
-        distanceKm: calculateDistanceKm(
-          location.lat,
-          location.lon,
-          spot.lat,
-          spot.lon
-        ),
+        distanceKm: calculateDistanceKm(location.lat, location.lon, spot.lat, spot.lon),
         sunrise: formatTime(sun.sunrise),
         sunset: formatTime(sun.sunset),
         goldenHour: formatTime(sun.goldenHour),
@@ -187,7 +181,6 @@ async function runSearchFlow(location) {
     .sort((a, b) => a.distanceKm - b.distanceKm)
     .slice(0, 20);
 
-  allSpots = enriched;
   applyFilterAndRender();
   updatePhotographerInsights();
   setStatus("ok", `${allSpots.length} spot trovati`);
@@ -203,9 +196,7 @@ async function geocodePlace(query) {
     "&limit=1";
 
   const response = await fetch(url, {
-    headers: {
-      "Accept-Language": "it"
-    }
+    headers: { "Accept-Language": "it" }
   });
 
   if (!response.ok) {
@@ -214,9 +205,7 @@ async function geocodePlace(query) {
 
   const data = await response.json();
 
-  if (!Array.isArray(data) || !data.length) {
-    return null;
-  }
+  if (!Array.isArray(data) || !data.length) return null;
 
   const item = data[0];
 
@@ -247,9 +236,7 @@ async function fetchNearbySpots(lat, lon) {
 
   const response = await fetch("https://overpass-api.de/api/interpreter", {
     method: "POST",
-    headers: {
-      "Content-Type": "text/plain"
-    },
+    headers: { "Content-Type": "text/plain" },
     body: overpassQuery
   });
 
@@ -259,9 +246,7 @@ async function fetchNearbySpots(lat, lon) {
 
   const data = await response.json();
 
-  if (!data || !Array.isArray(data.elements)) {
-    return [];
-  }
+  if (!data || !Array.isArray(data.elements)) return [];
 
   const spots = data.elements
     .map((item) => {
@@ -269,9 +254,7 @@ async function fetchNearbySpots(lat, lon) {
       const itemLon = item.lon ?? item.center?.lon;
       const name = item.tags?.name;
 
-      if (!name || !isFinite(itemLat) || !isFinite(itemLon)) {
-        return null;
-      }
+      if (!name || !isFinite(itemLat) || !isFinite(itemLon)) return null;
 
       return {
         name,
@@ -333,9 +316,7 @@ function applyFilterAndRender() {
   }
 
   renderSpots(filtered);
-  if (currentLocation) {
-    updateMap(currentLocation, filtered);
-  }
+  if (currentLocation) updateMap(currentLocation, filtered);
 }
 
 function normalizeGoldenScore(minutes) {
@@ -352,18 +333,12 @@ function updateFilterButtons() {
 
 function humanizeFilter(filter) {
   switch (filter) {
-    case "natura":
-      return "Natura";
-    case "storico":
-      return "Storico";
-    case "viewpoint":
-      return "Viewpoint";
-    case "turismo":
-      return "Turismo";
-    case "favorites":
-      return "Preferiti";
-    default:
-      return "Tutti";
+    case "natura": return "Natura";
+    case "storico": return "Storico";
+    case "viewpoint": return "Viewpoint";
+    case "turismo": return "Turismo";
+    case "favorites": return "Preferiti";
+    default: return "Tutti";
   }
 }
 
@@ -416,12 +391,9 @@ function setStatus(type, text) {
 
 function getBadgeLabel(type) {
   switch (type) {
-    case "ok":
-      return "OK";
-    case "error":
-      return "Errore";
-    default:
-      return "In attesa";
+    case "ok": return "OK";
+    case "error": return "Errore";
+    default: return "In attesa";
   }
 }
 
@@ -444,6 +416,11 @@ function renderSpots(spots) {
 
   resultsGrid.innerHTML = spots.map((spot) => {
     const isFav = favoriteKeys.includes(spot.favoriteKey);
+    const goldenLabel = isFinite(spot.goldenMinutes) && spot.goldenMinutes >= 0
+      ? `🌅 Golden hour tra ${spot.goldenMinutes} min`
+      : "🌙 Golden hour passata";
+
+    const goldenClass = isFinite(spot.goldenMinutes) && spot.goldenMinutes >= 0 ? "" : "past";
 
     return `
       <article class="spot-card">
@@ -452,10 +429,14 @@ function renderSpots(spots) {
         <div class="spot-header">
           <div class="spot-title-wrap">
             <div class="spot-title">${escapeHtml(spot.name)}</div>
-            <div class="spot-subline">${spot.distanceKm.toFixed(1)} km dal centro</div>
+            <div class="distance-pill">📍 ${spot.distanceKm.toFixed(1)} km</div>
           </div>
 
           <div class="spot-category">${escapeHtml(humanizeFilter(spot.category))}</div>
+        </div>
+
+        <div class="golden-badge ${goldenClass}">
+          ${goldenLabel}
         </div>
 
         <div class="spot-grid">
@@ -546,8 +527,7 @@ function saveFavorites(list) {
 }
 
 async function fetchSpotImages(spots) {
-  const cityName =
-    currentLocation?.name?.split(",")[0]?.trim() || "";
+  const cityName = currentLocation?.name?.split(",")[0]?.trim() || "";
 
   for (const spot of spots) {
     try {
@@ -563,23 +543,15 @@ async function fetchSpotImages(spots) {
 }
 
 async function fetchWikimediaImage(spotName, cityName) {
-  const candidates = [
-    spotName,
-    `${spotName}, ${cityName}`,
-    `${spotName} ${cityName}`
-  ];
+  const candidates = [spotName, `${spotName}, ${cityName}`, `${spotName} ${cityName}`];
 
   for (const candidate of candidates) {
-    const endpoint =
-      `https://it.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(candidate)}`;
-
+    const endpoint = `https://it.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(candidate)}`;
     const response = await fetch(endpoint);
-
     if (!response.ok) continue;
 
     const data = await response.json();
     const image = data?.thumbnail?.source || data?.originalimage?.source;
-
     if (image) return image;
   }
 
@@ -587,9 +559,7 @@ async function fetchWikimediaImage(spotName, cityName) {
 }
 
 function initMap() {
-  map = L.map("map", {
-    zoomControl: true
-  }).setView([41.9, 12.49], 5);
+  map = L.map("map", { zoomControl: true }).setView([41.9, 12.49], 5);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap contributors"
@@ -655,6 +625,34 @@ function updateMap(location, spots) {
   }
 }
 
+function zoomAllMarkers() {
+  if (!currentLocation || !map) return;
+
+  const filtered = getCurrentFilteredSpots();
+  updateMap(currentLocation, filtered);
+}
+
+function getCurrentFilteredSpots() {
+  let filtered =
+    currentFilter === "all"
+      ? [...allSpots]
+      : currentFilter === "favorites"
+      ? allSpots.filter((spot) => favoriteKeys.includes(spot.favoriteKey))
+      : allSpots.filter((spot) => spot.category === currentFilter);
+
+  const sortBy = sortSelect.value;
+
+  if (sortBy === "name") {
+    filtered.sort((a, b) => a.name.localeCompare(b.name, "it"));
+  } else if (sortBy === "golden") {
+    filtered.sort((a, b) => normalizeGoldenScore(a.goldenMinutes) - normalizeGoldenScore(b.goldenMinutes));
+  } else {
+    filtered.sort((a, b) => a.distanceKm - b.distanceKm);
+  }
+
+  return filtered;
+}
+
 function clearMapMarkers() {
   spotMarkers.forEach((marker) => map.removeLayer(marker));
   spotMarkers = [];
@@ -690,8 +688,7 @@ function formatTime(date) {
 
 function diffMinutesFromNow(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return NaN;
-  const diffMs = date.getTime() - Date.now();
-  return Math.round(diffMs / 60000);
+  return Math.round((date.getTime() - Date.now()) / 60000);
 }
 
 function calculateSunTimes(date, lat, lon) {
