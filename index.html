@@ -10,7 +10,7 @@
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   />
-  <link rel="stylesheet" href="style.css?v=pro2" />
+  <link rel="stylesheet" href="style.css?v=pro3" />
 </head>
 <body>
   <div class="app-shell">
@@ -60,6 +60,14 @@
         <p id="photographerText" class="status-text">
           Nessuna analisi disponibile.
         </p>
+      </section>
+
+      <section id="bestNowSection" class="best-now-section hidden">
+        <div class="section-head">
+          <h2>Spot migliori adesso</h2>
+          <span class="results-count">Golden hour</span>
+        </div>
+        <div id="bestNowGrid" class="best-now-grid"></div>
       </section>
 
       <section id="locationCard" class="info-card hidden">
@@ -132,9 +140,18 @@
     </main>
   </div>
 
+  <div id="detailModal" class="modal hidden">
+    <div class="modal-backdrop" id="modalBackdrop"></div>
+    <div class="modal-sheet">
+      <button id="closeModalBtn" class="close-modal-btn">Chiudi</button>
+
+      <div id="modalContent" class="modal-content"></div>
+    </div>
+  </div>
+
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   ></script>
-  <script src="app.js?v=pro2"></script>
+  <script src="app.js?v=pro3"></script>
 </body>
 </html>

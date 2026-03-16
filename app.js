@@ -10,6 +10,9 @@ const photographerCard = document.getElementById("photographerCard");
 const photographerBadge = document.getElementById("photographerBadge");
 const photographerText = document.getElementById("photographerText");
 
+const bestNowSection = document.getElementById("bestNowSection");
+const bestNowGrid = document.getElementById("bestNowGrid");
+
 const locationCard = document.getElementById("locationCard");
 const placeName = document.getElementById("placeName");
 const placeLat = document.getElementById("placeLat");
@@ -24,16 +27,23 @@ const sortSelect = document.getElementById("sortSelect");
 const mapStatus = document.getElementById("mapStatus");
 const zoomAllBtn = document.getElementById("zoomAllBtn");
 
-const APP_VERSION = "pro-2";
+const detailModal = document.getElementById("detailModal");
+const modalBackdrop = document.getElementById("modalBackdrop");
+const closeModalBtn = document.getElementById("closeModalBtn");
+const modalContent = document.getElementById("modalContent");
+
+const APP_VERSION = "pro-3";
 
 let allSpots = [];
 let currentFilter = "all";
 let currentLocation = null;
 let favoriteKeys = loadFavorites();
+let activeFocusedKey = null;
 
 let map = null;
 let cityMarker = null;
 let spotMarkers = [];
+let markerIndex = new Map();
 
 const FALLBACK_IMAGES = {
   natura: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
@@ -68,11 +78,15 @@ sortSelect.addEventListener("change", () => {
   applyFilterAndRender();
 });
 
+modalBackdrop.addEventListener("click", closeDetailModal);
+closeModalBtn.addEventListener("click", closeDetailModal);
+
 initMap();
 setStatus("idle", `Pronto (${APP_VERSION})`);
 renderEmpty('Inserisci una città oppure premi "Usa la mia posizione".');
 updateFilterButtons();
 updatePhotographerCard(null);
+hideBestNow();
 
 async function handleSearch() {
   const query = cityInput.value.trim();
@@ -82,6 +96,7 @@ async function handleSearch() {
     renderEmpty("Scrivi una città per iniziare.");
     hideLocation();
     updatePhotographerCard(null);
+    hideBestNow();
     resetMap();
     return;
   }
@@ -104,6 +119,7 @@ async function handleSearch() {
     renderEmpty("Si è verificato un errore. Riprova.");
     hideLocation();
     updatePhotographerCard(null);
+    hideBestNow();
     resetMap();
   }
 }
@@ -131,6 +147,7 @@ function handleGeolocation() {
         renderEmpty("Non sono riuscito a cercare spot vicino a te.");
         hideLocation();
         updatePhotographerCard(null);
+        hideBestNow();
         resetMap();
       }
     },
@@ -147,6 +164,7 @@ function handleGeolocation() {
 
 async function runSearchFlow(location) {
   currentLocation = location;
+  activeFocusedKey = null;
   showLocation(location);
 
   setStatus("idle", "Cerco spot vicini...");
@@ -159,6 +177,7 @@ async function runSearchFlow(location) {
     setStatus("error", "Nessuno spot trovato.");
     renderEmpty("Non ho trovato spot utili in quest'area.");
     updatePhotographerCard(null);
+    hideBestNow();
     resetMap(location);
     return;
   }
@@ -183,6 +202,7 @@ async function runSearchFlow(location) {
 
   applyFilterAndRender();
   updatePhotographerInsights();
+  updateBestNow();
   setStatus("ok", `${allSpots.length} spot trovati`);
 
   updateMap(location, allSpots);
@@ -288,6 +308,23 @@ function dedupeSpots(spots) {
 }
 
 function applyFilterAndRender() {
+  const filtered = getCurrentFilteredSpots();
+
+  activeFilterLabel.textContent = humanizeFilter(currentFilter);
+
+  if (!filtered.length) {
+    resultsCount.textContent = "0 risultati";
+    renderEmpty("Nessuno spot per questo filtro.");
+    if (mapStatus) mapStatus.textContent = "Nessun marker per questo filtro";
+    updateMap(currentLocation, []);
+    return;
+  }
+
+  renderSpots(filtered);
+  if (currentLocation) updateMap(currentLocation, filtered);
+}
+
+function getCurrentFilteredSpots() {
   let filtered =
     currentFilter === "all"
       ? [...allSpots]
@@ -305,18 +342,7 @@ function applyFilterAndRender() {
     filtered.sort((a, b) => a.distanceKm - b.distanceKm);
   }
 
-  activeFilterLabel.textContent = humanizeFilter(currentFilter);
-
-  if (!filtered.length) {
-    resultsCount.textContent = "0 risultati";
-    renderEmpty("Nessuno spot per questo filtro.");
-    if (mapStatus) mapStatus.textContent = "Nessun marker per questo filtro";
-    updateMap(currentLocation, []);
-    return;
-  }
-
-  renderSpots(filtered);
-  if (currentLocation) updateMap(currentLocation, filtered);
+  return filtered;
 }
 
 function normalizeGoldenScore(minutes) {
@@ -370,6 +396,41 @@ function updatePhotographerInsights() {
   });
 }
 
+function updateBestNow() {
+  const upcoming = [...allSpots]
+    .filter((spot) => isFinite(spot.goldenMinutes) && spot.goldenMinutes >= 0)
+    .sort((a, b) => a.goldenMinutes - b.goldenMinutes)
+    .slice(0, 3);
+
+  if (!upcoming.length) {
+    hideBestNow();
+    return;
+  }
+
+  bestNowSection.classList.remove("hidden");
+  bestNowGrid.innerHTML = upcoming.map((spot) => `
+    <article class="best-now-card">
+      <div class="best-now-top">
+        <div>
+          <div class="best-now-title">${escapeHtml(spot.name)}</div>
+          <div class="best-now-sub">${spot.distanceKm.toFixed(1)} km • ${humanizeFilter(spot.category)}</div>
+        </div>
+        <div class="best-now-badge">tra ${spot.goldenMinutes} min</div>
+      </div>
+
+      <div class="best-now-actions">
+        <button class="map-control-btn" onclick="focusSpot('${escapeForJs(spot.favoriteKey)}')">Centra sulla mappa</button>
+        <button class="map-control-btn" onclick="openDetailByKey('${escapeForJs(spot.favoriteKey)}')">Dettagli</button>
+      </div>
+    </article>
+  `).join("");
+}
+
+function hideBestNow() {
+  bestNowSection.classList.add("hidden");
+  bestNowGrid.innerHTML = "";
+}
+
 function updatePhotographerCard(data) {
   if (!data) {
     photographerCard.classList.add("hidden");
@@ -421,9 +482,10 @@ function renderSpots(spots) {
       : "🌙 Golden hour passata";
 
     const goldenClass = isFinite(spot.goldenMinutes) && spot.goldenMinutes >= 0 ? "" : "past";
+    const focusedClass = activeFocusedKey === spot.favoriteKey ? "focused" : "";
 
     return `
-      <article class="spot-card">
+      <article class="spot-card ${focusedClass}" id="card-${escapeAttr(spot.favoriteKey)}">
         <div class="spot-image" style="background-image:url('${escapeHtml(spot.imageUrl)}')"></div>
 
         <div class="spot-header">
@@ -470,6 +532,14 @@ function renderSpots(spots) {
             Naviga
           </a>
 
+          <button class="map-control-btn" onclick="focusSpot('${escapeForJs(spot.favoriteKey)}')">
+            Vedi sulla mappa
+          </button>
+
+          <button class="map-control-btn" onclick="openDetailByKey('${escapeForJs(spot.favoriteKey)}')">
+            Dettagli
+          </button>
+
           <button class="favorite-btn ${isFav ? "active" : ""}" onclick="toggleFavorite('${escapeForJs(spot.favoriteKey)}')">
             ${isFav ? "❤️ Salvato" : "🤍 Salva"}
           </button>
@@ -485,6 +555,90 @@ function renderEmpty(message) {
       <div class="spot-subline">${escapeHtml(message)}</div>
     </div>
   `;
+}
+
+function openDetailByKey(key) {
+  const spot = allSpots.find((item) => item.favoriteKey === key);
+  if (!spot) return;
+
+  const advice = buildPhotoAdvice(spot);
+
+  modalContent.innerHTML = `
+    <div class="modal-image" style="background-image:url('${escapeHtml(spot.imageUrl)}')"></div>
+    <div class="modal-title">${escapeHtml(spot.name)}</div>
+    <div class="spot-category">${escapeHtml(humanizeFilter(spot.category))}</div>
+
+    <div class="modal-advice">${escapeHtml(advice)}</div>
+
+    <div class="spot-grid">
+      <div class="spot-box">
+        <div class="spot-box-label">Distanza</div>
+        <div class="spot-box-value">${spot.distanceKm.toFixed(1)} km</div>
+      </div>
+
+      <div class="spot-box">
+        <div class="spot-box-label">Coordinate</div>
+        <div class="spot-box-value">${spot.lat.toFixed(4)}, ${spot.lon.toFixed(4)}</div>
+      </div>
+
+      <div class="spot-box">
+        <div class="spot-box-label">Alba</div>
+        <div class="spot-box-value">${spot.sunrise}</div>
+      </div>
+
+      <div class="spot-box">
+        <div class="spot-box-label">Tramonto</div>
+        <div class="spot-box-value">${spot.sunset}</div>
+      </div>
+
+      <div class="spot-box">
+        <div class="spot-box-label">Golden hour</div>
+        <div class="spot-box-value">${spot.goldenHour}</div>
+      </div>
+
+      <div class="spot-box">
+        <div class="spot-box-label">Categoria</div>
+        <div class="spot-box-value">${humanizeFilter(spot.category)}</div>
+      </div>
+    </div>
+
+    <div class="spot-actions">
+      <a class="spot-link" href="${buildGoogleMapsLink(spot.lat, spot.lon)}" target="_blank" rel="noopener noreferrer">
+        Apri in Maps
+      </a>
+      <a class="spot-link secondary" href="${buildNavigationLink(spot.lat, spot.lon)}" target="_blank" rel="noopener noreferrer">
+        Naviga
+      </a>
+    </div>
+  `;
+
+  detailModal.classList.remove("hidden");
+}
+
+window.openDetailByKey = openDetailByKey;
+
+function closeDetailModal() {
+  detailModal.classList.add("hidden");
+}
+
+function buildPhotoAdvice(spot) {
+  if (isFinite(spot.goldenMinutes) && spot.goldenMinutes >= 0 && spot.goldenMinutes <= 90) {
+    return "Ottimo momento fotografico: la golden hour è vicina. Questo spot è ideale da raggiungere adesso.";
+  }
+
+  if (spot.category === "viewpoint") {
+    return "Spot panoramico: tende a rendere meglio con luce calda e cielo pulito, soprattutto verso il tramonto.";
+  }
+
+  if (spot.category === "storico") {
+    return "Spot storico: spesso rende molto bene al mattino presto o nel tardo pomeriggio, con ombre più morbide.";
+  }
+
+  if (spot.category === "natura") {
+    return "Spot naturale: prova a visitarlo nelle ore con luce più morbida, evitando il sole troppo alto.";
+  }
+
+  return "Spot versatile: controlla alba, tramonto e golden hour per scegliere il momento più fotogenico.";
 }
 
 function buildGoogleMapsLink(lat, lon) {
@@ -511,6 +665,38 @@ function toggleFavorite(key) {
 }
 
 window.toggleFavorite = toggleFavorite;
+
+function focusSpot(key) {
+  const spot = allSpots.find((item) => item.favoriteKey === key);
+  if (!spot || !map) return;
+
+  activeFocusedKey = key;
+  renderFocusedCards();
+
+  const marker = markerIndex.get(key);
+  map.setView([spot.lat, spot.lon], 15);
+
+  if (marker) {
+    marker.openPopup();
+  }
+
+  const card = document.getElementById(`card-${escapeAttr(key)}`);
+  if (card) {
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+window.focusSpot = focusSpot;
+
+function renderFocusedCards() {
+  const cards = document.querySelectorAll(".spot-card");
+  cards.forEach((card) => card.classList.remove("focused"));
+
+  if (!activeFocusedKey) return;
+
+  const card = document.getElementById(`card-${escapeAttr(activeFocusedKey)}`);
+  if (card) card.classList.add("focused");
+}
 
 function loadFavorites() {
   try {
@@ -595,6 +781,7 @@ function updateMap(location, spots) {
   }
 
   clearMapMarkers();
+  markerIndex.clear();
 
   cityMarker = L.marker([location.lat, location.lon]).addTo(map);
   cityMarker.bindPopup(`<strong>${escapeHtml(location.name)}</strong>`);
@@ -610,7 +797,14 @@ function updateMap(location, spots) {
         Apri in Maps
       </a>
     `);
+
+    marker.on("click", () => {
+      activeFocusedKey = spot.favoriteKey;
+      renderFocusedCards();
+    });
+
     spotMarkers.push(marker);
+    markerIndex.set(spot.favoriteKey, marker);
     bounds.push([spot.lat, spot.lon]);
   });
 
@@ -627,9 +821,17 @@ function updateMap(location, spots) {
 
 function zoomAllMarkers() {
   if (!currentLocation || !map) return;
+  updateMap(currentLocation, getCurrentFilteredSpots());
+}
 
-  const filtered = getCurrentFilteredSpots();
-  updateMap(currentLocation, filtered);
+function clearMapMarkers() {
+  spotMarkers.forEach((marker) => map.removeLayer(marker));
+  spotMarkers = [];
+}
+
+function rerenderIfVisible() {
+  applyFilterAndRender();
+  updateBestNow();
 }
 
 function getCurrentFilteredSpots() {
@@ -651,15 +853,6 @@ function getCurrentFilteredSpots() {
   }
 
   return filtered;
-}
-
-function clearMapMarkers() {
-  spotMarkers.forEach((marker) => map.removeLayer(marker));
-  spotMarkers = [];
-}
-
-function rerenderIfVisible() {
-  applyFilterAndRender();
 }
 
 function calculateDistanceKm(lat1, lon1, lat2, lon2) {
@@ -747,6 +940,12 @@ function calculateSunTimes(date, lat, lon) {
   };
 }
 
+function normalizeGoldenScore(minutes) {
+  if (!isFinite(minutes)) return 999999;
+  if (minutes < 0) return 500000 + Math.abs(minutes);
+  return minutes;
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -760,4 +959,13 @@ function escapeForJs(value) {
   return String(value)
     .replaceAll("\\", "\\\\")
     .replaceAll("'", "\\'");
+}
+
+function escapeAttr(value) {
+  return String(value)
+    .replaceAll(" ", "_")
+    .replaceAll("|", "_")
+    .replaceAll(".", "_")
+    .replaceAll(",", "_")
+    .replaceAll("'", "_");
 }
