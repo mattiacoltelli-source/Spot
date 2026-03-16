@@ -27,26 +27,37 @@ const sortSelect = document.getElementById("sortSelect");
 const mapStatus = document.getElementById("mapStatus");
 const zoomAllBtn = document.getElementById("zoomAllBtn");
 
+const countToday = document.getElementById("countToday");
+const countWeekend = document.getElementById("countWeekend");
+const countSunsets = document.getElementById("countSunsets");
+const countCustom = document.getElementById("countCustom");
+const listFilterButtons = document.querySelectorAll(".list-chip");
+
 const detailModal = document.getElementById("detailModal");
 const modalBackdrop = document.getElementById("modalBackdrop");
 const closeModalBtn = document.getElementById("closeModalBtn");
 const modalContent = document.getElementById("modalContent");
 
-const APP_VERSION = "pro-3";
+const APP_VERSION = "pro-4";
 
 let allSpots = [];
 let currentFilter = "all";
 let currentLocation = null;
 let favoriteKeys = loadFavorites();
 let activeFocusedKey = null;
+let activeListFilter = null;
 
 let map = null;
 let cityMarker = null;
 let spotMarkers = [];
 let markerIndex = new Map();
 
+let savedLists = loadLists();
+
 const FALLBACK_IMAGES = {
   natura: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
+  acqua: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80",
+  panorama: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80",
   storico: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1200&q=80",
   viewpoint: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80",
   turismo: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=1200&q=80",
@@ -69,7 +80,20 @@ cityInput.addEventListener("keydown", (event) => {
 filterButtons.forEach((button) => {
   button.addEventListener("click", () => {
     currentFilter = button.dataset.filter;
+    activeListFilter = null;
     updateFilterButtons();
+    updateListFilterButtons();
+    applyFilterAndRender();
+  });
+});
+
+listFilterButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const listName = button.dataset.listFilter;
+    activeListFilter = activeListFilter === listName ? null : listName;
+    currentFilter = "all";
+    updateFilterButtons();
+    updateListFilterButtons();
     applyFilterAndRender();
   });
 });
@@ -85,8 +109,10 @@ initMap();
 setStatus("idle", `Pronto (${APP_VERSION})`);
 renderEmpty('Inserisci una città oppure premi "Usa la mia posizione".');
 updateFilterButtons();
+updateListFilterButtons();
 updatePhotographerCard(null);
 hideBestNow();
+updateListCounters();
 
 async function handleSearch() {
   const query = cityInput.value.trim();
@@ -130,7 +156,8 @@ function handleGeolocation() {
     return;
   }
 
-  setStatus("idle", "Cerco la tua posizione...");
+  setStatus("idle", "Sto cercando la tua posizione...");
+  statusText.textContent = "Attiva il GPS e attendi qualche secondo. Se non funziona, prova con una città.";
 
   navigator.geolocation.getCurrentPosition(
     async (position) => {
@@ -151,12 +178,21 @@ function handleGeolocation() {
         resetMap();
       }
     },
-    () => {
-      setStatus("error", "Permesso posizione negato.");
+    (error) => {
+      if (error.code === 1) {
+        setStatus("error", "Permesso posizione negato.");
+        renderEmpty("Permesso posizione negato. Cerca una città manualmente.");
+      } else if (error.code === 2) {
+        setStatus("error", "Posizione non disponibile.");
+        renderEmpty("Non riesco a leggere il GPS. Prova all'aperto oppure cerca una città.");
+      } else {
+        setStatus("error", "Timeout posizione.");
+        renderEmpty("La posizione ha impiegato troppo tempo. Cerca una città oppure riprova.");
+      }
     },
     {
       enableHighAccuracy: true,
-      timeout: 15000,
+      timeout: 18000,
       maximumAge: 0
     }
   );
@@ -194,7 +230,7 @@ async function runSearchFlow(location) {
         goldenHour: formatTime(sun.goldenHour),
         goldenMinutes: diffMinutesFromNow(sun.goldenHour),
         favoriteKey: buildSpotKey(spot),
-        imageUrl: FALLBACK_IMAGES[spot.category] || FALLBACK_IMAGES.spot
+        imageUrl: FALLBACK_IMAGES[spot.primaryType] || FALLBACK_IMAGES[spot.category] || FALLBACK_IMAGES.spot
       };
     })
     .sort((a, b) => a.distanceKm - b.distanceKm)
@@ -246,10 +282,18 @@ async function fetchNearbySpots(lat, lon) {
       node(around:${radius},${lat},${lon})["natural"];
       node(around:${radius},${lat},${lon})["historic"];
       node(around:${radius},${lat},${lon})["amenity"="viewpoint"];
+      node(around:${radius},${lat},${lon})["waterway"];
+      node(around:${radius},${lat},${lon})["natural"="water"];
+      node(around:${radius},${lat},${lon})["natural"="beach"];
+      node(around:${radius},${lat},${lon})["natural"="coastline"];
       way(around:${radius},${lat},${lon})["tourism"];
       way(around:${radius},${lat},${lon})["natural"];
       way(around:${radius},${lat},${lon})["historic"];
       way(around:${radius},${lat},${lon})["amenity"="viewpoint"];
+      way(around:${radius},${lat},${lon})["waterway"];
+      way(around:${radius},${lat},${lon})["natural"="water"];
+      way(around:${radius},${lat},${lon})["natural"="beach"];
+      way(around:${radius},${lat},${lon})["natural"="coastline"];
     );
     out center;
   `;
@@ -276,11 +320,15 @@ async function fetchNearbySpots(lat, lon) {
 
       if (!name || !isFinite(itemLat) || !isFinite(itemLon)) return null;
 
+      const spotType = buildSpotType(item.tags);
+
       return {
         name,
         lat: Number(itemLat),
         lon: Number(itemLon),
-        category: pickCategory(item.tags)
+        category: spotType.category,
+        primaryType: spotType.primaryType,
+        tags: spotType.tags
       };
     })
     .filter(Boolean);
@@ -288,12 +336,30 @@ async function fetchNearbySpots(lat, lon) {
   return dedupeSpots(spots);
 }
 
-function pickCategory(tags = {}) {
-  if (tags.amenity === "viewpoint") return "viewpoint";
-  if (tags.natural) return "natura";
-  if (tags.historic) return "storico";
-  if (tags.tourism) return "turismo";
-  return "spot";
+function buildSpotType(tags = {}) {
+  const derived = [];
+
+  if (tags.amenity === "viewpoint") derived.push("viewpoint");
+  if (tags.waterway || tags.natural === "water" || tags.natural === "beach" || tags.natural === "coastline") derived.push("acqua");
+  if (tags.amenity === "viewpoint" || tags.tourism === "viewpoint") derived.push("panorama");
+  if (tags.natural) derived.push("natura");
+  if (tags.historic) derived.push("storico");
+  if (tags.tourism) derived.push("turismo");
+
+  const unique = [...new Set(derived)];
+
+  let category = "turismo";
+  if (unique.includes("viewpoint")) category = "viewpoint";
+  else if (unique.includes("acqua")) category = "acqua";
+  else if (unique.includes("natura")) category = "natura";
+  else if (unique.includes("storico")) category = "storico";
+  else if (unique.includes("turismo")) category = "turismo";
+
+  return {
+    category,
+    primaryType: unique[0] || category,
+    tags: unique.length ? unique : ["turismo"]
+  };
 }
 
 function dedupeSpots(spots) {
@@ -310,7 +376,9 @@ function dedupeSpots(spots) {
 function applyFilterAndRender() {
   const filtered = getCurrentFilteredSpots();
 
-  activeFilterLabel.textContent = humanizeFilter(currentFilter);
+  activeFilterLabel.textContent = activeListFilter
+    ? humanizeList(activeListFilter)
+    : humanizeFilter(currentFilter);
 
   if (!filtered.length) {
     resultsCount.textContent = "0 risultati";
@@ -325,12 +393,18 @@ function applyFilterAndRender() {
 }
 
 function getCurrentFilteredSpots() {
-  let filtered =
-    currentFilter === "all"
-      ? [...allSpots]
-      : currentFilter === "favorites"
-      ? allSpots.filter((spot) => favoriteKeys.includes(spot.favoriteKey))
-      : allSpots.filter((spot) => spot.category === currentFilter);
+  let filtered = [...allSpots];
+
+  if (activeListFilter) {
+    filtered = filtered.filter((spot) => isInList(activeListFilter, spot.favoriteKey));
+  } else if (currentFilter === "favorites") {
+    filtered = filtered.filter((spot) => favoriteKeys.includes(spot.favoriteKey));
+  } else if (currentFilter !== "all") {
+    filtered = filtered.filter((spot) => {
+      if (spot.category === currentFilter) return true;
+      return Array.isArray(spot.tags) && spot.tags.includes(currentFilter);
+    });
+  }
 
   const sortBy = sortSelect.value;
 
@@ -353,18 +427,36 @@ function normalizeGoldenScore(minutes) {
 
 function updateFilterButtons() {
   filterButtons.forEach((button) => {
-    button.classList.toggle("active", button.dataset.filter === currentFilter);
+    button.classList.toggle("active", button.dataset.filter === currentFilter && !activeListFilter);
+  });
+}
+
+function updateListFilterButtons() {
+  listFilterButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.listFilter === activeListFilter);
   });
 }
 
 function humanizeFilter(filter) {
   switch (filter) {
     case "natura": return "Natura";
+    case "acqua": return "Acqua";
+    case "panorama": return "Panorama";
     case "storico": return "Storico";
     case "viewpoint": return "Viewpoint";
     case "turismo": return "Turismo";
     case "favorites": return "Preferiti";
     default: return "Tutti";
+  }
+}
+
+function humanizeList(listName) {
+  switch (listName) {
+    case "today": return "Lista Oggi";
+    case "weekend": return "Lista Weekend";
+    case "sunsets": return "Lista Tramonti";
+    case "custom": return "Mia lista";
+    default: return "Lista";
   }
 }
 
@@ -523,6 +615,13 @@ function renderSpots(spots) {
           </div>
         </div>
 
+        <div class="list-menu">
+          <button class="list-mini-btn ${isInList("today", spot.favoriteKey) ? "active" : ""}" onclick="toggleListItem('today','${escapeForJs(spot.favoriteKey)}')">Oggi</button>
+          <button class="list-mini-btn ${isInList("weekend", spot.favoriteKey) ? "active" : ""}" onclick="toggleListItem('weekend','${escapeForJs(spot.favoriteKey)}')">Weekend</button>
+          <button class="list-mini-btn ${isInList("sunsets", spot.favoriteKey) ? "active" : ""}" onclick="toggleListItem('sunsets','${escapeForJs(spot.favoriteKey)}')">Tramonti</button>
+          <button class="list-mini-btn ${isInList("custom", spot.favoriteKey) ? "active" : ""}" onclick="toggleListItem('custom','${escapeForJs(spot.favoriteKey)}')">Mia lista</button>
+        </div>
+
         <div class="spot-actions">
           <a class="spot-link" href="${buildGoogleMapsLink(spot.lat, spot.lon)}" target="_blank" rel="noopener noreferrer">
             Apri in Maps
@@ -597,8 +696,8 @@ function openDetailByKey(key) {
       </div>
 
       <div class="spot-box">
-        <div class="spot-box-label">Categoria</div>
-        <div class="spot-box-value">${humanizeFilter(spot.category)}</div>
+        <div class="spot-box-label">Filtri</div>
+        <div class="spot-box-value">${spot.tags.map(humanizeFilter).join(", ")}</div>
       </div>
     </div>
 
@@ -625,19 +724,18 @@ function buildPhotoAdvice(spot) {
   if (isFinite(spot.goldenMinutes) && spot.goldenMinutes >= 0 && spot.goldenMinutes <= 90) {
     return "Ottimo momento fotografico: la golden hour è vicina. Questo spot è ideale da raggiungere adesso.";
   }
-
-  if (spot.category === "viewpoint") {
+  if (spot.tags.includes("acqua")) {
+    return "Spot con acqua: spesso rende molto bene con luce morbida, riflessi e cielo interessante, soprattutto verso il tramonto.";
+  }
+  if (spot.tags.includes("panorama") || spot.category === "viewpoint") {
     return "Spot panoramico: tende a rendere meglio con luce calda e cielo pulito, soprattutto verso il tramonto.";
   }
-
   if (spot.category === "storico") {
     return "Spot storico: spesso rende molto bene al mattino presto o nel tardo pomeriggio, con ombre più morbide.";
   }
-
-  if (spot.category === "natura") {
+  if (spot.tags.includes("natura")) {
     return "Spot naturale: prova a visitarlo nelle ore con luce più morbida, evitando il sole troppo alto.";
   }
-
   return "Spot versatile: controlla alba, tramonto e golden hour per scegliere il momento più fotogenico.";
 }
 
@@ -666,38 +764,6 @@ function toggleFavorite(key) {
 
 window.toggleFavorite = toggleFavorite;
 
-function focusSpot(key) {
-  const spot = allSpots.find((item) => item.favoriteKey === key);
-  if (!spot || !map) return;
-
-  activeFocusedKey = key;
-  renderFocusedCards();
-
-  const marker = markerIndex.get(key);
-  map.setView([spot.lat, spot.lon], 15);
-
-  if (marker) {
-    marker.openPopup();
-  }
-
-  const card = document.getElementById(`card-${escapeAttr(key)}`);
-  if (card) {
-    card.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
-}
-
-window.focusSpot = focusSpot;
-
-function renderFocusedCards() {
-  const cards = document.querySelectorAll(".spot-card");
-  cards.forEach((card) => card.classList.remove("focused"));
-
-  if (!activeFocusedKey) return;
-
-  const card = document.getElementById(`card-${escapeAttr(activeFocusedKey)}`);
-  if (card) card.classList.add("focused");
-}
-
 function loadFavorites() {
   try {
     const raw = localStorage.getItem("photospot-favorites");
@@ -710,6 +776,52 @@ function loadFavorites() {
 
 function saveFavorites(list) {
   localStorage.setItem("photospot-favorites", JSON.stringify(list));
+}
+
+function loadLists() {
+  try {
+    const raw = localStorage.getItem("photospot-lists");
+    const parsed = JSON.parse(raw || "{}");
+    return {
+      today: Array.isArray(parsed.today) ? parsed.today : [],
+      weekend: Array.isArray(parsed.weekend) ? parsed.weekend : [],
+      sunsets: Array.isArray(parsed.sunsets) ? parsed.sunsets : [],
+      custom: Array.isArray(parsed.custom) ? parsed.custom : []
+    };
+  } catch {
+    return { today: [], weekend: [], sunsets: [], custom: [] };
+  }
+}
+
+function saveLists() {
+  localStorage.setItem("photospot-lists", JSON.stringify(savedLists));
+}
+
+function isInList(listName, key) {
+  return savedLists[listName]?.includes(key);
+}
+
+function toggleListItem(listName, key) {
+  const list = savedLists[listName] || [];
+
+  if (list.includes(key)) {
+    savedLists[listName] = list.filter((item) => item !== key);
+  } else {
+    savedLists[listName] = [...list, key];
+  }
+
+  saveLists();
+  updateListCounters();
+  applyFilterAndRender();
+}
+
+window.toggleListItem = toggleListItem;
+
+function updateListCounters() {
+  countToday.textContent = savedLists.today.length;
+  countWeekend.textContent = savedLists.weekend.length;
+  countSunsets.textContent = savedLists.sunsets.length;
+  countCustom.textContent = savedLists.custom.length;
 }
 
 async function fetchSpotImages(spots) {
@@ -834,25 +946,34 @@ function rerenderIfVisible() {
   updateBestNow();
 }
 
-function getCurrentFilteredSpots() {
-  let filtered =
-    currentFilter === "all"
-      ? [...allSpots]
-      : currentFilter === "favorites"
-      ? allSpots.filter((spot) => favoriteKeys.includes(spot.favoriteKey))
-      : allSpots.filter((spot) => spot.category === currentFilter);
+function focusSpot(key) {
+  const spot = allSpots.find((item) => item.favoriteKey === key);
+  if (!spot || !map) return;
 
-  const sortBy = sortSelect.value;
+  activeFocusedKey = key;
+  renderFocusedCards();
 
-  if (sortBy === "name") {
-    filtered.sort((a, b) => a.name.localeCompare(b.name, "it"));
-  } else if (sortBy === "golden") {
-    filtered.sort((a, b) => normalizeGoldenScore(a.goldenMinutes) - normalizeGoldenScore(b.goldenMinutes));
-  } else {
-    filtered.sort((a, b) => a.distanceKm - b.distanceKm);
+  const marker = markerIndex.get(key);
+  map.setView([spot.lat, spot.lon], 15);
+
+  if (marker) marker.openPopup();
+
+  const card = document.getElementById(`card-${escapeAttr(key)}`);
+  if (card) {
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
   }
+}
 
-  return filtered;
+window.focusSpot = focusSpot;
+
+function renderFocusedCards() {
+  const cards = document.querySelectorAll(".spot-card");
+  cards.forEach((card) => card.classList.remove("focused"));
+
+  if (!activeFocusedKey) return;
+
+  const card = document.getElementById(`card-${escapeAttr(activeFocusedKey)}`);
+  if (card) card.classList.add("focused");
 }
 
 function calculateDistanceKm(lat1, lon1, lat2, lon2) {
@@ -938,12 +1059,6 @@ function calculateSunTimes(date, lat, lon) {
     sunset: fromJulian(Jset),
     goldenHour: fromJulian(JgoldenSet)
   };
-}
-
-function normalizeGoldenScore(minutes) {
-  if (!isFinite(minutes)) return 999999;
-  if (minutes < 0) return 500000 + Math.abs(minutes);
-  return minutes;
 }
 
 function escapeHtml(value) {

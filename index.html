@@ -10,7 +10,7 @@
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   />
-  <link rel="stylesheet" href="style.css?v=pro3" />
+  <link rel="stylesheet" href="style.css?v=pro4" />
 </head>
 <body>
   <div class="app-shell">
@@ -70,6 +70,28 @@
         <div id="bestNowGrid" class="best-now-grid"></div>
       </section>
 
+      <section class="lists-section">
+        <div class="section-head">
+          <h2>Le tue liste</h2>
+          <span class="results-count">Organizzazione</span>
+        </div>
+
+        <div class="lists-grid">
+          <button class="list-chip" data-list-filter="today">
+            Oggi <span id="countToday">0</span>
+          </button>
+          <button class="list-chip" data-list-filter="weekend">
+            Weekend <span id="countWeekend">0</span>
+          </button>
+          <button class="list-chip" data-list-filter="sunsets">
+            Tramonti <span id="countSunsets">0</span>
+          </button>
+          <button class="list-chip" data-list-filter="custom">
+            Mia lista <span id="countCustom">0</span>
+          </button>
+        </div>
+      </section>
+
       <section id="locationCard" class="info-card hidden">
         <h3>Luogo trovato</h3>
 
@@ -100,6 +122,8 @@
         <div class="filters-row">
           <button class="filter-btn active" data-filter="all">Tutti</button>
           <button class="filter-btn" data-filter="natura">Natura</button>
+          <button class="filter-btn" data-filter="acqua">Acqua</button>
+          <button class="filter-btn" data-filter="panorama">Panorama</button>
           <button class="filter-btn" data-filter="storico">Storico</button>
           <button class="filter-btn" data-filter="viewpoint">Viewpoint</button>
           <button class="filter-btn" data-filter="turismo">Turismo</button>
@@ -144,7 +168,6 @@
     <div class="modal-backdrop" id="modalBackdrop"></div>
     <div class="modal-sheet">
       <button id="closeModalBtn" class="close-modal-btn">Chiudi</button>
-
       <div id="modalContent" class="modal-content"></div>
     </div>
   </div>
@@ -152,6 +175,6 @@
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   ></script>
-  <script src="app.js?v=pro3"></script>
+  <script src="app.js?v=pro4"></script>
 </body>
 </html>

@@ -135,7 +135,8 @@ h1{
 .filters-section,
 .photographer-card,
 .map-section,
-.best-now-section{
+.best-now-section,
+.lists-section{
   background:var(--card);
   padding:18px;
   border-radius:18px;
@@ -231,6 +232,32 @@ h1{
   border:1px solid rgba(255,255,255,0.08);
   border-radius:12px;
   padding:10px 12px;
+}
+
+.lists-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:10px;
+}
+
+.list-chip{
+  border:none;
+  border-radius:14px;
+  padding:12px 14px;
+  background:rgba(255,255,255,0.08);
+  color:white;
+  cursor:pointer;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.list-chip span{
+  background:rgba(255,255,255,0.08);
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:12px;
 }
 
 .map-actions{
@@ -406,6 +433,27 @@ h1{
   color:#ff9dc4;
 }
 
+.list-menu{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.list-mini-btn{
+  border:none;
+  border-radius:10px;
+  padding:9px 10px;
+  background:rgba(255,255,255,0.08);
+  color:white;
+  cursor:pointer;
+  font-size:12px;
+}
+
+.list-mini-btn.active{
+  background:rgba(39,174,96,0.18);
+  color:#9ae0b1;
+}
+
 .spot-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -545,5 +593,9 @@ h1{
 @media (max-width: 640px){
   h1{
     font-size:36px;
+  }
+
+  .lists-grid{
+    grid-template-columns:1fr;
   }
 }
