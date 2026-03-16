@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>PhotoSpot Planner Lite</title>
   <meta name="theme-color" content="#0b1220" />
-  <link rel="stylesheet" href="style.css?v=lite1" />
+  <link rel="stylesheet" href="style.css?v=lite2" />
 </head>
 <body>
   <div class="app-shell">
@@ -16,7 +16,7 @@
         <p class="eyebrow">Travel Photo App</p>
         <h1>PhotoSpot Planner</h1>
         <p class="hero-text">
-          Cerca una città e trova spot panoramici, naturali e fotogenici da aprire subito in Google Maps.
+          Cerca una città e trova spot panoramici, naturali e fotogenici con orari migliori per fotografarli.
         </p>
 
         <div class="search-box">
@@ -67,6 +67,21 @@
         </div>
       </section>
 
+      <section class="filters-section">
+        <div class="section-head">
+          <h2>Filtri</h2>
+          <span class="results-count" id="activeFilterLabel">Tutti</span>
+        </div>
+
+        <div class="filters-row">
+          <button class="filter-btn active" data-filter="all">Tutti</button>
+          <button class="filter-btn" data-filter="natura">Natura</button>
+          <button class="filter-btn" data-filter="storico">Storico</button>
+          <button class="filter-btn" data-filter="viewpoint">Viewpoint</button>
+          <button class="filter-btn" data-filter="turismo">Turismo</button>
+        </div>
+      </section>
+
       <section class="results-section">
         <div class="section-head">
           <h2>Spot trovati</h2>
@@ -78,6 +93,6 @@
     </main>
   </div>
 
-  <script src="app.js?v=lite1"></script>
+  <script src="app.js?v=lite2"></script>
 </body>
 </html>
