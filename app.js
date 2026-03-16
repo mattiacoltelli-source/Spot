@@ -1,15 +1,8 @@
-// ===============================
-// CONFIG
-// ===============================
 const CONFIG = {
-  OPENTRIPMAP_API_KEY: "7c3c863f5ce9759b81a87bc9c5e111065309a185f63464bdadefd4e4991333d5",
-  OPENTRIPMAP_BASE_URL: "https://api.opentripmap.com/0.1/en/places",
-  NOMINATIM_BASE_URL: "https://nominatim.openstreetmap.org/search"
+  API_KEY: "7c3c863f5ce9759b81a87bc9c5e111065309a185f63464bdadefd4e4991333d5"
 };
 
-// ===============================
-// ELEMENTI DOM
-// ===============================
+// DOM
 const cityInput = document.getElementById("cityInput");
 const searchBtn = document.getElementById("searchBtn");
 const exampleBtn = document.getElementById("exampleBtn");
@@ -25,9 +18,6 @@ const placeLon = document.getElementById("placeLon");
 const resultsGrid = document.getElementById("resultsGrid");
 const resultsCount = document.getElementById("resultsCount");
 
-// ===============================
-// EVENTI
-// ===============================
 searchBtn.addEventListener("click", handleSearch);
 
 exampleBtn.addEventListener("click", () => {
@@ -35,154 +25,121 @@ exampleBtn.addEventListener("click", () => {
   handleSearch();
 });
 
-cityInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    handleSearch();
-  }
+cityInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") handleSearch();
 });
 
-// ===============================
-// FUNZIONE PRINCIPALE
-// ===============================
 async function handleSearch() {
 
   const query = cityInput.value.trim();
 
   if (!query) {
-    setStatus("error", "Inserisci una città.");
+    setStatus("error","Inserisci una città");
     return;
   }
 
   try {
 
-    setStatus("loading", "Cerco città...");
+    setStatus("loading","Cerco città...");
 
-    const location = await geocodePlace(query);
-
-    if (!location) {
-      throw new Error("Città non trovata.");
-    }
+    const location = await geocode(query);
 
     showLocation(location);
 
-    setStatus("loading", "Cerco spot fotografici...");
+    setStatus("loading","Cerco spot...");
 
-    const spots = await fetchNearbySpots(location.lat, location.lon);
-
-    if (!spots.length) {
-      setStatus("error", "Nessuno spot trovato.");
-      renderEmpty("Nessuno spot trovato.");
-      return;
-    }
+    const spots = await fetchSpots(location.lat, location.lon);
 
     renderSpots(spots);
 
-    setStatus("success", `Trovati ${spots.length} spot.`);
+    setStatus("success", spots.length + " spot trovati");
 
-  } catch (error) {
+  } catch(err) {
 
-    console.error(error);
+    console.error(err);
 
-    setStatus("error", "Errore nel recupero degli spot da OpenTripMap.");
+    setStatus("error","Errore nel recupero degli spot da OpenTripMap");
 
-    renderEmpty("Si è verificato un errore.");
+    renderEmpty("Errore nella ricerca");
 
   }
 
 }
 
-// ===============================
-// CERCA CITTA
-// ===============================
-async function geocodePlace(query) {
+async function geocode(query){
 
   const url =
-    `${CONFIG.NOMINATIM_BASE_URL}?format=json&q=${encodeURIComponent(query)}&limit=1`;
+  "https://nominatim.openstreetmap.org/search?format=json&q=" +
+  encodeURIComponent(query) +
+  "&limit=1";
 
-  const response = await fetch(url, {
-    headers: {
-      "Accept-Language": "it"
-    }
-  });
+  const res = await fetch(url);
 
-  const data = await response.json();
+  const data = await res.json();
 
-  if (!data.length) return null;
-
-  const item = data[0];
+  if(!data.length) throw new Error("Città non trovata");
 
   return {
-    name: item.display_name,
-    lat: Number(item.lat),
-    lon: Number(item.lon)
-  };
-
-}
-
-// ===============================
-// OPEN TRIP MAP
-// ===============================
-async function fetchNearbySpots(lat, lon) {
-
-  const radius = 10000;
-  const limit = 20;
-
-  const url =
-    `${CONFIG.OPENTRIPMAP_BASE_URL}/radius` +
-    `?radius=${radius}` +
-    `&lon=${lon}` +
-    `&lat=${lat}` +
-    `&limit=${limit}` +
-    `&format=json` +
-    `&apikey=${CONFIG.OPENTRIPMAP_API_KEY}`;
-
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error("Errore API");
+    name: data[0].display_name,
+    lat: parseFloat(data[0].lat),
+    lon: parseFloat(data[0].lon)
   }
 
-  const data = await response.json();
+}
 
-  return data.filter(item => item.name && item.point);
+async function fetchSpots(lat,lon){
+
+  const url =
+  "https://corsproxy.io/?https://api.opentripmap.com/0.1/en/places/radius" +
+  "?radius=10000" +
+  "&lon=" + lon +
+  "&lat=" + lat +
+  "&limit=30" +
+  "&format=json" +
+  "&apikey=" + CONFIG.API_KEY;
+
+  const res = await fetch(url);
+
+  if(!res.ok) throw new Error("API error");
+
+  const data = await res.json();
+
+  return data.filter(s => s.name && s.point);
 
 }
 
-// ===============================
-// UI
-// ===============================
-function setStatus(type, text) {
+function setStatus(type,text){
 
-  statusBadge.className = `badge ${type}`;
+  statusBadge.className = "badge " + type;
 
-  if (type === "loading") statusBadge.textContent = "Ricerca";
-  if (type === "success") statusBadge.textContent = "OK";
-  if (type === "error") statusBadge.textContent = "Errore";
-  if (type === "idle") statusBadge.textContent = "In attesa";
+  if(type==="loading") statusBadge.textContent="Ricerca";
+  if(type==="success") statusBadge.textContent="OK";
+  if(type==="error") statusBadge.textContent="Errore";
 
   statusText.textContent = text;
 
 }
 
-function showLocation(location) {
+function showLocation(loc){
 
   locationCard.classList.remove("hidden");
 
-  placeName.textContent = location.name;
-  placeLat.textContent = location.lat.toFixed(5);
-  placeLon.textContent = location.lon.toFixed(5);
+  placeName.textContent = loc.name;
+  placeLat.textContent = loc.lat.toFixed(5);
+  placeLon.textContent = loc.lon.toFixed(5);
 
 }
 
-function renderSpots(spots) {
+function renderSpots(spots){
 
-  resultsCount.textContent = `${spots.length} risultati`;
+  resultsCount.textContent = spots.length + " risultati";
 
-  resultsGrid.innerHTML = spots.map(spot => {
+  resultsGrid.innerHTML = spots.map(s=>{
 
-    const name = spot.name || "Spot";
-    const lat = spot.point.lat;
-    const lon = spot.point.lon;
+    const name = s.name || "Spot";
+
+    const lat = s.point.lat;
+    const lon = s.point.lon;
 
     return `
       <div class="spot-card">
@@ -195,14 +152,11 @@ function renderSpots(spots) {
 
 }
 
-function renderEmpty(message) {
+function renderEmpty(msg){
 
   resultsCount.textContent = "0 risultati";
 
-  resultsGrid.innerHTML = `
-    <div class="empty-state">
-      ${message}
-    </div>
-  `;
+  resultsGrid.innerHTML =
+  `<div class="empty-state">${msg}</div>`;
 
 }
