@@ -1,7 +1,6 @@
 const CONFIG = {
   OPENTRIPMAP_API_KEY: "49233ef14675352094db78f9021de6d6d0e20d0d9355a451f8bf8713380f8feb",
-  OPENTRIPMAP_BASE_URL: "https://api.opentripmap.com/0.1/en/places",
-  NOMINATIM_BASE_URL: "https://nominatim.openstreetmap.org/search"
+  NOMINATIM_URL: "https://nominatim.openstreetmap.org/search"
 };
 
 const cityInput = document.getElementById("cityInput");
@@ -70,7 +69,6 @@ async function handleSearch() {
     const spots = await fetchNearbySpots(location.lat, location.lon);
 
     renderSpots(spots);
-
     renderMarkers(spots);
 
     setStatus("success", `${spots.length} spot trovati`);
@@ -88,7 +86,7 @@ async function handleSearch() {
 async function geocodePlace(query) {
 
   const url =
-    `${CONFIG.NOMINATIM_BASE_URL}?format=json&q=${encodeURIComponent(query)}&limit=1`;
+    `${CONFIG.NOMINATIM_URL}?format=json&q=${encodeURIComponent(query)}&limit=1`;
 
   const response = await fetch(url);
 
@@ -108,16 +106,10 @@ async function geocodePlace(query) {
 
 async function fetchNearbySpots(lat, lon) {
 
-  const radius = 10000;
+  const delta = 0.1;
 
   const url =
-    `${CONFIG.OPENTRIPMAP_BASE_URL}/radius` +
-    `?radius=${radius}` +
-    `&lon=${lon}` +
-    `&lat=${lat}` +
-    `&limit=30` +
-    `&format=json` +
-    `&apikey=${CONFIG.OPENTRIPMAP_API_KEY}`;
+    `https://api.opentripmap.com/0.1/en/places/bbox?lon_min=${lon - delta}&lon_max=${lon + delta}&lat_min=${lat - delta}&lat_max=${lat + delta}&format=json&apikey=${CONFIG.OPENTRIPMAP_API_KEY}`;
 
   const response = await fetch(url);
 
@@ -127,7 +119,7 @@ async function fetchNearbySpots(lat, lon) {
 
   const data = await response.json();
 
-  return data.filter(item => item.name && item.point);
+  return data.filter(item => item.name && item.point).slice(0,30);
 
 }
 
