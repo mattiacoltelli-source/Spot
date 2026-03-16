@@ -40,7 +40,10 @@ const modalContent = document.getElementById("modalContent");
 
 const installBtn = document.getElementById("installBtn");
 
-const APP_VERSION = "pro-6-images";
+const APP_VERSION = "pro-7-distance-fix";
+const SEARCH_RADIUS_METERS = 6000;
+const MAX_SAFE_DISTANCE_KM = 12;
+const IMAGE_CACHE_KEY = "photospot-image-cache-v2";
 
 let allSpots = [];
 let currentFilter = "all";
@@ -56,8 +59,6 @@ let markerIndex = new Map();
 
 let savedLists = loadLists();
 let deferredPrompt = null;
-
-const IMAGE_CACHE_KEY = "photospot-image-cache-v1";
 
 const FALLBACK_IMAGES = {
   natura: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
@@ -154,10 +155,7 @@ async function handleSearch() {
   if (!query) {
     setStatus("error", "Inserisci una città.");
     renderEmpty("Scrivi una città per iniziare.");
-    hideLocation();
-    updatePhotographerCard(null);
-    hideBestNow();
-    resetMap();
+    hardResetSearchState();
     return;
   }
 
@@ -165,6 +163,8 @@ async function handleSearch() {
     setStatus("idle", "Cerco la città...");
     renderEmpty("Sto cercando il luogo...");
     hideLocation();
+    closeDetailModal();
+    activeFocusedKey = null;
 
     const location = await geocodePlace(query);
 
@@ -177,10 +177,7 @@ async function handleSearch() {
     console.error(error);
     setStatus("error", error.message || "Errore nella ricerca.");
     renderEmpty("Si è verificato un errore. Riprova.");
-    hideLocation();
-    updatePhotographerCard(null);
-    hideBestNow();
-    resetMap();
+    hardResetSearchState();
   }
 }
 
@@ -196,20 +193,21 @@ function handleGeolocation() {
   navigator.geolocation.getCurrentPosition(
     async (position) => {
       try {
+        closeDetailModal();
+        activeFocusedKey = null;
+
         const location = {
           name: "La tua posizione",
           lat: position.coords.latitude,
           lon: position.coords.longitude
         };
+
         await runSearchFlow(location);
       } catch (error) {
         console.error(error);
         setStatus("error", "Errore nella ricerca vicino a te.");
         renderEmpty("Non sono riuscito a cercare spot vicino a te.");
-        hideLocation();
-        updatePhotographerCard(null);
-        hideBestNow();
-        resetMap();
+        hardResetSearchState();
       }
     },
     (error) => {
@@ -223,6 +221,7 @@ function handleGeolocation() {
         setStatus("error", "Timeout posizione.");
         renderEmpty("La posizione ha impiegato troppo tempo. Cerca una città oppure riprova.");
       }
+      hardResetSearchState();
     },
     {
       enableHighAccuracy: true,
@@ -230,6 +229,16 @@ function handleGeolocation() {
       maximumAge: 0
     }
   );
+}
+
+function hardResetSearchState() {
+  allSpots = [];
+  currentLocation = null;
+  hideLocation();
+  updatePhotographerCard(null);
+  hideBestNow();
+  activeFocusedKey = null;
+  resetMap();
 }
 
 async function runSearchFlow(location) {
@@ -240,25 +249,16 @@ async function runSearchFlow(location) {
   setStatus("idle", "Cerco spot vicini...");
   renderEmpty("Sto cercando gli spot...");
 
-  const spots = await fetchNearbySpots(location.lat, location.lon);
+  const rawSpots = await fetchNearbySpots(location.lat, location.lon);
 
-  if (!spots.length) {
-    allSpots = [];
-    setStatus("error", "Nessuno spot trovato.");
-    renderEmpty("Non ho trovato spot utili in quest'area.");
-    updatePhotographerCard(null);
-    hideBestNow();
-    resetMap(location);
-    return;
-  }
-
-  allSpots = spots
+  const enrichedSpots = rawSpots
     .map((spot) => {
+      const distanceKm = calculateDistanceKm(location.lat, location.lon, spot.lat, spot.lon);
       const sun = calculateSunTimes(new Date(), spot.lat, spot.lon);
 
       return {
         ...spot,
-        distanceKm: calculateDistanceKm(location.lat, location.lon, spot.lat, spot.lon),
+        distanceKm,
         sunrise: formatTime(sun.sunrise),
         sunset: formatTime(sun.sunset),
         goldenHour: formatTime(sun.goldenHour),
@@ -267,8 +267,21 @@ async function runSearchFlow(location) {
         imageUrl: FALLBACK_IMAGES[spot.primaryType] || FALLBACK_IMAGES[spot.category] || FALLBACK_IMAGES.spot
       };
     })
+    .filter((spot) => Number.isFinite(spot.distanceKm) && spot.distanceKm <= MAX_SAFE_DISTANCE_KM)
     .sort((a, b) => a.distanceKm - b.distanceKm)
     .slice(0, 20);
+
+  if (!enrichedSpots.length) {
+    allSpots = [];
+    setStatus("error", "Nessuno spot affidabile trovato.");
+    renderEmpty("Ho scartato risultati troppo lontani o incoerenti. Prova con un'altra città.");
+    updatePhotographerCard(null);
+    hideBestNow();
+    resetMap(location);
+    return;
+  }
+
+  allSpots = enrichedSpots;
 
   applyFilterAndRender();
   updatePhotographerInsights();
@@ -307,27 +320,25 @@ async function geocodePlace(query) {
 }
 
 async function fetchNearbySpots(lat, lon) {
-  const radius = 6000;
-
   const overpassQuery = `
     [out:json][timeout:25];
     (
-      node(around:${radius},${lat},${lon})["tourism"];
-      node(around:${radius},${lat},${lon})["natural"];
-      node(around:${radius},${lat},${lon})["historic"];
-      node(around:${radius},${lat},${lon})["amenity"="viewpoint"];
-      node(around:${radius},${lat},${lon})["waterway"];
-      node(around:${radius},${lat},${lon})["natural"="water"];
-      node(around:${radius},${lat},${lon})["natural"="beach"];
-      node(around:${radius},${lat},${lon})["natural"="coastline"];
-      way(around:${radius},${lat},${lon})["tourism"];
-      way(around:${radius},${lat},${lon})["natural"];
-      way(around:${radius},${lat},${lon})["historic"];
-      way(around:${radius},${lat},${lon})["amenity"="viewpoint"];
-      way(around:${radius},${lat},${lon})["waterway"];
-      way(around:${radius},${lat},${lon})["natural"="water"];
-      way(around:${radius},${lat},${lon})["natural"="beach"];
-      way(around:${radius},${lat},${lon})["natural"="coastline"];
+      node(around:${SEARCH_RADIUS_METERS},${lat},${lon})["tourism"];
+      node(around:${SEARCH_RADIUS_METERS},${lat},${lon})["natural"];
+      node(around:${SEARCH_RADIUS_METERS},${lat},${lon})["historic"];
+      node(around:${SEARCH_RADIUS_METERS},${lat},${lon})["amenity"="viewpoint"];
+      node(around:${SEARCH_RADIUS_METERS},${lat},${lon})["waterway"];
+      node(around:${SEARCH_RADIUS_METERS},${lat},${lon})["natural"="water"];
+      node(around:${SEARCH_RADIUS_METERS},${lat},${lon})["natural"="beach"];
+      node(around:${SEARCH_RADIUS_METERS},${lat},${lon})["natural"="coastline"];
+      way(around:${SEARCH_RADIUS_METERS},${lat},${lon})["tourism"];
+      way(around:${SEARCH_RADIUS_METERS},${lat},${lon})["natural"];
+      way(around:${SEARCH_RADIUS_METERS},${lat},${lon})["historic"];
+      way(around:${SEARCH_RADIUS_METERS},${lat},${lon})["amenity"="viewpoint"];
+      way(around:${SEARCH_RADIUS_METERS},${lat},${lon})["waterway"];
+      way(around:${SEARCH_RADIUS_METERS},${lat},${lon})["natural"="water"];
+      way(around:${SEARCH_RADIUS_METERS},${lat},${lon})["natural"="beach"];
+      way(around:${SEARCH_RADIUS_METERS},${lat},${lon})["natural"="coastline"];
     );
     out center;
   `;
@@ -863,7 +874,7 @@ async function fetchSpotImages(spots) {
   const cache = loadImageCache();
 
   for (const spot of spots) {
-    const cacheKey = buildImageCacheKey(spot.name, cityName);
+    const cacheKey = buildImageCacheKey(spot);
 
     if (cache[cacheKey]) {
       spot.imageUrl = cache[cacheKey];
@@ -934,8 +945,8 @@ function buildCategoryHints(spot) {
   return [...new Set(hints)];
 }
 
-function buildImageCacheKey(name, cityName) {
-  return `${name}__${cityName}`.toLowerCase();
+function buildImageCacheKey(spot) {
+  return `${spot.name}__${spot.lat.toFixed(4)}__${spot.lon.toFixed(4)}`.toLowerCase();
 }
 
 function loadImageCache() {
