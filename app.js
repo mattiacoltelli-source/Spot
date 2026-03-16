@@ -40,7 +40,7 @@ const modalContent = document.getElementById("modalContent");
 
 const installBtn = document.getElementById("installBtn");
 
-const APP_VERSION = "pro-5";
+const APP_VERSION = "pro-6-images";
 
 let allSpots = [];
 let currentFilter = "all";
@@ -56,6 +56,8 @@ let markerIndex = new Map();
 
 let savedLists = loadLists();
 let deferredPrompt = null;
+
+const IMAGE_CACHE_KEY = "photospot-image-cache-v1";
 
 const FALLBACK_IMAGES = {
   natura: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
@@ -858,12 +860,23 @@ function updateListCounters() {
 
 async function fetchSpotImages(spots) {
   const cityName = currentLocation?.name?.split(",")[0]?.trim() || "";
+  const cache = loadImageCache();
 
   for (const spot of spots) {
+    const cacheKey = buildImageCacheKey(spot.name, cityName);
+
+    if (cache[cacheKey]) {
+      spot.imageUrl = cache[cacheKey];
+      rerenderIfVisible();
+      continue;
+    }
+
     try {
-      const url = await fetchWikimediaImage(spot.name, cityName);
+      const url = await fetchSmartPlaceImage(spot, cityName);
       if (url) {
         spot.imageUrl = url;
+        cache[cacheKey] = url;
+        saveImageCache(cache);
         rerenderIfVisible();
       }
     } catch (error) {
@@ -872,8 +885,15 @@ async function fetchSpotImages(spots) {
   }
 }
 
-async function fetchWikimediaImage(spotName, cityName) {
-  const candidates = [spotName, `${spotName}, ${cityName}`, `${spotName} ${cityName}`];
+async function fetchSmartPlaceImage(spot, cityName) {
+  const categoryHints = buildCategoryHints(spot);
+  const candidates = [
+    spot.name,
+    `${spot.name}, ${cityName}`,
+    `${spot.name} ${cityName}`,
+    ...categoryHints.map((hint) => `${spot.name} ${hint}`),
+    ...categoryHints.map((hint) => `${spot.name} ${cityName} ${hint}`)
+  ];
 
   for (const candidate of candidates) {
     const endpoint = `https://it.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(candidate)}`;
@@ -886,6 +906,50 @@ async function fetchWikimediaImage(spotName, cityName) {
   }
 
   return null;
+}
+
+function buildCategoryHints(spot) {
+  const hints = [];
+
+  if (spot.tags.includes("acqua")) {
+    hints.push("fiume", "lago", "waterfall", "beach", "coast");
+  }
+
+  if (spot.tags.includes("panorama") || spot.category === "viewpoint") {
+    hints.push("viewpoint", "belvedere", "panorama");
+  }
+
+  if (spot.category === "storico") {
+    hints.push("monument", "historic", "palace", "church");
+  }
+
+  if (spot.tags.includes("natura")) {
+    hints.push("landscape", "park", "mountain", "nature");
+  }
+
+  if (spot.category === "turismo") {
+    hints.push("landmark", "tourism");
+  }
+
+  return [...new Set(hints)];
+}
+
+function buildImageCacheKey(name, cityName) {
+  return `${name}__${cityName}`.toLowerCase();
+}
+
+function loadImageCache() {
+  try {
+    const raw = localStorage.getItem(IMAGE_CACHE_KEY);
+    const parsed = JSON.parse(raw || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveImageCache(cache) {
+  localStorage.setItem(IMAGE_CACHE_KEY, JSON.stringify(cache));
 }
 
 function initMap() {
