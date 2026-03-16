@@ -38,7 +38,9 @@ const modalBackdrop = document.getElementById("modalBackdrop");
 const closeModalBtn = document.getElementById("closeModalBtn");
 const modalContent = document.getElementById("modalContent");
 
-const APP_VERSION = "pro-4";
+const installBtn = document.getElementById("installBtn");
+
+const APP_VERSION = "pro-5";
 
 let allSpots = [];
 let currentFilter = "all";
@@ -53,6 +55,7 @@ let spotMarkers = [];
 let markerIndex = new Map();
 
 let savedLists = loadLists();
+let deferredPrompt = null;
 
 const FALLBACK_IMAGES = {
   natura: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
@@ -105,6 +108,25 @@ sortSelect.addEventListener("change", () => {
 modalBackdrop.addEventListener("click", closeDetailModal);
 closeModalBtn.addEventListener("click", closeDetailModal);
 
+if (installBtn) {
+  installBtn.addEventListener("click", installApp);
+}
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredPrompt = event;
+  if (installBtn) {
+    installBtn.classList.remove("hidden");
+  }
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredPrompt = null;
+  if (installBtn) {
+    installBtn.classList.add("hidden");
+  }
+});
+
 initMap();
 setStatus("idle", `Pronto (${APP_VERSION})`);
 renderEmpty('Inserisci una città oppure premi "Usa la mia posizione".');
@@ -113,6 +135,16 @@ updateListFilterButtons();
 updatePhotographerCard(null);
 hideBestNow();
 updateListCounters();
+
+async function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  if (installBtn) {
+    installBtn.classList.add("hidden");
+  }
+}
 
 async function handleSearch() {
   const query = cityInput.value.trim();
@@ -1083,4 +1115,12 @@ function escapeAttr(value) {
     .replaceAll(".", "_")
     .replaceAll(",", "_")
     .replaceAll("'", "_");
+}
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js").catch((error) => {
+      console.warn("Service worker non registrato:", error);
+    });
+  });
 }

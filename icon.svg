@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="90" fill="#0b1220"/>
+  <circle cx="256" cy="210" r="90" fill="#ff9f43"/>
+  <rect x="120" y="320" width="272" height="60" rx="20" fill="#3498db"/>
+  <text x="256" y="420" font-size="70" text-anchor="middle" fill="white" font-family="Arial">
+    📸
+  </text>
+</svg>
