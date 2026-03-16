@@ -5,12 +5,19 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>PhotoSpot Planner PRO</title>
   <meta name="theme-color" content="#0b1220" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="PhotoSpot" />
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
 
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   />
-  <link rel="stylesheet" href="style.css?v=pro4" />
+  <link rel="stylesheet" href="style.css?v=pro5" />
 </head>
 <body>
   <div class="app-shell">
@@ -37,6 +44,7 @@
         <div class="quick-actions">
           <button id="geoBtn" class="secondary-btn strong">Usa la mia posizione</button>
           <button id="exampleBtn" class="secondary-btn">Usa esempio</button>
+          <button id="installBtn" class="secondary-btn hidden">Installa app</button>
         </div>
       </div>
     </header>
@@ -175,6 +183,6 @@
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   ></script>
-  <script src="app.js?v=pro4"></script>
+  <script src="app.js?v=pro5"></script>
 </body>
 </html>
