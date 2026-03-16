@@ -17,7 +17,7 @@
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   />
-  <link rel="stylesheet" href="style.css?v=pro5" />
+  <link rel="stylesheet" href="style.css?v=pro8" />
 </head>
 <body>
   <div class="app-shell">
@@ -43,7 +43,6 @@
 
         <div class="quick-actions">
           <button id="geoBtn" class="secondary-btn strong">Usa la mia posizione</button>
-          <button id="exampleBtn" class="secondary-btn">Usa esempio</button>
           <button id="installBtn" class="secondary-btn hidden">Installa app</button>
         </div>
       </div>
@@ -76,6 +75,14 @@
           <span class="results-count">Golden hour</span>
         </div>
         <div id="bestNowGrid" class="best-now-grid"></div>
+      </section>
+
+      <section id="sunsetSection" class="best-now-section hidden">
+        <div class="section-head">
+          <h2>Migliori al tramonto</h2>
+          <span class="results-count">Sunset pick</span>
+        </div>
+        <div id="sunsetGrid" class="best-now-grid"></div>
       </section>
 
       <section class="lists-section">
@@ -135,6 +142,11 @@
           <button class="filter-btn" data-filter="storico">Storico</button>
           <button class="filter-btn" data-filter="viewpoint">Viewpoint</button>
           <button class="filter-btn" data-filter="turismo">Turismo</button>
+          <button class="filter-btn" data-filter="monumenti">Monumenti</button>
+          <button class="filter-btn" data-filter="ponti">Ponti</button>
+          <button class="filter-btn" data-filter="piazze">Piazze</button>
+          <button class="filter-btn" data-filter="torri">Torri</button>
+          <button class="filter-btn" data-filter="street">Street</button>
           <button class="filter-btn" data-filter="favorites">Preferiti</button>
         </div>
 
@@ -143,6 +155,7 @@
           <select id="sortSelect" class="sort-select">
             <option value="distance">Distanza</option>
             <option value="golden">Golden hour</option>
+            <option value="photo">Photogenic score</option>
             <option value="name">Nome</option>
           </select>
         </div>
@@ -183,6 +196,6 @@
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   ></script>
-  <script src="app.js?v=pro5"></script>
+  <script src="app.js?v=pro8"></script>
 </body>
 </html>
