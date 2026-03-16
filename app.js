@@ -42,10 +42,10 @@ const modalContent = document.getElementById("modalContent");
 
 const installBtn = document.getElementById("installBtn");
 
-const APP_VERSION = "pro-9-clean-distance-itinerary";
-const SEARCH_RADIUS_METERS = 5500;
-const MAX_SAFE_DISTANCE_KM = 8.5;
-const IMAGE_CACHE_KEY = "photospot-image-cache-v4";
+const APP_VERSION = "pro-10-wiki-geosearch";
+const SEARCH_RADIUS_METERS = 4500;
+const MAX_SAFE_DISTANCE_KM = 7;
+const IMAGE_CACHE_KEY = "photospot-image-cache-v5";
 
 let allSpots = [];
 let currentFilter = "all";
@@ -63,18 +63,18 @@ let savedLists = loadLists();
 let deferredPrompt = null;
 
 const FALLBACK_IMAGES = {
-  natura: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
-  acqua: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80",
-  panorama: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80",
-  storico: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1200&q=80",
-  viewpoint: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80",
-  turismo: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=1200&q=80",
-  monumenti: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1200&q=80",
-  ponti: "https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=1200&q=80",
-  piazze: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
-  torri: "https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?auto=format&fit=crop&w=1200&q=80",
-  street: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?auto=format&fit=crop&w=1200&q=80",
-  spot: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80"
+  natura: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Forest_panorama.jpg/1200px-Forest_panorama.jpg",
+  acqua: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/River_landscape.jpg/1200px-River_landscape.jpg",
+  panorama: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Mountain_panorama.jpg/1200px-Mountain_panorama.jpg",
+  storico: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Historic_building.jpg/1200px-Historic_building.jpg",
+  viewpoint: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Mountain_panorama.jpg/1200px-Mountain_panorama.jpg",
+  turismo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Travel_landmark.jpg/1200px-Travel_landmark.jpg",
+  monumenti: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Monument_generic.jpg/1200px-Monument_generic.jpg",
+  ponti: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Bridge_generic.jpg/1200px-Bridge_generic.jpg",
+  piazze: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Square_generic.jpg/1200px-Square_generic.jpg",
+  torri: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Tower_generic.jpg/1200px-Tower_generic.jpg",
+  street: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Street_generic.jpg/1200px-Street_generic.jpg",
+  spot: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Travel_landmark.jpg/1200px-Travel_landmark.jpg"
 };
 
 searchBtn.addEventListener("click", handleSearch);
@@ -306,51 +306,38 @@ function enrichSpot(spot, location) {
 }
 
 function cleanAndRankSpots(spots, location) {
-  const normalizedCity = normalizeName(location.name.split(",")[0] || "");
-  const filtered = spots.filter((spot) => isUsefulSpot(spot, normalizedCity));
+  const filtered = spots.filter((spot) => isUsefulSpot(spot, location));
+  const deduped = dedupeAggressive(filtered);
 
-  const dedupedByNameAndZone = dedupeAggressive(filtered);
-
-  return dedupedByNameAndZone
+  return deduped
     .sort((a, b) => {
-      if (b.photogenicScore !== a.photogenicScore) {
-        return b.photogenicScore - a.photogenicScore;
-      }
+      if (b.photogenicScore !== a.photogenicScore) return b.photogenicScore - a.photogenicScore;
       return a.distanceKm - b.distanceKm;
     })
     .slice(0, 24)
     .sort((a, b) => a.distanceKm - b.distanceKm);
 }
 
-function isUsefulSpot(spot, normalizedCity) {
+function isUsefulSpot(spot) {
   const normalizedName = normalizeName(spot.name);
 
   if (!normalizedName) return false;
-
-  const bannedWords = [
-    "bus stop", "stop", "parcheggio", "parking", "farmacia", "banca", "bank",
-    "ufficio", "office", "via ", "viale ", "piazzale", "civico", "tabacchi",
-    "supermarket", "market", "negozio", "shop", "scuola", "school"
-  ];
-
-  if (bannedWords.some((word) => normalizedName.includes(word))) return false;
   if (normalizedName.length < 4) return false;
   if (spot.distanceKm > MAX_SAFE_DISTANCE_KM) return false;
 
+  const bannedWords = [
+    "bus stop", "parcheggio", "parking", "farmacia", "banca", "office",
+    "ufficio", "school", "scuola", "supermarket", "shop", "negozio"
+  ];
+
+  if (bannedWords.some((word) => normalizedName.includes(word))) return false;
+
   if (
-    spot.distanceKm > 4.5 &&
+    spot.distanceKm > 4.2 &&
     !spot.tags.includes("viewpoint") &&
     !spot.tags.includes("panorama") &&
     !spot.tags.includes("monumenti") &&
     !spot.tags.includes("storico")
-  ) {
-    return false;
-  }
-
-  if (
-    normalizedCity &&
-    normalizedName.includes(normalizedCity) &&
-    spot.distanceKm > 6
   ) {
     return false;
   }
@@ -374,8 +361,7 @@ function dedupeAggressive(spots) {
     }
 
     if (spot.photogenicScore > duplicate.photogenicScore) {
-      const index = kept.indexOf(duplicate);
-      kept[index] = spot;
+      kept[kept.indexOf(duplicate)] = spot;
     }
   }
 
@@ -658,7 +644,7 @@ function updateBestNow() {
           <div class="best-now-title">${escapeHtml(spot.name)}</div>
           <div class="best-now-sub">${spot.distanceKm.toFixed(1)} km • ${spot.qualityLabel} • score ${spot.photogenicScore}</div>
         </div>
-        <div class="bestNow-badge best-now-badge">tra ${spot.goldenMinutes} min</div>
+        <div class="best-now-badge">tra ${spot.goldenMinutes} min</div>
       </div>
 
       <div class="best-now-actions">
@@ -1206,26 +1192,147 @@ async function fetchSpotImages(spots) {
 }
 
 async function fetchSmartPlaceImage(spot, cityName) {
-  const categoryHints = buildCategoryHints(spot);
-  const candidates = [
-    spot.name,
-    `${spot.name}, ${cityName}`,
-    `${spot.name} ${cityName}`,
-    ...categoryHints.map((hint) => `${spot.name} ${hint}`),
-    ...categoryHints.map((hint) => `${spot.name} ${cityName} ${hint}`)
-  ];
-
-  for (const candidate of candidates) {
-    const endpoint = `https://it.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(candidate)}`;
-    const response = await fetch(endpoint);
-    if (!response.ok) continue;
-
-    const data = await response.json();
-    const image = data?.thumbnail?.source || data?.originalimage?.source;
-    if (image) return image;
+  // 1) geosearch vicino alle coordinate del luogo
+  const geoTitle = await fetchWikipediaGeoTitle(spot.lat, spot.lon);
+  if (geoTitle) {
+    const geoImage = await fetchWikipediaPageImage(geoTitle);
+    if (geoImage) return geoImage;
   }
 
-  return null;
+  // 2) prova titolo spot + città su Wikipedia
+  const candidates = buildImageCandidates(spot, cityName);
+  for (const candidate of candidates) {
+    const wikiImage = await fetchWikipediaPageImage(candidate);
+    if (wikiImage) return wikiImage;
+  }
+
+  // 3) prova Wikimedia Commons per query
+  for (const candidate of candidates) {
+    const commonsImage = await fetchCommonsImage(candidate);
+    if (commonsImage) return commonsImage;
+  }
+
+  // 4) fallback locale coerente
+  return getSmartFallback(spot);
+}
+
+function buildImageCandidates(spot, cityName) {
+  const categoryHints = buildCategoryHints(spot);
+
+  return [
+    `${spot.name}, ${cityName}`,
+    `${spot.name} ${cityName}`,
+    spot.name,
+    ...categoryHints.map((hint) => `${spot.name} ${hint}`),
+    ...categoryHints.map((hint) => `${cityName} ${hint}`)
+  ];
+}
+
+async function fetchWikipediaGeoTitle(lat, lon) {
+  try {
+    const url =
+      `https://it.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lon}` +
+      `&gsradius=500&gslimit=5&format=json&origin=*`;
+
+    const res = await fetch(url);
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const items = data?.query?.geosearch;
+    if (!Array.isArray(items) || !items.length) return null;
+
+    const best = items[0];
+    return best?.title || null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchWikipediaPageImage(title) {
+  try {
+    const url =
+      `https://it.wikipedia.org/w/api.php?action=query&format=json&origin=*` +
+      `&prop=pageimages|images&piprop=original&pithumbsize=1200&imlimit=10&titles=${encodeURIComponent(title)}`;
+
+    const res = await fetch(url);
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const pages = data?.query?.pages;
+    if (!pages) return null;
+
+    const page = Object.values(pages)[0];
+    if (!page) return null;
+
+    if (page.original?.source) return page.original.source;
+    if (page.thumbnail?.source) return page.thumbnail.source;
+
+    const imageTitles = Array.isArray(page.images)
+      ? page.images
+          .map((img) => img.title)
+          .filter((t) => /^File:/i.test(t))
+      : [];
+
+    if (!imageTitles.length) return null;
+
+    const picked = await fetchBestImageInfo("it.wikipedia.org", imageTitles);
+    return picked;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchCommonsImage(query) {
+  try {
+    const searchUrl =
+      `https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*` +
+      `&generator=search&gsrsearch=${encodeURIComponent(query)}` +
+      `&gsrlimit=5&prop=pageimages|imageinfo&pithumbsize=1200&iiprop=url`;
+
+    const res = await fetch(searchUrl);
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const pages = data?.query?.pages;
+    if (!pages) return null;
+
+    const candidates = Object.values(pages)
+      .map((page) => page.original?.source || page.thumbnail?.source || page.imageinfo?.[0]?.thumburl || page.imageinfo?.[0]?.url)
+      .filter(Boolean);
+
+    return candidates[0] || null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchBestImageInfo(wikiHost, imageTitles) {
+  try {
+    const titlesParam = imageTitles.slice(0, 10).join("|");
+    const url =
+      `https://${wikiHost}/w/api.php?action=query&format=json&origin=*` +
+      `&prop=imageinfo&titles=${encodeURIComponent(titlesParam)}` +
+      `&iiprop=url&iiurlwidth=1200`;
+
+    const res = await fetch(url);
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const pages = data?.query?.pages;
+    if (!pages) return null;
+
+    const images = Object.values(pages)
+      .map((page) => page.imageinfo?.[0]?.thumburl || page.imageinfo?.[0]?.url)
+      .filter(Boolean);
+
+    return images[0] || null;
+  } catch {
+    return null;
+  }
+}
+
+function getSmartFallback(spot) {
+  return FALLBACK_IMAGES[spot.primaryType] || FALLBACK_IMAGES[spot.category] || FALLBACK_IMAGES.spot;
 }
 
 function buildCategoryHints(spot) {
