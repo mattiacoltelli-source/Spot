@@ -1,8 +1,3 @@
-const CONFIG = {
-  API_KEY: "7c3c863f5ce9759b81a87bc9c5e111065309a185f63464bdadefd4e4991333d5"
-};
-
-// DOM
 const cityInput = document.getElementById("cityInput");
 const searchBtn = document.getElementById("searchBtn");
 const exampleBtn = document.getElementById("exampleBtn");
@@ -29,16 +24,16 @@ cityInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") handleSearch();
 });
 
-async function handleSearch() {
+async function handleSearch(){
 
   const query = cityInput.value.trim();
 
-  if (!query) {
+  if(!query){
     setStatus("error","Inserisci una città");
     return;
   }
 
-  try {
+  try{
 
     setStatus("loading","Cerco città...");
 
@@ -48,17 +43,17 @@ async function handleSearch() {
 
     setStatus("loading","Cerco spot...");
 
-    const spots = await fetchSpots(location.lat, location.lon);
+    const spots = await fetchSpots(location.lat,location.lon);
 
     renderSpots(spots);
 
-    setStatus("success", spots.length + " spot trovati");
+    setStatus("success",spots.length+" spot trovati");
 
-  } catch(err) {
+  }catch(err){
 
     console.error(err);
 
-    setStatus("error","Errore nel recupero degli spot da OpenTripMap");
+    setStatus("error","Errore nella ricerca");
 
     renderEmpty("Errore nella ricerca");
 
@@ -79,44 +74,55 @@ async function geocode(query){
 
   if(!data.length) throw new Error("Città non trovata");
 
-  return {
-    name: data[0].display_name,
-    lat: parseFloat(data[0].lat),
-    lon: parseFloat(data[0].lon)
+  return{
+    name:data[0].display_name,
+    lat:parseFloat(data[0].lat),
+    lon:parseFloat(data[0].lon)
   }
 
 }
 
 async function fetchSpots(lat,lon){
 
+  const radius = 5000;
+
+  const query =
+  `[out:json];
+  (
+  node(around:${radius},${lat},${lon})["tourism"];
+  node(around:${radius},${lat},${lon})["natural"];
+  node(around:${radius},${lat},${lon})["historic"];
+  );
+  out;`;
+
   const url =
-  "https://corsproxy.io/?https://api.opentripmap.com/0.1/en/places/radius" +
-  "?radius=10000" +
-  "&lon=" + lon +
-  "&lat=" + lat +
-  "&limit=30" +
-  "&format=json" +
-  "&apikey=" + CONFIG.API_KEY;
+  "https://overpass-api.de/api/interpreter?data=" +
+  encodeURIComponent(query);
 
   const res = await fetch(url);
 
-  if(!res.ok) throw new Error("API error");
-
   const data = await res.json();
 
-  return data.filter(s => s.name && s.point);
+  return data.elements
+  .filter(e=>e.tags && e.tags.name)
+  .slice(0,30)
+  .map(e=>({
+    name:e.tags.name,
+    lat:e.lat,
+    lon:e.lon
+  }));
 
 }
 
 function setStatus(type,text){
 
-  statusBadge.className = "badge " + type;
+  statusBadge.className="badge "+type;
 
   if(type==="loading") statusBadge.textContent="Ricerca";
   if(type==="success") statusBadge.textContent="OK";
   if(type==="error") statusBadge.textContent="Errore";
 
-  statusText.textContent = text;
+  statusText.textContent=text;
 
 }
 
@@ -124,28 +130,23 @@ function showLocation(loc){
 
   locationCard.classList.remove("hidden");
 
-  placeName.textContent = loc.name;
-  placeLat.textContent = loc.lat.toFixed(5);
-  placeLon.textContent = loc.lon.toFixed(5);
+  placeName.textContent=loc.name;
+  placeLat.textContent=loc.lat.toFixed(5);
+  placeLon.textContent=loc.lon.toFixed(5);
 
 }
 
 function renderSpots(spots){
 
-  resultsCount.textContent = spots.length + " risultati";
+  resultsCount.textContent=spots.length+" risultati";
 
-  resultsGrid.innerHTML = spots.map(s=>{
-
-    const name = s.name || "Spot";
-
-    const lat = s.point.lat;
-    const lon = s.point.lon;
+  resultsGrid.innerHTML=spots.map(s=>{
 
     return `
-      <div class="spot-card">
-        <h3>${name}</h3>
-        <p>${lat.toFixed(4)}, ${lon.toFixed(4)}</p>
-      </div>
+    <div class="spot-card">
+      <h3>${s.name}</h3>
+      <p>${s.lat.toFixed(4)}, ${s.lon.toFixed(4)}</p>
+    </div>
     `;
 
   }).join("");
@@ -154,9 +155,9 @@ function renderSpots(spots){
 
 function renderEmpty(msg){
 
-  resultsCount.textContent = "0 risultati";
+  resultsCount.textContent="0 risultati";
 
-  resultsGrid.innerHTML =
+  resultsGrid.innerHTML=
   `<div class="empty-state">${msg}</div>`;
 
 }
