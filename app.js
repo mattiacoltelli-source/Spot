@@ -42,10 +42,10 @@ const modalContent = document.getElementById("modalContent");
 
 const installBtn = document.getElementById("installBtn");
 
-const APP_VERSION = "pro-8-full-upgrade";
-const SEARCH_RADIUS_METERS = 6000;
-const MAX_SAFE_DISTANCE_KM = 12;
-const IMAGE_CACHE_KEY = "photospot-image-cache-v3";
+const APP_VERSION = "pro-9-clean-distance-itinerary";
+const SEARCH_RADIUS_METERS = 5500;
+const MAX_SAFE_DISTANCE_KM = 8.5;
+const IMAGE_CACHE_KEY = "photospot-image-cache-v4";
 
 let allSpots = [];
 let currentFilter = "all";
@@ -120,16 +120,12 @@ if (installBtn) {
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
   deferredPrompt = event;
-  if (installBtn) {
-    installBtn.classList.remove("hidden");
-  }
+  if (installBtn) installBtn.classList.remove("hidden");
 });
 
 window.addEventListener("appinstalled", () => {
   deferredPrompt = null;
-  if (installBtn) {
-    installBtn.classList.add("hidden");
-  }
+  if (installBtn) installBtn.classList.add("hidden");
 });
 
 initMap();
@@ -169,9 +165,7 @@ async function handleSearch() {
 
     const location = await geocodePlace(query);
 
-    if (!location) {
-      throw new Error("Città non trovata.");
-    }
+    if (!location) throw new Error("Città non trovata.");
 
     await runSearchFlow(location);
   } catch (error) {
@@ -253,36 +247,16 @@ async function runSearchFlow(location) {
 
   const rawSpots = await fetchNearbySpots(location.lat, location.lon);
 
-  const enrichedSpots = rawSpots
-    .map((spot) => {
-      const distanceKm = calculateDistanceKm(location.lat, location.lon, spot.lat, spot.lon);
-      const sun = calculateSunTimes(new Date(), spot.lat, spot.lon);
-      const photoTags = buildPhotoTags(spot);
-      const photogenicScore = calculatePhotogenicScore(spot, distanceKm, photoTags);
-      const smartDescription = buildSmartDescription(spot, distanceKm, photoTags);
+  const enriched = rawSpots
+    .map((spot) => enrichSpot(spot, location))
+    .filter(Boolean);
 
-      return {
-        ...spot,
-        distanceKm,
-        sunrise: formatTime(sun.sunrise),
-        sunset: formatTime(sun.sunset),
-        goldenHour: formatTime(sun.goldenHour),
-        goldenMinutes: diffMinutesFromNow(sun.goldenHour),
-        favoriteKey: buildSpotKey(spot),
-        imageUrl: FALLBACK_IMAGES[spot.primaryType] || FALLBACK_IMAGES[spot.category] || FALLBACK_IMAGES.spot,
-        photoTags,
-        photogenicScore,
-        smartDescription
-      };
-    })
-    .filter((spot) => Number.isFinite(spot.distanceKm) && spot.distanceKm <= MAX_SAFE_DISTANCE_KM)
-    .sort((a, b) => a.distanceKm - b.distanceKm)
-    .slice(0, 24);
+  const cleaned = cleanAndRankSpots(enriched, location);
 
-  if (!enrichedSpots.length) {
+  if (!cleaned.length) {
     allSpots = [];
     setStatus("error", "Nessuno spot affidabile trovato.");
-    renderEmpty("Ho scartato risultati troppo lontani o incoerenti. Prova con un'altra città.");
+    renderEmpty("Ho scartato risultati troppo lontani, duplicati o poco coerenti. Prova con un'altra città.");
     updatePhotographerCard(null);
     hideBestNow();
     hideSunsetSection();
@@ -290,7 +264,7 @@ async function runSearchFlow(location) {
     return;
   }
 
-  allSpots = enrichedSpots;
+  allSpots = cleaned;
 
   applyFilterAndRender();
   updatePhotographerInsights();
@@ -300,6 +274,112 @@ async function runSearchFlow(location) {
 
   updateMap(location, allSpots);
   fetchSpotImages(allSpots);
+}
+
+function enrichSpot(spot, location) {
+  const distanceKm = calculateDistanceKm(location.lat, location.lon, spot.lat, spot.lon);
+
+  if (!Number.isFinite(distanceKm) || distanceKm > MAX_SAFE_DISTANCE_KM) {
+    return null;
+  }
+
+  const sun = calculateSunTimes(new Date(), spot.lat, spot.lon);
+  const photoTags = buildPhotoTags(spot, distanceKm);
+  const photogenicScore = calculatePhotogenicScore(spot, distanceKm, photoTags);
+  const qualityLabel = buildQualityLabel(photogenicScore);
+  const smartDescription = buildSmartDescription(spot, distanceKm, photoTags);
+
+  return {
+    ...spot,
+    distanceKm,
+    sunrise: formatTime(sun.sunrise),
+    sunset: formatTime(sun.sunset),
+    goldenHour: formatTime(sun.goldenHour),
+    goldenMinutes: diffMinutesFromNow(sun.goldenHour),
+    favoriteKey: buildSpotKey(spot),
+    imageUrl: FALLBACK_IMAGES[spot.primaryType] || FALLBACK_IMAGES[spot.category] || FALLBACK_IMAGES.spot,
+    photoTags,
+    photogenicScore,
+    qualityLabel,
+    smartDescription
+  };
+}
+
+function cleanAndRankSpots(spots, location) {
+  const normalizedCity = normalizeName(location.name.split(",")[0] || "");
+  const filtered = spots.filter((spot) => isUsefulSpot(spot, normalizedCity));
+
+  const dedupedByNameAndZone = dedupeAggressive(filtered);
+
+  return dedupedByNameAndZone
+    .sort((a, b) => {
+      if (b.photogenicScore !== a.photogenicScore) {
+        return b.photogenicScore - a.photogenicScore;
+      }
+      return a.distanceKm - b.distanceKm;
+    })
+    .slice(0, 24)
+    .sort((a, b) => a.distanceKm - b.distanceKm);
+}
+
+function isUsefulSpot(spot, normalizedCity) {
+  const normalizedName = normalizeName(spot.name);
+
+  if (!normalizedName) return false;
+
+  const bannedWords = [
+    "bus stop", "stop", "parcheggio", "parking", "farmacia", "banca", "bank",
+    "ufficio", "office", "via ", "viale ", "piazzale", "civico", "tabacchi",
+    "supermarket", "market", "negozio", "shop", "scuola", "school"
+  ];
+
+  if (bannedWords.some((word) => normalizedName.includes(word))) return false;
+  if (normalizedName.length < 4) return false;
+  if (spot.distanceKm > MAX_SAFE_DISTANCE_KM) return false;
+
+  if (
+    spot.distanceKm > 4.5 &&
+    !spot.tags.includes("viewpoint") &&
+    !spot.tags.includes("panorama") &&
+    !spot.tags.includes("monumenti") &&
+    !spot.tags.includes("storico")
+  ) {
+    return false;
+  }
+
+  if (
+    normalizedCity &&
+    normalizedName.includes(normalizedCity) &&
+    spot.distanceKm > 6
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function dedupeAggressive(spots) {
+  const kept = [];
+
+  for (const spot of spots) {
+    const duplicate = kept.find((existing) => {
+      const sameName = normalizeName(existing.name) === normalizeName(spot.name);
+      const veryNear = calculateDistanceKm(existing.lat, existing.lon, spot.lat, spot.lon) < 0.18;
+      return sameName && veryNear;
+    });
+
+    if (!duplicate) {
+      kept.push(spot);
+      continue;
+    }
+
+    if (spot.photogenicScore > duplicate.photogenicScore) {
+      const index = kept.indexOf(duplicate);
+      kept[index] = spot;
+    }
+  }
+
+  return kept;
 }
 
 async function geocodePlace(query) {
@@ -312,12 +392,9 @@ async function geocodePlace(query) {
     headers: { "Accept-Language": "it" }
   });
 
-  if (!response.ok) {
-    throw new Error("Errore nella ricerca della città.");
-  }
+  if (!response.ok) throw new Error("Errore nella ricerca della città.");
 
   const data = await response.json();
-
   if (!Array.isArray(data) || !data.length) return null;
 
   const item = data[0];
@@ -367,12 +444,9 @@ async function fetchNearbySpots(lat, lon) {
     body: overpassQuery
   });
 
-  if (!response.ok) {
-    throw new Error("Errore nel recupero degli spot.");
-  }
+  if (!response.ok) throw new Error("Errore nel recupero degli spot.");
 
   const data = await response.json();
-
   if (!data || !Array.isArray(data.elements)) return [];
 
   const spots = data.elements
@@ -412,7 +486,7 @@ function buildSpotType(tags = {}) {
   if (tags.historic === "monument" || tags.monument || tags.tourism === "attraction") derived.push("monumenti");
   if (tags.bridge || tags.man_made === "bridge") derived.push("ponti");
   if (tags.place === "square") derived.push("piazze");
-  if (tags.man_made === "tower" || /tower/i.test(tags.name || "")) derived.push("torri");
+  if (tags.man_made === "tower" || /tower|torre/i.test(tags.name || "")) derived.push("torri");
   if (tags.highway || tags.amenity === "marketplace" || tags.shop || tags.place === "square") derived.push("street");
 
   const unique = [...new Set(derived)];
@@ -439,7 +513,7 @@ function dedupeSpots(spots) {
   const seen = new Set();
 
   return spots.filter((spot) => {
-    const key = `${spot.name}|${spot.lat.toFixed(4)}|${spot.lon.toFixed(4)}`;
+    const key = `${normalizeName(spot.name)}|${spot.lat.toFixed(4)}|${spot.lon.toFixed(4)}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -486,7 +560,7 @@ function getCurrentFilteredSpots() {
   } else if (sortBy === "golden") {
     filtered.sort((a, b) => normalizeGoldenScore(a.goldenMinutes) - normalizeGoldenScore(b.goldenMinutes));
   } else if (sortBy === "photo") {
-    filtered.sort((a, b) => b.photogenicScore - a.photogenicScore);
+    filtered.sort((a, b) => b.photogenicScore - a.photogenicScore || a.distanceKm - b.distanceKm);
   } else {
     filtered.sort((a, b) => a.distanceKm - b.distanceKm);
   }
@@ -558,20 +632,17 @@ function updatePhotographerInsights() {
     return;
   }
 
-  const bestNow = upcoming.slice(0, 3);
-  const first = bestNow[0];
-  const spotNames = bestNow.map((spot) => spot.name).join(" • ");
-
+  const best = upcoming[0];
   updatePhotographerCard({
     badge: "Ora",
-    text: `Golden hour tra ${first.goldenMinutes} min. Spot consigliati adesso: ${spotNames}.`
+    text: `Golden hour tra ${best.goldenMinutes} min. Il candidato più rapido da raggiungere adesso è ${best.name}.`
   });
 }
 
 function updateBestNow() {
   const upcoming = [...allSpots]
     .filter((spot) => isFinite(spot.goldenMinutes) && spot.goldenMinutes >= 0)
-    .sort((a, b) => a.goldenMinutes - b.goldenMinutes)
+    .sort((a, b) => a.goldenMinutes - b.goldenMinutes || b.photogenicScore - a.photogenicScore)
     .slice(0, 3);
 
   if (!upcoming.length) {
@@ -585,9 +656,9 @@ function updateBestNow() {
       <div class="best-now-top">
         <div>
           <div class="best-now-title">${escapeHtml(spot.name)}</div>
-          <div class="best-now-sub">${spot.distanceKm.toFixed(1)} km • score ${spot.photogenicScore}</div>
+          <div class="best-now-sub">${spot.distanceKm.toFixed(1)} km • ${spot.qualityLabel} • score ${spot.photogenicScore}</div>
         </div>
-        <div class="best-now-badge">tra ${spot.goldenMinutes} min</div>
+        <div class="bestNow-badge best-now-badge">tra ${spot.goldenMinutes} min</div>
       </div>
 
       <div class="best-now-actions">
@@ -605,12 +676,8 @@ function hideBestNow() {
 
 function updateSunsetSection() {
   const sunsetPicks = [...allSpots]
-    .filter((spot) => spot.tags.includes("panorama") || spot.tags.includes("acqua") || spot.tags.includes("viewpoint"))
-    .sort((a, b) => {
-      const scoreA = buildSunsetScore(a);
-      const scoreB = buildSunsetScore(b);
-      return scoreB - scoreA;
-    })
+    .filter((spot) => spot.tags.includes("panorama") || spot.tags.includes("acqua") || spot.tags.includes("viewpoint") || spot.tags.includes("ponti"))
+    .sort((a, b) => buildSunsetScore(b) - buildSunsetScore(a))
     .slice(0, 3);
 
   if (!sunsetPicks.length) {
@@ -647,10 +714,34 @@ function buildSunsetScore(spot) {
   if (spot.tags.includes("panorama")) score += 4;
   if (spot.tags.includes("viewpoint")) score += 4;
   if (spot.tags.includes("acqua")) score += 3;
+  if (spot.tags.includes("ponti")) score += 2;
   if (spot.tags.includes("monumenti")) score += 2;
   if (spot.distanceKm <= 2) score += 2;
   if (spot.distanceKm <= 1) score += 1;
+  score += spot.photogenicScore * 0.4;
   return score;
+}
+
+function buildQualityLabel(score) {
+  if (score >= 14) return "Imperdibile";
+  if (score >= 10) return "Ottimo";
+  return "Buono";
+}
+
+function buildMiniItinerary(spots) {
+  const sorted = [...spots]
+    .sort((a, b) => b.photogenicScore - a.photogenicScore || a.distanceKm - b.distanceKm)
+    .slice(0, 6);
+
+  const itinerary = [];
+
+  for (const spot of sorted) {
+    const tooClose = itinerary.some((chosen) => calculateDistanceKm(chosen.lat, chosen.lon, spot.lat, spot.lon) < 0.35);
+    if (!tooClose) itinerary.push(spot);
+    if (itinerary.length === 3) break;
+  }
+
+  return itinerary;
 }
 
 function updatePhotographerCard(data) {
@@ -694,7 +785,7 @@ function hideLocation() {
   placeLon.textContent = "-";
 }
 
-function buildPhotoTags(spot) {
+function buildPhotoTags(spot, distanceKm) {
   const tags = [];
 
   if (spot.tags.includes("panorama") || spot.tags.includes("viewpoint")) tags.push("panorama");
@@ -705,8 +796,8 @@ function buildPhotoTags(spot) {
   if (spot.tags.includes("torri")) tags.push("verticalità");
   if (spot.tags.includes("street")) tags.push("street");
   if (spot.tags.includes("natura")) tags.push("paesaggio");
-  if (spot.distanceKm <= 1) tags.push("vicino");
-  if (spot.distanceKm <= 0.4) tags.push("super vicino");
+  if (distanceKm <= 1) tags.push("vicino");
+  if (distanceKm <= 0.4) tags.push("super vicino");
 
   if (isFinite(spot.goldenMinutes) && spot.goldenMinutes >= 0 && spot.goldenMinutes <= 120) {
     tags.push("golden hour");
@@ -730,15 +821,15 @@ function calculatePhotogenicScore(spot, distanceKm, photoTags) {
   if (spot.tags.includes("piazze")) score += 1;
   if (spot.tags.includes("street")) score += 1;
 
-  if (distanceKm <= 0.5) score += 3;
-  else if (distanceKm <= 1.5) score += 2;
-  else if (distanceKm <= 3) score += 1;
+  if (distanceKm <= 0.4) score += 4;
+  else if (distanceKm <= 1) score += 3;
+  else if (distanceKm <= 2.5) score += 2;
+  else if (distanceKm <= 4) score += 1;
 
   if (isFinite(spot.goldenMinutes) && spot.goldenMinutes >= 0 && spot.goldenMinutes <= 90) score += 3;
   else if (isFinite(spot.goldenMinutes) && spot.goldenMinutes >= 0 && spot.goldenMinutes <= 180) score += 1;
 
   score += Math.min(photoTags.length, 4);
-
   return score;
 }
 
@@ -748,40 +839,62 @@ function buildSmartDescription(spot, distanceKm, photoTags) {
   const tagsText = photoTags.slice(0, 3).join(", ");
 
   if (spot.tags.includes("ponti")) {
-    return `${name} è uno spot di tipo ${type}, interessante per linee prospettiche, riflessi e scatti urbani. Ottimo se cerchi foto con forte composizione grafica. Tag utili: ${tagsText}.`;
+    return `${name} è uno spot di tipo ${type}, utile per composizioni con linee forti, riflessi e scatti urbani. Rende bene all’ora blu e al tramonto. Tag: ${tagsText}.`;
   }
 
   if (spot.tags.includes("monumenti")) {
-    return `${name} è uno spot iconico di tipo ${type}, adatto a foto architettoniche e travel. Funziona bene con luce morbida e inquadrature pulite. Tag utili: ${tagsText}.`;
+    return `${name} è uno spot iconico di tipo ${type}, adatto a foto architettoniche e travel. Cerca luce morbida e inquadrature pulite. Tag: ${tagsText}.`;
   }
 
   if (spot.tags.includes("piazze")) {
-    return `${name} è uno spot di tipo ${type}, utile per fotografie urbane, simmetrie e scene di vita cittadina. Ideale anche per street photography leggera. Tag utili: ${tagsText}.`;
+    return `${name} è uno spot di tipo ${type}, interessante per scene urbane, simmetrie e street photography leggera. Tag: ${tagsText}.`;
   }
 
   if (spot.tags.includes("torri")) {
-    return `${name} è uno spot di tipo ${type}, perfetto per scatti verticali e dettagli architettonici. Conviene cercare una luce radente o un cielo interessante. Tag utili: ${tagsText}.`;
+    return `${name} è uno spot di tipo ${type}, ideale per scatti verticali e dettagli architettonici. Un cielo interessante lo valorizza molto. Tag: ${tagsText}.`;
   }
 
   if (spot.tags.includes("acqua")) {
-    return `${name} è uno spot di tipo ${type}, molto fotogenico per riflessi, luce calda e tramonto. A ${distanceKm.toFixed(1)} km può essere un’ottima tappa rapida. Tag utili: ${tagsText}.`;
+    return `${name} è uno spot di tipo ${type}, molto fotogenico per riflessi e luce calda. A ${distanceKm.toFixed(1)} km può essere un’ottima tappa rapida. Tag: ${tagsText}.`;
   }
 
   if (spot.tags.includes("panorama") || spot.tags.includes("viewpoint")) {
-    return `${name} è uno spot di tipo ${type}, consigliato per skyline, ampiezza e luce di fine giornata. È uno dei candidati migliori per il tramonto. Tag utili: ${tagsText}.`;
+    return `${name} è uno spot di tipo ${type}, consigliato per skyline, apertura visiva e luce di fine giornata. È uno dei candidati migliori per il tramonto. Tag: ${tagsText}.`;
   }
 
   if (spot.tags.includes("natura")) {
-    return `${name} è uno spot di tipo ${type}, adatto a foto paesaggistiche e a una luce più morbida nelle prime o ultime ore del giorno. Tag utili: ${tagsText}.`;
+    return `${name} è uno spot di tipo ${type}, adatto a fotografie paesaggistiche con luce morbida nelle prime o ultime ore del giorno. Tag: ${tagsText}.`;
   }
 
-  return `${name} è uno spot di tipo ${type}, interessante per una sosta fotografica travel. A ${distanceKm.toFixed(1)} km resta facile da raggiungere e da integrare in un mini itinerario. Tag utili: ${tagsText}.`;
+  return `${name} è uno spot di tipo ${type}, interessante per una sosta fotografica travel. A ${distanceKm.toFixed(1)} km resta facile da raggiungere. Tag: ${tagsText}.`;
 }
 
 function renderSpots(spots) {
+  const itinerary = buildMiniItinerary(spots);
   resultsCount.textContent = `${spots.length} risultati`;
 
-  resultsGrid.innerHTML = spots.map((spot) => {
+  const itineraryHtml = itinerary.length
+    ? `
+      <article class="spot-card">
+        <div class="spot-title">Mini itinerario fotografico</div>
+        <div class="smart-description">
+          Tre tappe consigliate per partire subito, evitando duplicati troppo vicini.
+        </div>
+        <div class="photo-tags">
+          ${itinerary.map((spot, index) => `<span class="photo-tag">${index + 1}. ${escapeHtml(spot.name)}</span>`).join("")}
+        </div>
+        <div class="spot-actions">
+          ${itinerary.map((spot) => `
+            <button class="map-control-btn" onclick="focusSpot('${escapeForJs(spot.favoriteKey)}')">
+              ${escapeHtml(spot.name)}
+            </button>
+          `).join("")}
+        </div>
+      </article>
+    `
+    : "";
+
+  resultsGrid.innerHTML = itineraryHtml + spots.map((spot) => {
     const isFav = favoriteKeys.includes(spot.favoriteKey);
     const goldenLabel = isFinite(spot.goldenMinutes) && spot.goldenMinutes >= 0
       ? `🌅 Golden hour tra ${spot.goldenMinutes} min`
@@ -803,7 +916,7 @@ function renderSpots(spots) {
           <div class="spot-category">${escapeHtml(humanizeFilter(spot.category))}</div>
         </div>
 
-        <div class="score-pill">⭐ Score ${spot.photogenicScore}</div>
+        <div class="score-pill">⭐ ${spot.qualityLabel} · ${spot.photogenicScore}</div>
 
         <div class="golden-badge ${goldenClass}">
           ${goldenLabel}
@@ -888,7 +1001,7 @@ function openDetailByKey(key) {
     <div class="modal-image" style="background-image:url('${escapeHtml(spot.imageUrl)}')"></div>
     <div class="modal-title">${escapeHtml(spot.name)}</div>
     <div class="spot-category">${escapeHtml(humanizeFilter(spot.category))}</div>
-    <div class="score-pill">⭐ Score ${spot.photogenicScore}</div>
+    <div class="score-pill">⭐ ${spot.qualityLabel} · ${spot.photogenicScore}</div>
 
     <div class="modal-advice">${escapeHtml(advice)}</div>
     <div class="smart-description">${escapeHtml(spot.smartDescription)}</div>
@@ -980,6 +1093,16 @@ function buildNavigationLink(lat, lon) {
 
 function buildSpotKey(spot) {
   return `${spot.name}|${spot.lat.toFixed(4)}|${spot.lon.toFixed(4)}`;
+}
+
+function normalizeName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function toggleFavorite(key) {
@@ -1170,9 +1293,7 @@ function updateMap(location, spots) {
     return;
   }
 
-  if (cityMarker) {
-    map.removeLayer(cityMarker);
-  }
+  if (cityMarker) map.removeLayer(cityMarker);
 
   clearMapMarkers();
   markerIndex.clear();
@@ -1187,7 +1308,7 @@ function updateMap(location, spots) {
     marker.bindPopup(`
       <strong>${escapeHtml(spot.name)}</strong><br>
       ${escapeHtml(humanizeFilter(spot.category))}<br>
-      Score ${spot.photogenicScore}<br>
+      ${escapeHtml(spot.qualityLabel)} · score ${spot.photogenicScore}<br>
       <a href="${buildGoogleMapsLink(spot.lat, spot.lon)}" target="_blank" rel="noopener noreferrer">
         Apri in Maps
       </a>
@@ -1209,9 +1330,7 @@ function updateMap(location, spots) {
     map.setView([location.lat, location.lon], 12);
   }
 
-  if (mapStatus) {
-    mapStatus.textContent = `${spots.length} marker visibili`;
-  }
+  if (mapStatus) mapStatus.textContent = `${spots.length} marker visibili`;
 }
 
 function zoomAllMarkers() {
@@ -1243,9 +1362,7 @@ function focusSpot(key) {
   if (marker) marker.openPopup();
 
   const card = document.getElementById(`card-${escapeAttr(key)}`);
-  if (card) {
-    card.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
+  if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 window.focusSpot = focusSpot;
@@ -1270,8 +1387,8 @@ function calculateDistanceKm(lat1, lon1, lat2, lon2) {
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) ** 2;
+    Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) ** 2;
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return earthRadiusKm * c;
@@ -1312,8 +1429,8 @@ function calculateSunTimes(date, lat, lon) {
   const julianCycle = (d, lw) => Math.round(d - 0.0009 - lw / (2 * Math.PI));
   const approxTransit = (Ht, lw, n) => 0.0009 + (Ht + lw) / (2 * Math.PI) + n;
   const solarTransitJ = (ds, M, L) => J2000 + ds + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * L);
-  const hourAngle = (h, phi, d) =>
-    Math.acos((Math.sin(h) - Math.sin(phi) * Math.sin(d)) / (Math.cos(phi) * Math.cos(d)));
+  const hourAngle = (h, phi, dec) =>
+    Math.acos((Math.sin(h) - Math.sin(phi) * Math.sin(dec)) / (Math.cos(phi) * Math.cos(dec)));
 
   const observerAngle = -0.833 * rad;
   const goldenAngle = 6 * rad * -1;

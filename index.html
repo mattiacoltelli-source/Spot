@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>PhotoSpot Planner PRO</title>
+
   <meta name="theme-color" content="#0b1220" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -17,7 +18,7 @@
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   />
-  <link rel="stylesheet" href="style.css?v=pro8" />
+  <link rel="stylesheet" href="style.css?v=pro9" />
 </head>
 <body>
   <div class="app-shell">
@@ -28,7 +29,8 @@
         <p class="eyebrow">Travel Photo App</p>
         <h1>PhotoSpot Planner</h1>
         <p class="hero-text">
-          Cerca una città oppure usa la tua posizione e trova spot panoramici, naturali e fotogenici con i momenti migliori per fotografarli.
+          Cerca una città oppure usa la tua posizione e trova spot panoramici,
+          naturali, urbani e fotogenici con i momenti migliori per fotografarli.
         </p>
 
         <div class="search-box">
@@ -95,12 +97,15 @@
           <button class="list-chip" data-list-filter="today">
             Oggi <span id="countToday">0</span>
           </button>
+
           <button class="list-chip" data-list-filter="weekend">
             Weekend <span id="countWeekend">0</span>
           </button>
+
           <button class="list-chip" data-list-filter="sunsets">
             Tramonti <span id="countSunsets">0</span>
           </button>
+
           <button class="list-chip" data-list-filter="custom">
             Mia lista <span id="countCustom">0</span>
           </button>
@@ -196,6 +201,6 @@
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   ></script>
-  <script src="app.js?v=pro8"></script>
+  <script src="app.js?v=pro9"></script>
 </body>
 </html>
