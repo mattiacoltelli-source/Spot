@@ -1,5 +1,6 @@
 const cityInput = document.getElementById("cityInput");
 const searchBtn = document.getElementById("searchBtn");
+const geoBtn = document.getElementById("geoBtn");
 const exampleBtn = document.getElementById("exampleBtn");
 
 const statusBadge = document.getElementById("statusBadge");
@@ -20,15 +21,29 @@ const resultsCount = document.getElementById("resultsCount");
 const activeFilterLabel = document.getElementById("activeFilterLabel");
 const filterButtons = document.querySelectorAll(".filter-btn");
 const sortSelect = document.getElementById("sortSelect");
+const mapStatus = document.getElementById("mapStatus");
 
-const APP_VERSION = "lite-3";
+const APP_VERSION = "pro-1";
 
 let allSpots = [];
 let currentFilter = "all";
 let currentLocation = null;
 let favoriteKeys = loadFavorites();
 
+let map = null;
+let cityMarker = null;
+let spotMarkers = [];
+
+const FALLBACK_IMAGES = {
+  natura: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
+  storico: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1200&q=80",
+  viewpoint: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80",
+  turismo: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=1200&q=80",
+  spot: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80"
+};
+
 searchBtn.addEventListener("click", handleSearch);
+geoBtn.addEventListener("click", handleGeolocation);
 
 exampleBtn.addEventListener("click", () => {
   cityInput.value = "Bologna";
@@ -53,8 +68,9 @@ sortSelect.addEventListener("change", () => {
   applyFilterAndRender();
 });
 
+initMap();
 setStatus("idle", `Pronto (${APP_VERSION})`);
-renderEmpty('Inserisci una città oppure premi "Usa esempio".');
+renderEmpty('Inserisci una città oppure premi "Usa la mia posizione".');
 updateFilterButtons();
 updatePhotographerCard(null);
 
@@ -66,6 +82,7 @@ async function handleSearch() {
     renderEmpty("Scrivi una città per iniziare.");
     hideLocation();
     updatePhotographerCard(null);
+    resetMap();
     return;
   }
 
@@ -80,54 +97,103 @@ async function handleSearch() {
       throw new Error("Città non trovata.");
     }
 
-    currentLocation = location;
-    showLocation(location);
-
-    setStatus("idle", "Cerco spot vicini...");
-
-    const spots = await fetchNearbySpots(location.lat, location.lon);
-
-    if (!spots.length) {
-      allSpots = [];
-      setStatus("error", "Nessuno spot trovato.");
-      renderEmpty("Non ho trovato spot utili in quest'area.");
-      updatePhotographerCard(null);
-      return;
-    }
-
-    allSpots = spots
-      .map((spot) => {
-        const sun = calculateSunTimes(new Date(), spot.lat, spot.lon);
-
-        return {
-          ...spot,
-          distanceKm: calculateDistanceKm(
-            location.lat,
-            location.lon,
-            spot.lat,
-            spot.lon
-          ),
-          sunrise: formatTime(sun.sunrise),
-          sunset: formatTime(sun.sunset),
-          goldenHour: formatTime(sun.goldenHour),
-          goldenMinutes: diffMinutesFromNow(sun.goldenHour),
-          favoriteKey: buildSpotKey(spot)
-        };
-      })
-      .sort((a, b) => a.distanceKm - b.distanceKm)
-      .slice(0, 20);
-
-    applyFilterAndRender();
-    updatePhotographerInsights();
-
-    setStatus("ok", `${allSpots.length} spot trovati`);
+    await runSearchFlow(location);
   } catch (error) {
     console.error(error);
     setStatus("error", error.message || "Errore nella ricerca.");
     renderEmpty("Si è verificato un errore. Riprova.");
     hideLocation();
     updatePhotographerCard(null);
+    resetMap();
   }
+}
+
+function handleGeolocation() {
+  if (!navigator.geolocation) {
+    setStatus("error", "Geolocalizzazione non supportata.");
+    return;
+  }
+
+  setStatus("idle", "Cerco la tua posizione...");
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      try {
+        const location = {
+          name: "La tua posizione",
+          lat: position.coords.latitude,
+          lon: position.coords.longitude
+        };
+
+        await runSearchFlow(location);
+      } catch (error) {
+        console.error(error);
+        setStatus("error", "Errore nella ricerca vicino a te.");
+        renderEmpty("Non sono riuscito a cercare spot vicino a te.");
+        hideLocation();
+        updatePhotographerCard(null);
+        resetMap();
+      }
+    },
+    () => {
+      setStatus("error", "Permesso posizione negato.");
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    }
+  );
+}
+
+async function runSearchFlow(location) {
+  currentLocation = location;
+  showLocation(location);
+
+  setStatus("idle", "Cerco spot vicini...");
+  renderEmpty("Sto cercando gli spot...");
+
+  const spots = await fetchNearbySpots(location.lat, location.lon);
+
+  if (!spots.length) {
+    allSpots = [];
+    setStatus("error", "Nessuno spot trovato.");
+    renderEmpty("Non ho trovato spot utili in quest'area.");
+    updatePhotographerCard(null);
+    resetMap(location);
+    return;
+  }
+
+  const enriched = spots
+    .map((spot) => {
+      const sun = calculateSunTimes(new Date(), spot.lat, spot.lon);
+
+      return {
+        ...spot,
+        distanceKm: calculateDistanceKm(
+          location.lat,
+          location.lon,
+          spot.lat,
+          spot.lon
+        ),
+        sunrise: formatTime(sun.sunrise),
+        sunset: formatTime(sun.sunset),
+        goldenHour: formatTime(sun.goldenHour),
+        goldenMinutes: diffMinutesFromNow(sun.goldenHour),
+        favoriteKey: buildSpotKey(spot),
+        imageUrl: FALLBACK_IMAGES[spot.category] || FALLBACK_IMAGES.spot
+      };
+    })
+    .sort((a, b) => a.distanceKm - b.distanceKm)
+    .slice(0, 20);
+
+  allSpots = enriched;
+  applyFilterAndRender();
+  updatePhotographerInsights();
+  setStatus("ok", `${allSpots.length} spot trovati`);
+
+  updateMap(location, allSpots);
+  fetchSpotImages(allSpots);
 }
 
 async function geocodePlace(query) {
@@ -261,10 +327,15 @@ function applyFilterAndRender() {
   if (!filtered.length) {
     resultsCount.textContent = "0 risultati";
     renderEmpty("Nessuno spot per questo filtro.");
+    if (mapStatus) mapStatus.textContent = "Nessun marker per questo filtro";
+    updateMap(currentLocation, []);
     return;
   }
 
   renderSpots(filtered);
+  if (currentLocation) {
+    updateMap(currentLocation, filtered);
+  }
 }
 
 function normalizeGoldenScore(minutes) {
@@ -316,7 +387,6 @@ function updatePhotographerInsights() {
 
   const bestNow = upcoming.slice(0, 3);
   const first = bestNow[0];
-
   const spotNames = bestNow.map((spot) => spot.name).join(" • ");
 
   updatePhotographerCard({
@@ -377,6 +447,8 @@ function renderSpots(spots) {
 
     return `
       <article class="spot-card">
+        <div class="spot-image" style="background-image:url('${escapeHtml(spot.imageUrl)}')"></div>
+
         <div class="spot-header">
           <div class="spot-title-wrap">
             <div class="spot-title">${escapeHtml(spot.name)}</div>
@@ -471,6 +543,125 @@ function loadFavorites() {
 
 function saveFavorites(list) {
   localStorage.setItem("photospot-favorites", JSON.stringify(list));
+}
+
+async function fetchSpotImages(spots) {
+  const cityName =
+    currentLocation?.name?.split(",")[0]?.trim() || "";
+
+  for (const spot of spots) {
+    try {
+      const url = await fetchWikimediaImage(spot.name, cityName);
+      if (url) {
+        spot.imageUrl = url;
+        rerenderIfVisible();
+      }
+    } catch (error) {
+      console.warn("Immagine non trovata per", spot.name, error);
+    }
+  }
+}
+
+async function fetchWikimediaImage(spotName, cityName) {
+  const candidates = [
+    spotName,
+    `${spotName}, ${cityName}`,
+    `${spotName} ${cityName}`
+  ];
+
+  for (const candidate of candidates) {
+    const endpoint =
+      `https://it.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(candidate)}`;
+
+    const response = await fetch(endpoint);
+
+    if (!response.ok) continue;
+
+    const data = await response.json();
+    const image = data?.thumbnail?.source || data?.originalimage?.source;
+
+    if (image) return image;
+  }
+
+  return null;
+}
+
+function initMap() {
+  map = L.map("map", {
+    zoomControl: true
+  }).setView([41.9, 12.49], 5);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(map);
+}
+
+function resetMap(location = null) {
+  clearMapMarkers();
+
+  if (cityMarker) {
+    map.removeLayer(cityMarker);
+    cityMarker = null;
+  }
+
+  if (location) {
+    cityMarker = L.marker([location.lat, location.lon]).addTo(map);
+    map.setView([location.lat, location.lon], 12);
+    if (mapStatus) mapStatus.textContent = "In attesa degli spot";
+  } else {
+    map.setView([41.9, 12.49], 5);
+    if (mapStatus) mapStatus.textContent = "Aspetto una ricerca";
+  }
+}
+
+function updateMap(location, spots) {
+  if (!location) {
+    resetMap();
+    return;
+  }
+
+  if (cityMarker) {
+    map.removeLayer(cityMarker);
+  }
+
+  clearMapMarkers();
+
+  cityMarker = L.marker([location.lat, location.lon]).addTo(map);
+  cityMarker.bindPopup(`<strong>${escapeHtml(location.name)}</strong>`);
+
+  const bounds = [[location.lat, location.lon]];
+
+  spots.forEach((spot) => {
+    const marker = L.marker([spot.lat, spot.lon]).addTo(map);
+    marker.bindPopup(`
+      <strong>${escapeHtml(spot.name)}</strong><br>
+      ${escapeHtml(humanizeFilter(spot.category))}<br>
+      <a href="${buildGoogleMapsLink(spot.lat, spot.lon)}" target="_blank" rel="noopener noreferrer">
+        Apri in Maps
+      </a>
+    `);
+    spotMarkers.push(marker);
+    bounds.push([spot.lat, spot.lon]);
+  });
+
+  if (bounds.length > 1) {
+    map.fitBounds(bounds, { padding: [30, 30] });
+  } else {
+    map.setView([location.lat, location.lon], 12);
+  }
+
+  if (mapStatus) {
+    mapStatus.textContent = `${spots.length} marker visibili`;
+  }
+}
+
+function clearMapMarkers() {
+  spotMarkers.forEach((marker) => map.removeLayer(marker));
+  spotMarkers = [];
+}
+
+function rerenderIfVisible() {
+  applyFilterAndRender();
 }
 
 function calculateDistanceKm(lat1, lon1, lat2, lon2) {

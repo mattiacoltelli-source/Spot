@@ -1,363 +1,135 @@
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-}
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>PhotoSpot Planner PRO</title>
+  <meta name="theme-color" content="#0b1220" />
 
-:root{
-  --bg:#0b1220;
-  --card:#101a32;
-  --card2:#16244a;
-  --text:#ffffff;
-  --muted:rgba(255,255,255,0.72);
-  --line:rgba(255,255,255,0.08);
-  --accent:#ff9f43;
-  --accent2:#3498db;
-  --ok:#27ae60;
-  --error:#e74c3c;
-  --chip:#22345f;
-  --pink:#ff6fa9;
-}
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <link rel="stylesheet" href="style.css?v=pro1" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div class="hero-overlay"></div>
 
-body{
-  background:var(--bg);
-  color:var(--text);
-  min-height:100vh;
-}
+      <div class="hero-content">
+        <p class="eyebrow">Travel Photo App</p>
+        <h1>PhotoSpot Planner</h1>
+        <p class="hero-text">
+          Cerca una città oppure usa la tua posizione e trova spot panoramici, naturali e fotogenici con i momenti migliori per fotografarli.
+        </p>
 
-.app-shell{
-  max-width:700px;
-  margin:auto;
-  padding-bottom:60px;
-}
+        <div class="search-box">
+          <input
+            id="cityInput"
+            type="text"
+            placeholder="Scrivi una città, ad esempio Bologna"
+            autocomplete="off"
+          />
+          <button id="searchBtn">Cerca</button>
+        </div>
 
-/* HERO */
-.hero{
-  position:relative;
-  min-height:420px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  padding:30px;
-  background-image:url("https://images.unsplash.com/photo-1500530855697-b586d89ba3ee");
-  background-size:cover;
-  background-position:center;
-  border-bottom-left-radius:30px;
-  border-bottom-right-radius:30px;
-  overflow:hidden;
-}
+        <div class="quick-actions">
+          <button id="geoBtn" class="secondary-btn strong">Usa la mia posizione</button>
+          <button id="exampleBtn" class="secondary-btn">Usa esempio</button>
+        </div>
+      </div>
+    </header>
 
-.hero-overlay{
-  position:absolute;
-  inset:0;
-  background:linear-gradient(180deg,rgba(0,0,0,0.2),rgba(0,0,0,0.72));
-}
+    <main class="main-content">
+      <section class="status-card">
+        <div class="status-top">
+          <h2>Stato ricerca</h2>
+          <span id="statusBadge" class="badge idle">In attesa</span>
+        </div>
+        <p id="statusText" class="status-text">
+          Inserisci una città oppure usa la geolocalizzazione.
+        </p>
+      </section>
 
-.hero-content{
-  position:relative;
-  max-width:520px;
-}
+      <section id="photographerCard" class="photographer-card hidden">
+        <div class="section-head">
+          <h2>Modalità fotografo</h2>
+          <span id="photographerBadge" class="mini-badge">Analisi</span>
+        </div>
+        <p id="photographerText" class="status-text">
+          Nessuna analisi disponibile.
+        </p>
+      </section>
 
-.eyebrow{
-  font-size:12px;
-  letter-spacing:2px;
-  text-transform:uppercase;
-  opacity:.7;
-  margin-bottom:10px;
-}
+      <section id="locationCard" class="info-card hidden">
+        <h3>Luogo trovato</h3>
 
-h1{
-  font-size:42px;
-  font-weight:700;
-  margin-bottom:15px;
-}
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Nome</span>
+            <span id="placeName">-</span>
+          </div>
 
-.hero-text{
-  opacity:.92;
-  line-height:1.5;
-  margin-bottom:25px;
-}
+          <div class="info-item">
+            <span class="label">Latitudine</span>
+            <span id="placeLat">-</span>
+          </div>
 
-/* SEARCH */
-.search-box{
-  display:flex;
-  gap:10px;
-  margin-bottom:15px;
-}
+          <div class="info-item">
+            <span class="label">Longitudine</span>
+            <span id="placeLon">-</span>
+          </div>
+        </div>
+      </section>
 
-.search-box input{
-  flex:1;
-  padding:14px 16px;
-  border-radius:14px;
-  border:none;
-  font-size:16px;
-}
+      <section class="filters-section">
+        <div class="section-head">
+          <h2>Filtri</h2>
+          <span class="results-count" id="activeFilterLabel">Tutti</span>
+        </div>
 
-.search-box button{
-  padding:14px 20px;
-  border:none;
-  border-radius:14px;
-  background:var(--accent);
-  color:white;
-  font-weight:600;
-  cursor:pointer;
-}
+        <div class="filters-row">
+          <button class="filter-btn active" data-filter="all">Tutti</button>
+          <button class="filter-btn" data-filter="natura">Natura</button>
+          <button class="filter-btn" data-filter="storico">Storico</button>
+          <button class="filter-btn" data-filter="viewpoint">Viewpoint</button>
+          <button class="filter-btn" data-filter="turismo">Turismo</button>
+          <button class="filter-btn" data-filter="favorites">Preferiti</button>
+        </div>
 
-.secondary-btn{
-  padding:12px 18px;
-  border-radius:14px;
-  border:none;
-  background:rgba(255,255,255,0.15);
-  color:white;
-  cursor:pointer;
-}
+        <div class="sort-row">
+          <label for="sortSelect" class="sort-label">Ordina per</label>
+          <select id="sortSelect" class="sort-select">
+            <option value="distance">Distanza</option>
+            <option value="golden">Golden hour</option>
+            <option value="name">Nome</option>
+          </select>
+        </div>
+      </section>
 
-/* MAIN */
-.main-content{
-  padding:20px;
-  display:flex;
-  flex-direction:column;
-  gap:20px;
-}
+      <section class="map-section">
+        <div class="section-head">
+          <h2>Mappa spot</h2>
+          <span id="mapStatus" class="results-count">Aspetto una ricerca</span>
+        </div>
+        <div id="map" class="map-box"></div>
+      </section>
 
-/* CARDS */
-.status-card,
-.info-card,
-.filters-section,
-.photographer-card{
-  background:var(--card);
-  padding:18px;
-  border-radius:18px;
-  border:1px solid var(--line);
-}
+      <section class="results-section">
+        <div class="section-head">
+          <h2>Spot trovati</h2>
+          <span id="resultsCount" class="results-count">0 risultati</span>
+        </div>
 
-.status-top,
-.section-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  margin-bottom:8px;
-}
+        <div id="resultsGrid" class="results-grid"></div>
+      </section>
+    </main>
+  </div>
 
-.status-text{
-  opacity:.82;
-  line-height:1.45;
-}
-
-.badge,
-.mini-badge{
-  padding:8px 16px;
-  border-radius:20px;
-  font-size:12px;
-}
-
-.badge.idle{
-  background:#2c3e50;
-}
-
-.badge.ok{
-  background:var(--ok);
-}
-
-.badge.error{
-  background:var(--error);
-}
-
-.mini-badge{
-  background:rgba(255,159,67,.16);
-  color:#ffc27e;
-}
-
-/* LOCATION */
-.info-grid{
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  margin-top:10px;
-}
-
-.info-item{
-  background:var(--card2);
-  padding:12px;
-  border-radius:12px;
-  display:flex;
-  justify-content:space-between;
-  gap:12px;
-}
-
-.label{
-  opacity:.7;
-}
-
-/* FILTERS */
-.filters-row{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-top:10px;
-}
-
-.filter-btn{
-  border:none;
-  border-radius:999px;
-  padding:10px 14px;
-  background:rgba(255,255,255,0.08);
-  color:white;
-  cursor:pointer;
-}
-
-.filter-btn.active{
-  background:var(--accent2);
-}
-
-.sort-row{
-  margin-top:14px;
-  display:flex;
-  align-items:center;
-  gap:12px;
-}
-
-.sort-label{
-  color:var(--muted);
-  font-size:14px;
-}
-
-.sort-select{
-  flex:1;
-  background:var(--card2);
-  color:white;
-  border:1px solid var(--line);
-  border-radius:12px;
-  padding:10px 12px;
-}
-
-/* RESULTS */
-.results-section{
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
-
-.results-count{
-  opacity:.7;
-  font-size:14px;
-}
-
-.results-grid{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-}
-
-/* RESULT CARD */
-.spot-card{
-  background:var(--card);
-  padding:16px;
-  border-radius:16px;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  border:1px solid var(--line);
-}
-
-.spot-header{
-  display:flex;
-  justify-content:space-between;
-  gap:12px;
-  align-items:flex-start;
-}
-
-.spot-title-wrap{
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  flex:1;
-}
-
-.spot-title{
-  font-weight:700;
-  font-size:18px;
-  line-height:1.25;
-}
-
-.spot-subline{
-  color:var(--muted);
-  font-size:14px;
-}
-
-.spot-category{
-  font-size:12px;
-  padding:8px 12px;
-  border-radius:999px;
-  background:rgba(52,152,219,0.16);
-  color:#8ecbff;
-  white-space:nowrap;
-}
-
-.favorite-btn{
-  border:none;
-  background:rgba(255,255,255,0.08);
-  color:white;
-  border-radius:12px;
-  padding:10px 12px;
-  cursor:pointer;
-}
-
-.favorite-btn.active{
-  background:rgba(255,111,169,0.18);
-  color:#ff9dc4;
-}
-
-.spot-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-
-.spot-box{
-  background:var(--card2);
-  padding:12px;
-  border-radius:12px;
-}
-
-.spot-box-label{
-  font-size:12px;
-  color:var(--muted);
-  margin-bottom:6px;
-}
-
-.spot-box-value{
-  font-size:15px;
-  line-height:1.35;
-}
-
-.spot-actions{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-.spot-link{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding:11px 14px;
-  border:none;
-  border-radius:12px;
-  background:var(--accent2);
-  color:white;
-  text-decoration:none;
-  cursor:pointer;
-}
-
-.spot-link.secondary{
-  background:rgba(255,255,255,0.08);
-}
-
-/* HIDDEN */
-.hidden{
-  display:none;
-}
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  ></script>
+  <script src="app.js?v=pro1"></script>
+</body>
+</html>
