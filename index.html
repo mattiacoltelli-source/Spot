@@ -6,12 +6,10 @@
   <title>PhotoSpot Planner</title>
 
   <meta name="theme-color" content="#0b1020" />
-  <meta name="description" content="Scopri spot fotogenici, salva i preferiti e crea il tuo itinerario fotografico perfetto." />
+  <meta name="description" content="Scopri spot fotogenici e pianifica il tuo itinerario fotografico." />
 
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <link rel="preconnect" href="https://unpkg.com" />
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
 
   <link
     rel="stylesheet"
@@ -26,11 +24,9 @@
       --panel:#101827;
       --panel2:#131d2f;
       --panel3:#18243a;
-      --panel4:#1d2a43;
       --text:#eef3ff;
       --muted:#9fb0cc;
       --line:#263247;
-      --line2:rgba(255,255,255,.08);
       --accent:#ffd166;
       --accent2:#62b6ff;
       --accent3:#7ef0c4;
@@ -66,7 +62,9 @@
 
     img{display:block;max-width:100%}
     button,input{font:inherit}
-    button{transition:transform .18s ease, opacity .18s ease, background .18s ease, border-color .18s ease}
+    button{
+      transition:transform .18s ease, opacity .18s ease, background .18s ease, border-color .18s ease;
+    }
     button:active{transform:scale(.985)}
 
     .app{
@@ -883,10 +881,6 @@
 
       .hero{
         padding:22px;
-      }
-
-      .hero-controls{
-        grid-template-columns:1fr;
       }
 
       .sheet{
