@@ -21,10 +21,10 @@
   <style>
     :root{
       --bg:#070b14;
-      --bg2:#0c1220;
+      --bg2:#0b1120;
       --panel:#101827;
-      --panel2:#151f31;
-      --panel3:#1b2740;
+      --panel2:#131d2f;
+      --panel3:#18253b;
       --text:#eef3ff;
       --muted:#9fb0cc;
       --line:#263247;
@@ -36,25 +36,24 @@
       --shadow:0 16px 40px rgba(0,0,0,.34);
       --radius:22px;
       --radius-sm:16px;
-      --maxw:1280px;
+      --maxw:1320px;
     }
 
-    *{ box-sizing:border-box; }
-
+    *{box-sizing:border-box}
     html,body{
       margin:0;
       padding:0;
+      min-height:100%;
       background:
         radial-gradient(circle at top right, rgba(98,182,255,.14), transparent 28%),
         radial-gradient(circle at top left, rgba(255,209,102,.10), transparent 30%),
         linear-gradient(180deg, var(--bg), #09111d 45%, #0a1120 100%);
       color:var(--text);
       font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-      min-height:100%;
     }
 
     a{ color:inherit; text-decoration:none; }
-    img{ max-width:100%; display:block; }
+    img{ display:block; max-width:100%; }
 
     .app{
       max-width:var(--maxw);
@@ -100,15 +99,15 @@
     }
 
     h1{
-      font-size:1.9rem;
-      line-height:1.02;
       margin:0;
+      font-size:1.95rem;
+      line-height:1.02;
       letter-spacing:-.03em;
     }
 
     .subtitle{
-      color:var(--muted);
       margin:0;
+      color:var(--muted);
       line-height:1.5;
       font-size:.98rem;
     }
@@ -158,6 +157,13 @@
       box-shadow:none;
     }
 
+    .btn.small{
+      min-height:40px;
+      border-radius:14px;
+      padding:0 12px;
+      font-size:.88rem;
+    }
+
     .search-actions{
       display:flex;
       gap:10px;
@@ -169,10 +175,8 @@
       gap:10px;
       overflow:auto;
       padding-bottom:4px;
-      margin-top:2px;
       scrollbar-width:none;
     }
-
     .quick-filters::-webkit-scrollbar{ display:none; }
 
     .chip{
@@ -196,7 +200,6 @@
       display:grid;
       grid-template-columns:repeat(2,1fr);
       gap:10px;
-      margin-top:4px;
     }
 
     .sun-box{
@@ -216,6 +219,10 @@
       font-weight:800;
       letter-spacing:-.02em;
       font-size:1rem;
+    }
+
+    .layout{
+      display:block;
     }
 
     .section{ margin-top:18px; }
@@ -261,6 +268,11 @@
       width:100%;
       height:100%;
       object-fit:cover;
+      transition:transform .35s ease;
+    }
+
+    .spot-card:hover .spot-cover img{
+      transform:scale(1.04);
     }
 
     .overlay-top{
@@ -272,7 +284,7 @@
       align-items:flex-start;
       gap:8px;
       padding:12px;
-      background:linear-gradient(180deg, rgba(0,0,0,.35), transparent);
+      background:linear-gradient(180deg, rgba(0,0,0,.38), transparent);
       pointer-events:none;
     }
 
@@ -281,7 +293,7 @@
       display:inline-flex;
       align-items:center;
       gap:8px;
-      background:rgba(10,15,26,.76);
+      background:rgba(10,15,26,.78);
       border:1px solid rgba(255,255,255,.08);
       color:#fff2c7;
       border-radius:999px;
@@ -321,7 +333,7 @@
 
     .spot-title{
       margin:0;
-      font-size:1.1rem;
+      font-size:1.08rem;
       line-height:1.15;
       letter-spacing:-.02em;
     }
@@ -380,7 +392,7 @@
     }
 
     .best-time-main{
-      font-size:.98rem;
+      font-size:.97rem;
       font-weight:800;
       line-height:1.3;
       color:#e8fff8;
@@ -401,7 +413,8 @@
       text-align:center;
     }
 
-    .planner-card{
+    .planner-card,
+    .favorites-card{
       background:linear-gradient(180deg, rgba(17,26,42,.96), rgba(11,18,30,.98));
       border:1px solid rgba(255,255,255,.06);
       border-radius:24px;
@@ -432,6 +445,20 @@
     .planner-stat .value{
       font-size:1rem;
       font-weight:800;
+    }
+
+    .planner-map-wrap{
+      margin-top:8px;
+      margin-bottom:14px;
+    }
+
+    .planner-map{
+      width:100%;
+      height:240px;
+      border-radius:20px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.06);
+      background:#0f1726;
     }
 
     .route-list{
@@ -704,7 +731,7 @@
 
       .layout{
         display:grid;
-        grid-template-columns:1.2fr .8fr;
+        grid-template-columns:1.15fr .85fr;
         gap:18px;
         align-items:start;
       }
@@ -714,7 +741,7 @@
       }
 
       .sheet{
-        width:min(720px,100%);
+        width:min(760px,100%);
         margin:0 auto;
         border-radius:28px;
       }
@@ -803,10 +830,10 @@
       </div>
 
       <div>
-        <section class="section">
+        <section class="section" id="plannerSection">
           <div class="section-head">
             <h2>Planner fotografico</h2>
-            <button class="btn ghost" id="clearPlannerBtn">Svuota</button>
+            <button class="btn ghost small" id="clearPlannerBtn">Svuota</button>
           </div>
 
           <div class="planner-card">
@@ -825,6 +852,10 @@
               </div>
             </div>
 
+            <div class="planner-map-wrap">
+              <div class="planner-map" id="plannerMap"></div>
+            </div>
+
             <div class="route-list" id="plannerList"></div>
 
             <div class="empty" id="plannerEmpty">
@@ -833,14 +864,17 @@
           </div>
         </section>
 
-        <section class="section">
+        <section class="section" id="favoritesSection">
           <div class="section-head">
             <h2>Preferiti</h2>
-            <button class="btn ghost" id="clearFavoritesBtn">Pulisci</button>
+            <button class="btn ghost small" id="clearFavoritesBtn">Pulisci</button>
           </div>
-          <div class="favorites-list" id="favoritesList"></div>
-          <div class="empty" id="favoritesEmpty">
-            Non hai ancora preferiti salvati.
+
+          <div class="favorites-card">
+            <div class="favorites-list" id="favoritesList"></div>
+            <div class="empty" id="favoritesEmpty">
+              Non hai ancora preferiti salvati.
+            </div>
           </div>
         </section>
       </div>
@@ -856,8 +890,8 @@
 
   <div class="bottom-nav">
     <button class="nav-btn active" data-scroll="#spotsSection">Spot</button>
-    <button class="nav-btn" data-scroll="#plannerList">Planner</button>
-    <button class="nav-btn" data-scroll="#favoritesList">Preferiti</button>
+    <button class="nav-btn" data-scroll="#plannerSection">Planner</button>
+    <button class="nav-btn" data-scroll="#favoritesSection">Preferiti</button>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -875,10 +909,13 @@
       filter: "all",
       sortByScore: true,
       favorites: loadLocal("photospot_favorites", []),
-      planner: loadLocal("photospot_planner", [])
+      planner: loadLocal("photospot_planner", []),
+      imageCache: loadLocal("photospot_image_cache", {})
     };
 
     let detailMapInstance = null;
+    let plannerMapInstance = null;
+    let plannerMapLayer = null;
 
     const cityInput = document.getElementById("cityInput");
     const searchBtn = document.getElementById("searchBtn");
@@ -953,6 +990,7 @@
       if (e.target === detailModal) closeDetail();
     });
 
+    initPlannerMap();
     renderFavorites();
     renderPlanner();
     updateSunPanel(null);
@@ -1048,6 +1086,8 @@
         state.spots = cleaned;
         resultInfo.textContent = `${cleaned.length} spot vicino a ${shortPlaceName(state.currentPlaceName)}`;
         renderSpots();
+
+        hydrateSpotImages(cleaned);
       }catch(err){
         console.error(err);
         resultInfo.textContent = "Errore nel caricamento degli spot";
@@ -1063,7 +1103,7 @@
       const name = props.name || "Spot senza nome";
       const category = detectCategory(props.kinds || "", name);
       const distanceKm = calcDistanceKm(state.center?.lat || 0, state.center?.lon || 0, lat, lon);
-      const image = getSpotImage(name, index, category);
+      const image = getInitialSpotImage(name, index);
       const tags = buildPhotoTags(category, name);
       const bestTime = suggestBestTime(category);
       const score = computeSpotScore({ category, distanceKm, image, tags, name });
@@ -1190,9 +1230,59 @@
       return Math.max(60, Math.min(99, score));
     }
 
-    function getSpotImage(name, index){
-      const seed = encodeURIComponent(name || ("spot" + index));
-      return `https://picsum.photos/seed/${seed}/900/600`;
+    function getInitialSpotImage(name, index){
+      const cacheKey = normalizeCacheKey(name);
+      if (state.imageCache[cacheKey]) return state.imageCache[cacheKey];
+      return `https://picsum.photos/seed/${encodeURIComponent(name || ("spot" + index))}/900/600`;
+    }
+
+    async function hydrateSpotImages(spots){
+      const subset = spots.slice(0, 12);
+      for (const spot of subset){
+        try{
+          const betterImage = await findWikimediaImage(spot.name, state.currentPlaceName);
+          if (betterImage){
+            spot.image = betterImage;
+            state.imageCache[normalizeCacheKey(spot.name)] = betterImage;
+            saveLocal("photospot_image_cache", state.imageCache);
+
+            syncSpotAcrossCollections(spot);
+            renderSpots();
+            renderFavorites();
+          }
+        }catch(err){
+          console.warn("Immagine Wikimedia non trovata per", spot.name, err);
+        }
+      }
+    }
+
+    async function findWikimediaImage(name, placeName){
+      const queries = [
+        `${name} ${shortPlaceName(placeName)}`,
+        `${name}`,
+      ];
+
+      for (const q of queries){
+        const api = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(q)}&gsrnamespace=6&prop=imageinfo&iiprop=url&iiurlwidth=1200&format=json&origin=*`;
+        const res = await fetch(api);
+        const data = await res.json();
+        const pages = data?.query?.pages ? Object.values(data.query.pages) : [];
+        const valid = pages
+          .map(p => p?.imageinfo?.[0]?.thumburl || p?.imageinfo?.[0]?.url)
+          .filter(Boolean);
+
+        if (valid.length) return valid[0];
+      }
+
+      return null;
+    }
+
+    function syncSpotAcrossCollections(updatedSpot){
+      state.spots = state.spots.map(s => s.id === updatedSpot.id ? { ...s, image: updatedSpot.image } : s);
+      state.favorites = state.favorites.map(s => s.id === updatedSpot.id ? { ...s, image: updatedSpot.image } : s);
+      state.planner = state.planner.map(s => s.id === updatedSpot.id ? { ...s, image: updatedSpot.image } : s);
+      saveLocal("photospot_favorites", state.favorites);
+      saveLocal("photospot_planner", state.planner);
     }
 
     function buildDescription(name, category){
@@ -1236,7 +1326,7 @@
         card.className = "spot-card";
         card.innerHTML = `
           <div class="spot-cover">
-            <img src="${spot.image}" alt="${escapeHtml(spot.name)}" />
+            <img src="${spot.image}" alt="${escapeHtml(spot.name)}" loading="lazy" />
             <div class="overlay-top">
               <div class="score-pill">📍 Score ${spot.score}</div>
               <button class="fav-btn" data-action="favorite" title="Preferito">
@@ -1350,7 +1440,7 @@
         detailMapInstance = L.map("detailMap", { zoomControl:false }).setView([spot.lat, spot.lon], 15);
 
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: '&copy; OpenStreetMap'
+          attribution: "&copy; OpenStreetMap"
         }).addTo(detailMapInstance);
 
         L.marker([spot.lat, spot.lon]).addTo(detailMapInstance);
@@ -1380,7 +1470,7 @@
       if (exists){
         state.favorites = state.favorites.filter(s => s.id !== spot.id);
       } else {
-        state.favorites.unshift(spot);
+        state.favorites.unshift({ ...spot });
       }
       saveLocal("photospot_favorites", state.favorites);
       renderFavorites();
@@ -1392,7 +1482,7 @@
       if (exists){
         state.planner = state.planner.filter(s => s.id !== spot.id);
       } else {
-        state.planner.push(spot);
+        state.planner.push({ ...spot });
       }
       state.planner = sortPlannerRoute(state.planner);
       saveLocal("photospot_planner", state.planner);
@@ -1419,7 +1509,7 @@
             <div class="favorite-name">${escapeHtml(spot.name)}</div>
             <div class="favorite-sub">${spot.category} • score ${spot.score}</div>
           </div>
-          <button class="btn ghost">Apri</button>
+          <button class="btn ghost small">Apri</button>
         `;
         row.querySelector("button").addEventListener("click", () => openDetail(spot));
         favoritesList.appendChild(row);
@@ -1434,6 +1524,7 @@
         plannerCount.textContent = "0";
         plannerDuration.textContent = "0 min";
         plannerMood.textContent = "—";
+        updatePlannerMap([]);
         return;
       }
 
@@ -1472,6 +1563,44 @@
 
         plannerList.appendChild(item);
       });
+
+      updatePlannerMap(sorted);
+    }
+
+    function initPlannerMap(){
+      plannerMapInstance = L.map("plannerMap", { zoomControl:false, attributionControl:true }).setView([45.4642, 9.19], 5);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap"
+      }).addTo(plannerMapInstance);
+
+      plannerMapLayer = L.layerGroup().addTo(plannerMapInstance);
+    }
+
+    function updatePlannerMap(items){
+      if (!plannerMapInstance || !plannerMapLayer) return;
+
+      plannerMapLayer.clearLayers();
+
+      if (!items.length){
+        plannerMapInstance.setView([45.4642, 9.19], 5);
+        return;
+      }
+
+      const latlngs = items.map(spot => [spot.lat, spot.lon]);
+
+      items.forEach((spot, index) => {
+        L.marker([spot.lat, spot.lon])
+          .bindPopup(`<strong>${escapeHtml(spot.name)}</strong><br>${spot.category} • score ${spot.score}<br>Tappa ${index + 1}`)
+          .addTo(plannerMapLayer);
+      });
+
+      if (latlngs.length > 1){
+        L.polyline(latlngs, { weight:4, opacity:0.75 }).addTo(plannerMapLayer);
+      }
+
+      const bounds = L.latLngBounds(latlngs);
+      plannerMapInstance.fitBounds(bounds.pad(0.25));
     }
 
     function sortPlannerRoute(items){
@@ -1489,8 +1618,7 @@
     }
 
     function guessPlannerMood(items){
-      const top = items[0];
-      if (!top) return "—";
+      if (!items.length) return "—";
       if (items.some(i => i.bestTime.mood === "sunset")) return "sunset route";
       if (items.some(i => i.bestTime.mood === "blue-hour")) return "city lights";
       if (items.some(i => i.bestTime.mood === "street")) return "urban walk";
@@ -1548,6 +1676,10 @@
 
     function isInPlanner(id){
       return state.planner.some(s => s.id === id);
+    }
+
+    function normalizeCacheKey(str){
+      return String(str || "").trim().toLowerCase();
     }
 
     function calcDistanceKm(lat1, lon1, lat2, lon2){

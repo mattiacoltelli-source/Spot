@@ -1,9 +1,11 @@
-const CACHE_NAME = "photospot-planner-v2";
+const CACHE_NAME = "photospot-planner-v3";
 const APP_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./service-worker.js"
+  "./service-worker.js",
+  "./icon-192.png",
+  "./icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {
