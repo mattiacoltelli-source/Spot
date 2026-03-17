@@ -32,10 +32,10 @@
       --accent2:#62b6ff;
       --accent3:#7ef0c4;
       --danger:#ff6b7a;
+      --warn:#ffb84d;
       --ok:#35d08a;
       --shadow:0 16px 40px rgba(0,0,0,.34);
       --radius:22px;
-      --radius-sm:16px;
       --maxw:1320px;
     }
 
@@ -221,10 +221,71 @@
       font-size:1rem;
     }
 
-    .layout{
-      display:block;
+    .debug-panel{
+      display:grid;
+      gap:10px;
+      padding:14px;
+      border-radius:20px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06);
     }
 
+    .debug-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+    }
+
+    .debug-title{
+      font-weight:800;
+      letter-spacing:-.02em;
+    }
+
+    .debug-status{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      font-size:.84rem;
+      font-weight:700;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.04);
+    }
+
+    .debug-status.ok{ color:#baf5d9; border-color:rgba(53,208,138,.25); background:rgba(53,208,138,.08); }
+    .debug-status.warn{ color:#ffe1a6; border-color:rgba(255,184,77,.25); background:rgba(255,184,77,.08); }
+    .debug-status.err{ color:#ffc3cb; border-color:rgba(255,107,122,.25); background:rgba(255,107,122,.08); }
+
+    .debug-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .debug-box{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:16px;
+      padding:12px;
+      min-width:0;
+    }
+
+    .debug-box .label{
+      font-size:.78rem;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+
+    .debug-box .value{
+      font-size:.9rem;
+      font-weight:700;
+      line-height:1.35;
+      word-break:break-word;
+    }
+
+    .layout{ display:block; }
     .section{ margin-top:18px; }
 
     .section-head{
@@ -769,8 +830,7 @@
         <div class="eyebrow">✨ Assistente fotografico da viaggio</div>
         <h1>PhotoSpot Planner</h1>
         <p class="subtitle">
-          Trova luoghi fotogenici, scopri il momento migliore per fotografarli
-          e costruisci il tuo itinerario ideale.
+          Trova luoghi fotogenici, scopri il momento migliore per fotografarli e costruisci il tuo itinerario ideale.
         </p>
 
         <div class="searchbar">
@@ -810,6 +870,32 @@
           <div class="sun-box">
             <div class="sun-label">Blue hour</div>
             <div class="sun-time">—</div>
+          </div>
+        </div>
+
+        <div class="debug-panel">
+          <div class="debug-head">
+            <div class="debug-title">Debug API</div>
+            <div class="debug-status warn" id="debugStatus">In attesa</div>
+          </div>
+
+          <div class="debug-grid">
+            <div class="debug-box">
+              <div class="label">Ultimo stato</div>
+              <div class="value" id="debugMessage">Nessuna richiesta ancora</div>
+            </div>
+            <div class="debug-box">
+              <div class="label">HTTP status</div>
+              <div class="value" id="debugHttp">—</div>
+            </div>
+            <div class="debug-box">
+              <div class="label">Modalità query</div>
+              <div class="value" id="debugMode">—</div>
+            </div>
+            <div class="debug-box">
+              <div class="label">Fallback</div>
+              <div class="value" id="debugFallback">No</div>
+            </div>
           </div>
         </div>
       </div>
@@ -910,7 +996,14 @@
       sortByScore: true,
       favorites: loadLocal("photospot_favorites", []),
       planner: loadLocal("photospot_planner", []),
-      imageCache: loadLocal("photospot_image_cache", {})
+      imageCache: loadLocal("photospot_image_cache", {}),
+      debug: {
+        status: "warn",
+        message: "Nessuna richiesta ancora",
+        http: "—",
+        mode: "—",
+        fallback: false
+      }
     };
 
     let detailMapInstance = null;
@@ -937,6 +1030,12 @@
     const detailContent = document.getElementById("detailContent");
     const sunPanel = document.getElementById("sunPanel");
     const startupScreen = document.getElementById("startupScreen");
+
+    const debugStatus = document.getElementById("debugStatus");
+    const debugMessage = document.getElementById("debugMessage");
+    const debugHttp = document.getElementById("debugHttp");
+    const debugMode = document.getElementById("debugMode");
+    const debugFallback = document.getElementById("debugFallback");
 
     setTimeout(() => startupScreen.classList.add("hide"), 900);
 
@@ -991,6 +1090,7 @@
     });
 
     initPlannerMap();
+    renderDebug();
     renderFavorites();
     renderPlanner();
     updateSunPanel(null);
@@ -1000,10 +1100,13 @@
       if (!query) return;
 
       resultInfo.textContent = "Ricerca in corso...";
+      setDebug("warn", "Geocoding città in corso...", "—", "geocode", false);
+
       try{
         const place = await geocodePlace(query);
         if (!place) {
           resultInfo.textContent = "Luogo non trovato";
+          setDebug("err", "Nominatim non ha trovato il luogo", "200", "geocode", false);
           return;
         }
 
@@ -1018,6 +1121,7 @@
       }catch(err){
         console.error(err);
         resultInfo.textContent = "Errore nella ricerca";
+        setDebug("err", "Errore durante il geocoding", "fetch error", "geocode", false);
       }
     }
 
@@ -1028,6 +1132,8 @@
       }
 
       resultInfo.textContent = "Recupero posizione...";
+      setDebug("warn", "Recupero geolocalizzazione...", "—", "geolocation", false);
+
       navigator.geolocation.getCurrentPosition(async (pos) => {
         state.center = {
           lat: pos.coords.latitude,
@@ -1038,6 +1144,7 @@
         await loadPhotoSpots();
       }, () => {
         resultInfo.textContent = "Impossibile ottenere la posizione";
+        setDebug("err", "Geolocalizzazione negata o non disponibile", "browser", "geolocation", false);
       }, {
         enableHighAccuracy:true,
         timeout:10000
@@ -1060,8 +1167,7 @@
       spotsGrid.innerHTML = "";
       spotsEmpty.classList.add("hidden");
 
-      const radius = 6000;
-      const kinds = [
+      const fullKinds = [
         "view_points",
         "interesting_places",
         "architecture",
@@ -1072,27 +1178,130 @@
         "monuments"
       ].join(",");
 
-      const url = `https://api.opentripmap.com/0.1/en/places/radius?radius=${radius}&lon=${state.center.lon}&lat=${state.center.lat}&kinds=${encodeURIComponent(kinds)}&rate=2&limit=30&format=geojson&apikey=${OPEN_TRIP_MAP_KEY}`;
+      const safeKinds = [
+        "interesting_places",
+        "historic",
+        "architecture"
+      ].join(",");
 
       try{
-        const res = await fetch(url);
-        const data = await res.json();
+        setDebug("warn", "Tentativo query completa OpenTripMap...", "—", "full", false);
+        let data = await fetchOpenTripMap(fullKinds, false);
 
-        const cleaned = (data.features || [])
+        let features = (data && data.features) ? data.features : [];
+
+        if (!features.length){
+          setDebug("warn", "Nessun risultato con query completa, provo fallback...", "200", "fallback", true);
+          data = await fetchOpenTripMap(safeKinds, true);
+          features = (data && data.features) ? data.features : [];
+        }
+
+        const cleaned = features
           .map((f, index) => normalizeSpot(f, index))
           .filter(s => s.name && s.name.trim().length > 2)
           .filter((spot, index, arr) => arr.findIndex(a => a.name.toLowerCase() === spot.name.toLowerCase()) === index);
 
+        if (!cleaned.length){
+          resultInfo.textContent = "Nessuno spot trovato";
+          spotsEmpty.classList.remove("hidden");
+          setDebug("warn", "API raggiunta ma nessuno spot utile trovato", "200", "parsed", true);
+          return;
+        }
+
         state.spots = cleaned;
         resultInfo.textContent = `${cleaned.length} spot vicino a ${shortPlaceName(state.currentPlaceName)}`;
+        setDebug("ok", `${cleaned.length} spot caricati correttamente`, "200", "success", state.debug.fallback);
         renderSpots();
-
         hydrateSpotImages(cleaned);
+
       }catch(err){
-        console.error(err);
-        resultInfo.textContent = "Errore nel caricamento degli spot";
+        console.error("OpenTripMap error:", err);
+
+        state.spots = [];
+        spotsGrid.innerHTML = "";
         spotsEmpty.classList.remove("hidden");
+
+        const status = err && err.httpStatus ? String(err.httpStatus) : "fetch error";
+        const friendly = getFriendlyApiError(status);
+
+        resultInfo.textContent = friendly.short;
+        setDebug("err", friendly.long, status, "error", state.debug.fallback);
       }
+    }
+
+    async function fetchOpenTripMap(kinds, isFallback){
+      const radius = 6000;
+      const url = `https://api.opentripmap.com/0.1/en/places/radius?radius=${radius}&lon=${state.center.lon}&lat=${state.center.lat}&kinds=${encodeURIComponent(kinds)}&limit=30&format=geojson&apikey=${OPEN_TRIP_MAP_KEY}`;
+
+      console.log("OpenTripMap URL:", url);
+
+      const res = await fetch(url);
+      console.log("OpenTripMap status:", res.status);
+
+      state.debug.fallback = isFallback;
+      renderDebug();
+
+      if (!res.ok){
+        const err = new Error(`HTTP ${res.status}`);
+        err.httpStatus = res.status;
+        throw err;
+      }
+
+      const data = await res.json();
+      return data;
+    }
+
+    function getFriendlyApiError(status){
+      const code = String(status);
+
+      if (code === "401" || code === "403"){
+        return {
+          short: "Chiave API non valida o bloccata",
+          long: "OpenTripMap ha rifiutato la richiesta. Probabile chiave API non valida, limitata o bloccata."
+        };
+      }
+
+      if (code === "429"){
+        return {
+          short: "Troppe richieste all'API",
+          long: "OpenTripMap sta limitando le richieste. Riprova tra poco oppure usa la ricerca meno frequentemente."
+        };
+      }
+
+      if (code === "400"){
+        return {
+          short: "Richiesta API non valida",
+          long: "OpenTripMap ha restituito 400. Potrebbero esserci parametri non accettati per questa combinazione di query."
+        };
+      }
+
+      return {
+        short: "Errore nel caricamento degli spot",
+        long: "La richiesta verso OpenTripMap è fallita o non è stata completata correttamente."
+      };
+    }
+
+    function setDebug(status, message, http, mode, fallback){
+      state.debug = {
+        status,
+        message,
+        http,
+        mode,
+        fallback
+      };
+      renderDebug();
+    }
+
+    function renderDebug(){
+      debugStatus.className = `debug-status ${state.debug.status}`;
+      debugStatus.textContent =
+        state.debug.status === "ok" ? "OK" :
+        state.debug.status === "err" ? "Errore" : "Attenzione";
+
+      debugMessage.textContent = state.debug.message;
+      debugHttp.textContent = state.debug.http;
+      debugMode.textContent = state.debug.mode;
+      debugFallback.textContent = state.debug.fallback ? "Sì" : "No";
     }
 
     function normalizeSpot(feature, index){
@@ -1237,7 +1446,7 @@
     }
 
     async function hydrateSpotImages(spots){
-      const subset = spots.slice(0, 12);
+      const subset = spots.slice(0, 8);
       for (const spot of subset){
         try{
           const betterImage = await findWikimediaImage(spot.name, state.currentPlaceName);
@@ -1245,7 +1454,6 @@
             spot.image = betterImage;
             state.imageCache[normalizeCacheKey(spot.name)] = betterImage;
             saveLocal("photospot_image_cache", state.imageCache);
-
             syncSpotAcrossCollections(spot);
             renderSpots();
             renderFavorites();
@@ -1259,7 +1467,7 @@
     async function findWikimediaImage(name, placeName){
       const queries = [
         `${name} ${shortPlaceName(placeName)}`,
-        `${name}`,
+        `${name}`
       ];
 
       for (const q of queries){

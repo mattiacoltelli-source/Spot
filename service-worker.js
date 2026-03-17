@@ -1,4 +1,4 @@
-const CACHE_NAME = "photospot-planner-v3";
+const CACHE_NAME = "photospot-planner-v4-debug";
 const APP_ASSETS = [
   "./",
   "./index.html",
