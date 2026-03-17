@@ -3,9 +3,9 @@
   "short_name": "PhotoSpot",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#070b14",
+  "background_color": "#060912",
   "theme_color": "#0b1020",
-  "description": "Trova spot fotogenici, scopri il momento migliore per fotografarli e crea il tuo itinerario.",
+  "description": "Scopri spot fotogenici, salva i preferiti e crea il tuo itinerario fotografico perfetto.",
   "lang": "it-IT",
   "orientation": "portrait",
   "icons": [

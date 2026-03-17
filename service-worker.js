@@ -1,4 +1,4 @@
-const CACHE_NAME = "photospot-planner-v5-debug";
+const CACHE_NAME = "photospot-planner-appstore-v1";
 const APP_ASSETS = [
   "./",
   "./index.html",
@@ -20,9 +20,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
+          if (key !== CACHE_NAME) return caches.delete(key);
         })
       )
     )
@@ -31,9 +29,11 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).catch(() => cached);
+      return cached || fetch(event.request);
     })
   );
 });
