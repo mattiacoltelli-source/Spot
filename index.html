@@ -40,6 +40,7 @@
     }
 
     *{box-sizing:border-box}
+
     html,body{
       margin:0;
       padding:0;
@@ -62,14 +63,14 @@
     }
 
     .topbar{
-      position:sticky;
-      top:0;
-      z-index:30;
-      backdrop-filter:blur(16px);
-      background:linear-gradient(180deg, rgba(7,11,20,.94), rgba(7,11,20,.72));
-      padding:14px 14px 12px;
-      margin:-18px -14px 16px;
-      border-bottom:1px solid rgba(255,255,255,.04);
+      position:relative;
+      top:auto;
+      z-index:1;
+      backdrop-filter:none;
+      background:transparent;
+      padding:0;
+      margin:0 0 16px;
+      border-bottom:none;
     }
 
     .hero{
@@ -83,6 +84,7 @@
         linear-gradient(180deg, rgba(21,31,49,.95), rgba(10,15,26,.95));
       border:1px solid rgba(255,255,255,.06);
       box-shadow:var(--shadow);
+      margin-bottom:8px;
     }
 
     .eyebrow{
@@ -177,6 +179,7 @@
       padding-bottom:4px;
       scrollbar-width:none;
     }
+
     .quick-filters::-webkit-scrollbar{ display:none; }
 
     .chip{
@@ -784,10 +787,8 @@
       }
 
       .topbar{
-        margin-left:-20px;
-        margin-right:-20px;
-        padding-left:20px;
-        padding-right:20px;
+        margin:0 0 16px;
+        padding:0;
       }
 
       .layout{

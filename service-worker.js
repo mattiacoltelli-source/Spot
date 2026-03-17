@@ -1,4 +1,4 @@
-const CACHE_NAME = "photospot-planner-v4-debug";
+const CACHE_NAME = "photospot-planner-v5-debug";
 const APP_ASSETS = [
   "./",
   "./index.html",
@@ -20,7 +20,9 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) return caches.delete(key);
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
         })
       )
     )
