@@ -97,13 +97,40 @@
 
     .weather-box{
       margin-top:10px;
-      padding:10px 12px;
-      border-radius:14px;
+      padding:12px;
+      border-radius:16px;
       background:rgba(113,184,255,.08);
       border:1px solid rgba(113,184,255,.15);
-      font-weight:700;
-      font-size:.9rem;
       color:#d9ecff;
+    }
+
+    .weather-main{
+      font-weight:800;
+      font-size:.95rem;
+      margin-bottom:6px;
+    }
+
+    .weather-sub{
+      font-size:.86rem;
+      color:#bfd9f7;
+      line-height:1.45;
+    }
+
+    .weather-tags{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    .weather-tag{
+      padding:7px 9px;
+      border-radius:999px;
+      font-size:.74rem;
+      font-weight:800;
+      border:1px solid rgba(255,255,255,.06);
+      background:#182133;
+      color:#dfe7f6;
     }
 
     .main-actions{
@@ -120,7 +147,8 @@
 
     .btn-main,
     .btn-secondary,
-    .btn-ghost{
+    .btn-ghost,
+    .btn-danger{
       min-height:48px;
       border-radius:16px;
       padding:0 14px;
@@ -143,6 +171,12 @@
       background:transparent;
       color:var(--muted);
       border:1px solid var(--line);
+    }
+
+    .btn-danger{
+      background:rgba(255,150,150,.12);
+      color:#ffd5d5;
+      border:1px solid rgba(255,150,150,.18);
     }
 
     .stats{
@@ -241,6 +275,12 @@
       margin-bottom:8px;
     }
 
+    .spot-top-right{
+      display:flex;
+      align-items:flex-start;
+      gap:8px;
+    }
+
     .spot-name{
       margin:0;
       font-size:1.06rem;
@@ -264,6 +304,26 @@
       font-weight:800;
       white-space:nowrap;
       border:1px solid rgba(255,255,255,.06);
+    }
+
+    .fav-btn{
+      min-width:38px;
+      min-height:38px;
+      border-radius:12px;
+      background:#182133;
+      color:#ffd8d8;
+      border:1px solid rgba(255,255,255,.06);
+      font-size:1rem;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:0;
+    }
+
+    .fav-btn.active{
+      background:rgba(255,150,150,.16);
+      border-color:rgba(255,150,150,.22);
+      color:#ff9c9c;
     }
 
     .lvl-core{background:rgba(245,196,81,.12); color:#ffe7b6; border-color:rgba(245,196,81,.18)}
@@ -293,6 +353,9 @@
     .b-easy{background:rgba(105,218,164,.12); color:#d8ffee}
     .b-medium{background:rgba(255,191,111,.12); color:#ffe5c2}
     .b-hard{background:rgba(255,150,150,.12); color:#ffd4d4}
+    .b-good{background:rgba(105,218,164,.12); color:#d8ffee; border-color:rgba(105,218,164,.18)}
+    .b-warn{background:rgba(255,191,111,.12); color:#ffe5c2; border-color:rgba(255,191,111,.18)}
+    .b-bad{background:rgba(255,150,150,.12); color:#ffd4d4; border-color:rgba(255,150,150,.18)}
 
     .spot-desc{
       color:#d8e0ee;
@@ -305,6 +368,24 @@
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:10px;
+    }
+
+    .spot-quick{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .quick-btn{
+      min-height:40px;
+      border-radius:12px;
+      background:#182133;
+      color:#dfe7f6;
+      border:1px solid rgba(255,255,255,.05);
+      font-weight:800;
+      font-size:.82rem;
+      padding:0 8px;
     }
 
     .empty{
@@ -458,8 +539,30 @@
       font-size:.92rem;
     }
 
+    .slot-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      margin-bottom:6px;
+    }
+
+    .slot-empty{
+      color:var(--muted);
+      font-size:.9rem;
+    }
+
+    .planner-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+
     @media (max-width:740px){
       .stats{grid-template-columns:repeat(2,1fr)}
+      .spot-quick{grid-template-columns:1fr}
+      .modal-actions{grid-template-columns:1fr}
     }
   </style>
 </head>
@@ -469,16 +572,19 @@
       <div class="eyebrow">📸 Madeira outdoor travel guide</div>
       <h1>Madeira Planner PRO</h1>
       <p class="sub">
-        Guida fotografica e outdoor per Madeira con priorità chiare: spot top, spot validi e spot extra. Filtra per luce, zona, attività e difficoltà, poi apri dettagli, mappa o una giornata già ragionata.
+        Guida fotografica e outdoor per Madeira con priorità chiare: spot top, spot validi e spot extra. Ora con meteo più intelligente, preferiti e planner giornata salvabile.
       </p>
 
-      <div id="weatherBox" class="weather-box">🌤️ Caricamento meteo...</div>
+      <div id="weatherBox" class="weather-box">
+        <div class="weather-main">🌤️ Caricamento meteo...</div>
+        <div class="weather-sub">Sto leggendo condizioni e consigli sugli spot.</div>
+      </div>
 
       <div class="main-actions">
         <button class="btn-main" id="spotNowBtn">🔥 Spot ora</button>
         <div class="row">
-          <button class="btn-main" id="dayBtn">📅 Crea giornata</button>
-          <button class="btn-main" id="sportDayBtn">🚵 Giornata sportiva</button>
+          <button class="btn-main" id="dayBtn">📅 Giornata smart</button>
+          <button class="btn-main" id="plannerBtn">🗓️ Planner</button>
         </div>
         <div class="row">
           <button class="btn-main" id="topBtn">⭐ Top 10</button>
@@ -492,16 +598,16 @@
           <div class="value" id="spotCount">0</div>
         </div>
         <div class="stat">
-          <div class="label">Livelli</div>
-          <div class="value">40 / 30 / 20</div>
+          <div class="label">Preferiti</div>
+          <div class="value" id="favCount">0</div>
         </div>
         <div class="stat">
           <div class="label">Filtro attivo</div>
           <div class="value" id="filterState">Tutti</div>
         </div>
         <div class="stat">
-          <div class="label">Modalità</div>
-          <div class="value">Outdoor</div>
+          <div class="label">Planner</div>
+          <div class="value" id="plannerCount">0 / 3</div>
         </div>
       </div>
     </section>
@@ -576,6 +682,17 @@
 
     <section class="section">
       <div class="section-head">
+        <h2 class="section-title">Preferiti</h2>
+        <div class="section-note">mostra solo quelli salvati</div>
+      </div>
+      <div class="chips" id="favoriteChips">
+        <button class="chip active" data-favorites="all">Tutti</button>
+        <button class="chip" data-favorites="favorites">Solo preferiti</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
         <h2 class="section-title">Spot</h2>
         <div class="section-note" id="resultNote">Tutti gli spot</div>
       </div>
@@ -593,17 +710,26 @@
       <div class="badge-row" id="detailBadges"></div>
       <p id="detailDesc" class="modal-text"></p>
       <div class="tip-box" id="detailTip"></div>
+
       <div class="modal-actions">
-        <button class="btn-main" id="googlePhotosBtn">📸 Vedi foto reali</button>
+        <button class="btn-secondary" id="detailFavBtn">❤️ Preferito</button>
         <button class="btn-secondary" id="mapsBtn">🗺️ Apri in Maps</button>
       </div>
+
+      <div class="spot-quick" style="margin-top:10px">
+        <button class="quick-btn" id="addAlbaBtn">🌅 Aggiungi alba</button>
+        <button class="quick-btn" id="addMainBtn">🥾 Aggiungi attività</button>
+        <button class="quick-btn" id="addTramontoBtn">🌇 Aggiungi tramonto</button>
+      </div>
+
       <div class="mini-row">
+        <button class="btn-main mini-btn" id="googlePhotosBtn">📸 Vedi foto reali</button>
         <button class="btn-ghost mini-btn" id="closeDetailBtn">Chiudi</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL GIORNATA / TOP -->
+  <!-- MODAL LISTE / TOP -->
   <div class="overlay" id="plannerOverlay">
     <div class="modal-box">
       <div class="handle"></div>
@@ -612,6 +738,28 @@
       <div class="day-list" id="plannerList"></div>
       <div class="mini-row">
         <button class="btn-ghost mini-btn" id="closePlannerBtn">Chiudi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PLANNER MANUALE -->
+  <div class="overlay" id="manualPlannerOverlay">
+    <div class="modal-box">
+      <div class="handle"></div>
+      <h3 class="modal-title">Planner giornata</h3>
+      <p class="modal-text">
+        Salva 3 slot chiari: alba, attività centrale e tramonto. Puoi riempirli dallo spot che apri nei dettagli.
+      </p>
+
+      <div class="day-list" id="manualPlannerList"></div>
+
+      <div class="planner-actions">
+        <button class="btn-main" id="autofillPlannerBtn">⚡ Auto compila</button>
+        <button class="btn-danger" id="clearPlannerBtn">🗑️ Svuota</button>
+      </div>
+
+      <div class="mini-row">
+        <button class="btn-ghost mini-btn" id="closeManualPlannerBtn">Chiudi</button>
       </div>
     </div>
   </div>
@@ -865,15 +1013,30 @@
       return { lat, lon };
     }
 
+    const STORAGE_KEYS = {
+      favorites:"madeira_favorites_v2",
+      planner:"madeira_day_planner_v2"
+    };
+
+    const defaultPlanner = {
+      alba:null,
+      main:null,
+      tramonto:null
+    };
+
     const state = {
       level:"all",
       light:"all",
       zone:"all",
       activity:"all",
       difficulty:"all",
+      favoritesFilter:"all",
       userPos:null,
       currentSpot:null,
-      weatherNote:""
+      weatherNote:"",
+      weatherData:null,
+      favorites:loadJson(STORAGE_KEYS.favorites, []),
+      planner:loadJson(STORAGE_KEYS.planner, defaultPlanner)
     };
 
     let mapInstance = null;
@@ -884,10 +1047,13 @@
     const resultNoteEl = document.getElementById("resultNote");
     const filterStateEl = document.getElementById("filterState");
     const spotCountEl = document.getElementById("spotCount");
+    const favCountEl = document.getElementById("favCount");
+    const plannerCountEl = document.getElementById("plannerCount");
     const weatherBox = document.getElementById("weatherBox");
 
     const detailOverlay = document.getElementById("detailOverlay");
     const plannerOverlay = document.getElementById("plannerOverlay");
+    const manualPlannerOverlay = document.getElementById("manualPlannerOverlay");
     const mapModal = document.getElementById("mapModal");
 
     const detailTitle = document.getElementById("detailTitle");
@@ -895,9 +1061,11 @@
     const detailDesc = document.getElementById("detailDesc");
     const detailTip = document.getElementById("detailTip");
     const detailBadges = document.getElementById("detailBadges");
+    const detailFavBtn = document.getElementById("detailFavBtn");
     const plannerTitle = document.getElementById("plannerTitle");
     const plannerIntro = document.getElementById("plannerIntro");
     const plannerList = document.getElementById("plannerList");
+    const manualPlannerList = document.getElementById("manualPlannerList");
 
     spotCountEl.textContent = SPOTS.length;
 
@@ -915,6 +1083,7 @@
     bindChipGroup("zoneChips","zone");
     bindChipGroup("activityChips","activity");
     bindChipGroup("difficultyChips","difficulty");
+    bindChipGroup("favoriteChips","favoritesFilter");
 
     function bindChipGroup(id,key){
       document.getElementById(id).addEventListener("click", e => {
@@ -925,6 +1094,78 @@
         state[key] = btn.dataset[key];
         render();
       });
+    }
+
+    function loadJson(key, fallback){
+      try{
+        const raw = localStorage.getItem(key);
+        if(!raw) return structuredCloneSafe(fallback);
+        return JSON.parse(raw);
+      }catch{
+        return structuredCloneSafe(fallback);
+      }
+    }
+
+    function saveJson(key, value){
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function structuredCloneSafe(obj){
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function isFavorite(id){
+      return state.favorites.includes(id);
+    }
+
+    function toggleFavorite(id){
+      if(isFavorite(id)){
+        state.favorites = state.favorites.filter(x => x !== id);
+      }else{
+        state.favorites = [...state.favorites, id];
+      }
+      saveJson(STORAGE_KEYS.favorites, state.favorites);
+      updateCounts();
+      render();
+      if(state.currentSpot?.id === id){
+        syncDetailFavoriteButton(id);
+      }
+    }
+
+    function syncDetailFavoriteButton(id){
+      const active = isFavorite(id);
+      detailFavBtn.textContent = active ? "❤️ Salvato" : "🤍 Preferito";
+      detailFavBtn.className = active ? "btn-danger" : "btn-secondary";
+    }
+
+    function setPlannerSlot(slot, spotId){
+      state.planner[slot] = spotId;
+      saveJson(STORAGE_KEYS.planner, state.planner);
+      updateCounts();
+      renderManualPlanner();
+    }
+
+    function clearPlannerSlot(slot){
+      state.planner[slot] = null;
+      saveJson(STORAGE_KEYS.planner, state.planner);
+      updateCounts();
+      renderManualPlanner();
+    }
+
+    function clearPlannerAll(){
+      state.planner = structuredCloneSafe(defaultPlanner);
+      saveJson(STORAGE_KEYS.planner, state.planner);
+      updateCounts();
+      renderManualPlanner();
+    }
+
+    function plannerFilledCount(){
+      return ["alba","main","tramonto"].filter(k => !!state.planner[k]).length;
+    }
+
+    function updateCounts(){
+      favCountEl.textContent = state.favorites.length;
+      plannerCountEl.textContent = `${plannerFilledCount()} / 3`;
     }
 
     function distKm(a,b,c,d){
@@ -944,7 +1185,8 @@
         (state.light === "all" || s.light === state.light) &&
         (state.zone === "all" || s.zone === state.zone) &&
         (state.activity === "all" || s.activity === state.activity) &&
-        (state.difficulty === "all" || s.difficulty === state.difficulty)
+        (state.difficulty === "all" || s.difficulty === state.difficulty) &&
+        (state.favoritesFilter === "all" || isFavorite(s.id))
       );
     }
 
@@ -955,6 +1197,7 @@
       if(state.zone !== "all") parts.push(state.zone);
       if(state.activity !== "all") parts.push(state.activity);
       if(state.difficulty !== "all") parts.push(state.difficulty);
+      if(state.favoritesFilter === "favorites") parts.push("preferiti");
       return parts.length ? parts.join(" • ") : "Tutti";
     }
 
@@ -994,14 +1237,55 @@
       return `${d.toFixed(1)} km da te`;
     }
 
+    function weatherSuitability(spot){
+      const w = state.weatherData;
+      if(!w) return { score:0, label:"meteo neutro", cls:"b-warn" };
+
+      let score = 0;
+
+      if(w.rain >= 55){
+        if(spot.activity === "relax") score += 3;
+        if(spot.name.toLowerCase().includes("forest") || spot.name.toLowerCase().includes("fanal")) score += 4;
+        if(spot.activity === "view" && (spot.zone === "montagna" || spot.zone === "ovest")) score -= 3;
+      }
+
+      if(w.wind >= 32){
+        if(spot.zone === "montagna") score -= 4;
+        if(spot.name.toLowerCase().includes("pico")) score -= 4;
+        if(spot.activity === "view") score -= 2;
+        if(spot.activity === "relax") score += 2;
+        if(spot.activity === "trekking" && spot.difficulty === "facile") score += 1;
+      }
+
+      if(w.cloud >= 65){
+        if(spot.name.toLowerCase().includes("forest") || spot.activity === "trekking") score += 2;
+        if(spot.light === "tramonto") score -= 1;
+      }
+
+      if(w.cloud <= 35 && w.rain < 25){
+        if(spot.light === "alba" || spot.light === "tramonto") score += 3;
+        if(spot.activity === "view") score += 2;
+      }
+
+      if(w.period === "alba" && spot.light === "alba") score += 2;
+      if(w.period === "tramonto" && spot.light === "tramonto") score += 2;
+      if(w.period === "giorno" && spot.light === "giorno") score += 1;
+
+      if(score >= 4) return { score, label:"🔥 ottimo oggi", cls:"b-good" };
+      if(score <= -2) return { score, label:"⚠️ poco ideale", cls:"b-bad" };
+      return { score, label:"🙂 abbastanza valido", cls:"b-warn" };
+    }
+
     function render(){
       const items = filteredSpots().map(s => ({
         ...s,
-        distance: state.userPos ? distKm(state.userPos.lat, state.userPos.lon, s.lat, s.lon) : null
+        distance: state.userPos ? distKm(state.userPos.lat, state.userPos.lon, s.lat, s.lon) : null,
+        weatherFit: weatherSuitability(s)
       }));
 
       items.sort((a,b) => {
         const levelOrder = { core:0, secondary:1, extra:2 };
+        if(b.weatherFit.score !== a.weatherFit.score) return b.weatherFit.score - a.weatherFit.score;
         if(levelOrder[a.level] !== levelOrder[b.level]) return levelOrder[a.level] - levelOrder[b.level];
         if(a.distance == null && b.distance == null) return a.name.localeCompare(b.name);
         if(a.distance == null) return 1;
@@ -1011,6 +1295,7 @@
 
       resultNoteEl.textContent = `${items.length} spot`;
       filterStateEl.textContent = currentFilterLabel();
+      updateCounts();
 
       if(!items.length){
         listEl.innerHTML = "";
@@ -1022,6 +1307,7 @@
 
       listEl.innerHTML = items.map(s => {
         const lvl = levelBadge(s.level);
+        const favoriteActive = isFavorite(s.id);
         return `
           <article class="spot">
             <div class="spot-top">
@@ -1029,7 +1315,13 @@
                 <h3 class="spot-name">${escapeHtml(s.name)}</h3>
                 <div class="spot-sub">${displayDistance(s.distance)}</div>
               </div>
-              <span class="pill ${lvl.cls}">${lvl.txt}</span>
+
+              <div class="spot-top-right">
+                <button class="fav-btn ${favoriteActive ? "active" : ""}" onclick="toggleFavoriteById('${s.id}')" aria-label="Preferito">
+                  ${favoriteActive ? "❤️" : "🤍"}
+                </button>
+                <span class="pill ${lvl.cls}">${lvl.txt}</span>
+              </div>
             </div>
 
             <div class="badge-row">
@@ -1037,6 +1329,7 @@
               <span class="badge b-zone">🧭 ${escapeHtml(s.zone)}</span>
               <span class="badge b-act">${badgeIconActivity(s.activity)} ${escapeHtml(s.activity)}</span>
               <span class="badge ${difficultyClass(s.difficulty)}">⚡ ${escapeHtml(s.difficulty)}</span>
+              <span class="badge ${s.weatherFit.cls}">${escapeHtml(s.weatherFit.label)}</span>
             </div>
 
             <div class="spot-desc">${escapeHtml(s.desc)}</div>
@@ -1044,6 +1337,12 @@
             <div class="spot-actions">
               <button class="btn-secondary" onclick="openDetail('${s.id}')">Dettagli</button>
               <button class="btn-main" onclick="openMapsById('${s.id}')">Apri Maps</button>
+            </div>
+
+            <div class="spot-quick">
+              <button class="quick-btn" onclick="addToPlannerById('${s.id}','alba')">🌅 Planner alba</button>
+              <button class="quick-btn" onclick="addToPlannerById('${s.id}','main')">🥾 Planner attività</button>
+              <button class="quick-btn" onclick="addToPlannerById('${s.id}','tramonto')">🌇 Planner tramonto</button>
             </div>
           </article>
         `;
@@ -1054,11 +1353,23 @@
       return SPOTS.find(s => s.id === id);
     }
 
+    window.toggleFavoriteById = function(id){
+      toggleFavorite(id);
+    };
+
+    window.addToPlannerById = function(id, slot){
+      const s = findSpot(id);
+      if(!s) return;
+      setPlannerSlot(slot, s.id);
+      showToastLikeMessage(`${s.name} aggiunto in ${slotLabel(slot)}.`);
+    };
+
     window.openDetail = function(id){
       const s = findSpot(id);
       if(!s) return;
       state.currentSpot = s;
       const lvl = levelBadge(s.level);
+      const weatherFit = weatherSuitability(s);
 
       detailTitle.textContent = s.name;
       detailImg.src = `https://picsum.photos/seed/${encodeURIComponent(s.name)}/900/600`;
@@ -1072,7 +1383,10 @@
         <span class="badge b-zone">🧭 ${escapeHtml(s.zone)}</span>
         <span class="badge b-act">${badgeIconActivity(s.activity)} ${escapeHtml(s.activity)}</span>
         <span class="badge ${difficultyClass(s.difficulty)}">⚡ ${escapeHtml(s.difficulty)}</span>
+        <span class="badge ${weatherFit.cls}">${escapeHtml(weatherFit.label)}</span>
       `;
+
+      syncDetailFavoriteButton(s.id);
 
       detailOverlay.classList.add("show");
       document.body.classList.add("modal-open");
@@ -1088,6 +1402,11 @@
     });
     document.getElementById("closeDetailBtn").addEventListener("click", closeDetail);
 
+    detailFavBtn.addEventListener("click", () => {
+      if(!state.currentSpot) return;
+      toggleFavorite(state.currentSpot.id);
+    });
+
     document.getElementById("googlePhotosBtn").addEventListener("click", () => {
       if(!state.currentSpot) return;
       const q = encodeURIComponent(state.currentSpot.name + " Madeira");
@@ -1097,6 +1416,24 @@
     document.getElementById("mapsBtn").addEventListener("click", () => {
       if(!state.currentSpot) return;
       openMaps(state.currentSpot.lat, state.currentSpot.lon);
+    });
+
+    document.getElementById("addAlbaBtn").addEventListener("click", () => {
+      if(!state.currentSpot) return;
+      setPlannerSlot("alba", state.currentSpot.id);
+      showToastLikeMessage(`${state.currentSpot.name} aggiunto in alba.`);
+    });
+
+    document.getElementById("addMainBtn").addEventListener("click", () => {
+      if(!state.currentSpot) return;
+      setPlannerSlot("main", state.currentSpot.id);
+      showToastLikeMessage(`${state.currentSpot.name} aggiunto in attività.`);
+    });
+
+    document.getElementById("addTramontoBtn").addEventListener("click", () => {
+      if(!state.currentSpot) return;
+      setPlannerSlot("tramonto", state.currentSpot.id);
+      showToastLikeMessage(`${state.currentSpot.name} aggiunto in tramonto.`);
     });
 
     function openMaps(lat, lon){
@@ -1110,40 +1447,45 @@
     };
 
     document.getElementById("spotNowBtn").addEventListener("click", () => {
-      const h = new Date().getHours();
-      let desired = "giorno";
-      if(h < 9) desired = "alba";
-      else if(h >= 17) desired = "tramonto";
-
+      const desired = currentPeriod();
       let pool = SPOTS.filter(s => s.light === desired);
+
       if(state.zone !== "all") pool = pool.filter(s => s.zone === state.zone);
       if(state.activity !== "all") pool = pool.filter(s => s.activity === state.activity);
       if(state.difficulty !== "all") pool = pool.filter(s => s.difficulty === state.difficulty);
       if(state.level !== "all") pool = pool.filter(s => s.level === state.level);
+      if(state.favoritesFilter === "favorites") pool = pool.filter(s => isFavorite(s.id));
+
       if(!pool.length) pool = SPOTS.filter(s => s.light === desired);
       if(!pool.length) pool = [...SPOTS];
 
-      if(state.userPos){
-        pool = pool
-          .map(s => ({...s, d: distKm(state.userPos.lat, state.userPos.lon, s.lat, s.lon)}))
-          .sort((a,b) => {
-            const levelOrder = { core:0, secondary:1, extra:2 };
-            if(levelOrder[a.level] !== levelOrder[b.level]) return levelOrder[a.level] - levelOrder[b.level];
-            return a.d - b.d;
-          });
-      }
+      pool = pool
+        .map(s => ({
+          ...s,
+          fit: weatherSuitability(s),
+          d: state.userPos ? distKm(state.userPos.lat, state.userPos.lon, s.lat, s.lon) : null
+        }))
+        .sort((a,b) => {
+          const levelOrder = { core:0, secondary:1, extra:2 };
+          if(b.fit.score !== a.fit.score) return b.fit.score - a.fit.score;
+          if(levelOrder[a.level] !== levelOrder[b.level]) return levelOrder[a.level] - levelOrder[b.level];
+          if(a.d == null && b.d == null) return 0;
+          if(a.d == null) return 1;
+          if(b.d == null) return -1;
+          return a.d - b.d;
+        });
 
       openDetail(pool[0].id);
     });
 
     document.getElementById("dayBtn").addEventListener("click", () => {
-      const alba = bestSpot({ light:"alba", activity:["view","trekking"] });
+      const alba = bestSpot({ light:"alba", activity:["view","trekking","relax"] });
       const main = bestSpot({ activity:["trekking","view","relax","mtb"], exclude:[alba?.id] });
       const tram = bestSpot({ light:"tramonto", activity:["view","relax"], exclude:[alba?.id, main?.id] });
 
       showPlanner(
         "Giornata Madeira",
-        "Una giornata semplice ma molto sensata: partenza forte, attività centrale, chiusura bella ma comoda.",
+        "Una giornata sensata in base all'ora e al meteo: partenza forte, blocco centrale, chiusura bella ma comoda.",
         [
           { kicker:"🌅 Alba", spot:alba, note:"Parti con la luce migliore e poca gente." },
           { kicker:"🥾 Attività centrale", spot:main, note:"Qui metti il blocco principale della giornata." },
@@ -1152,20 +1494,29 @@
       );
     });
 
-    document.getElementById("sportDayBtn").addEventListener("click", () => {
-      const warmup = bestSpot({ light:"alba", activity:["view"], exclude:[] });
-      const sport = bestSpot({ activity:["trekking","mtb"], difficulty:["medio","impegnativo"], exclude:[warmup?.id] });
-      const finish = bestSpot({ light:"tramonto", activity:["view","relax"], exclude:[warmup?.id, sport?.id] });
+    document.getElementById("plannerBtn").addEventListener("click", () => {
+      renderManualPlanner();
+      manualPlannerOverlay.classList.add("show");
+      document.body.classList.add("modal-open");
+    });
 
-      showPlanner(
-        "Giornata sportiva",
-        "Pensata per chi vuole movimento vero ma anche una bella apertura e una chiusura forte.",
-        [
-          { kicker:"🌅 Start", spot:warmup, note:"Viewpoint rapido o alba forte per iniziare bene." },
-          { kicker:"🚵 Core outdoor", spot:sport, note:"La parte più sportiva della giornata." },
-          { kicker:"🌇 Finish", spot:finish, note:"Un finale panoramico o relax ben piazzato." }
-        ]
-      );
+    document.getElementById("autofillPlannerBtn").addEventListener("click", () => {
+      const alba = bestSpot({ light:"alba", activity:["view","trekking","relax"] });
+      const main = bestSpot({ activity:["trekking","view","relax","mtb"], exclude:[alba?.id] });
+      const tram = bestSpot({ light:"tramonto", activity:["view","relax"], exclude:[alba?.id, main?.id] });
+
+      state.planner = {
+        alba: alba?.id || null,
+        main: main?.id || null,
+        tramonto: tram?.id || null
+      };
+      saveJson(STORAGE_KEYS.planner, state.planner);
+      updateCounts();
+      renderManualPlanner();
+    });
+
+    document.getElementById("clearPlannerBtn").addEventListener("click", () => {
+      clearPlannerAll();
     });
 
     document.getElementById("topBtn").addEventListener("click", () => {
@@ -1193,12 +1544,20 @@
           <div class="mini-row">
             <button class="btn-secondary mini-btn" onclick="openDetailFromPlanner('${s.id}')">Dettagli</button>
             <button class="btn-main mini-btn" onclick="openMapsById('${s.id}')">Maps</button>
+            <button class="btn-ghost mini-btn" onclick="toggleFavoriteById('${s.id}')">❤️ Preferito</button>
           </div>
         </div>
       `).join("");
       plannerOverlay.classList.add("show");
       document.body.classList.add("modal-open");
     });
+
+    function currentPeriod(){
+      const h = new Date().getHours();
+      if(h < 9) return "alba";
+      if(h >= 17) return "tramonto";
+      return "giorno";
+    }
 
     function bestSpot({ light=null, activity=null, difficulty=null, exclude=[] }){
       let pool = SPOTS.filter(s => !exclude.includes(s.id));
@@ -1207,6 +1566,7 @@
       if(activity) pool = pool.filter(s => activity.includes(s.activity));
       if(difficulty) pool = pool.filter(s => difficulty.includes(s.difficulty));
       if(state.zone !== "all") pool = pool.filter(s => s.zone === state.zone);
+      if(state.level !== "all") pool = pool.filter(s => s.level === state.level);
 
       if(!pool.length){
         pool = SPOTS.filter(s => !exclude.includes(s.id));
@@ -1218,16 +1578,20 @@
 
       const levelOrder = { core:0, secondary:1, extra:2 };
 
-      if(state.userPos){
-        pool = pool
-          .map(s => ({...s, d: distKm(state.userPos.lat, state.userPos.lon, s.lat, s.lon)}))
-          .sort((a,b) => {
-            if(levelOrder[a.level] !== levelOrder[b.level]) return levelOrder[a.level] - levelOrder[b.level];
-            return a.d - b.d;
-          });
-      } else {
-        pool = pool.sort((a,b) => levelOrder[a.level] - levelOrder[b.level]);
-      }
+      pool = pool
+        .map(s => ({
+          ...s,
+          fit: weatherSuitability(s),
+          d: state.userPos ? distKm(state.userPos.lat, state.userPos.lon, s.lat, s.lon) : null
+        }))
+        .sort((a,b) => {
+          if(b.fit.score !== a.fit.score) return b.fit.score - a.fit.score;
+          if(levelOrder[a.level] !== levelOrder[b.level]) return levelOrder[a.level] - levelOrder[b.level];
+          if(a.d == null && b.d == null) return 0;
+          if(a.d == null) return 1;
+          if(b.d == null) return -1;
+          return a.d - b.d;
+        });
 
       return pool[0];
     }
@@ -1245,10 +1609,16 @@
             </div>
           `;
         }
+
+        const fit = weatherSuitability(row.spot);
+
         return `
           <div class="day-item">
             <div class="day-kicker">${row.kicker}</div>
             <div class="day-main">${escapeHtml(row.spot.name)}</div>
+            <div class="badge-row" style="margin-bottom:8px">
+              <span class="badge ${fit.cls}">${escapeHtml(fit.label)}</span>
+            </div>
             <div class="day-sub">${escapeHtml(row.note)} ${escapeHtml(row.spot.desc)}</div>
             <div class="mini-row">
               <button class="btn-secondary mini-btn" onclick="openDetailFromPlanner('${row.spot.id}')">Dettagli</button>
@@ -1262,8 +1632,64 @@
       document.body.classList.add("modal-open");
     }
 
+    function renderManualPlanner(){
+      const slots = [
+        { key:"alba", kicker:"🌅 Alba", hint:"Metti uno spot da alba o apertura giornata." },
+        { key:"main", kicker:"🥾 Attività centrale", hint:"Metti il blocco principale della giornata." },
+        { key:"tramonto", kicker:"🌇 Tramonto", hint:"Metti la chiusura forte o più rilassata." }
+      ];
+
+      manualPlannerList.innerHTML = slots.map(slot => {
+        const spotId = state.planner[slot.key];
+        const spot = spotId ? findSpot(spotId) : null;
+
+        if(!spot){
+          return `
+            <div class="day-item">
+              <div class="slot-head">
+                <div class="day-kicker">${slot.kicker}</div>
+              </div>
+              <div class="slot-empty">${escapeHtml(slot.hint)}</div>
+            </div>
+          `;
+        }
+
+        const fit = weatherSuitability(spot);
+
+        return `
+          <div class="day-item">
+            <div class="slot-head">
+              <div class="day-kicker">${slot.kicker}</div>
+              <button class="btn-danger mini-btn" onclick="clearPlannerSlotPublic('${slot.key}')">Rimuovi</button>
+            </div>
+            <div class="day-main">${escapeHtml(spot.name)}</div>
+            <div class="badge-row" style="margin-bottom:8px">
+              <span class="badge b-light">${badgeIconLight(spot.light)} ${escapeHtml(spot.light)}</span>
+              <span class="badge b-zone">🧭 ${escapeHtml(spot.zone)}</span>
+              <span class="badge b-act">${badgeIconActivity(spot.activity)} ${escapeHtml(spot.activity)}</span>
+              <span class="badge ${fit.cls}">${escapeHtml(fit.label)}</span>
+            </div>
+            <div class="day-sub">${escapeHtml(spot.desc)}</div>
+            <div class="mini-row">
+              <button class="btn-secondary mini-btn" onclick="openDetailFromManual('${spot.id}')">Dettagli</button>
+              <button class="btn-main mini-btn" onclick="openMapsById('${spot.id}')">Maps</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    window.clearPlannerSlotPublic = function(slot){
+      clearPlannerSlot(slot);
+    };
+
     window.openDetailFromPlanner = function(id){
       plannerOverlay.classList.remove("show");
+      openDetail(id);
+    };
+
+    window.openDetailFromManual = function(id){
+      manualPlannerOverlay.classList.remove("show");
       openDetail(id);
     };
 
@@ -1272,10 +1698,20 @@
       document.body.classList.remove("modal-open");
     }
 
+    function closeManualPlanner(){
+      manualPlannerOverlay.classList.remove("show");
+      document.body.classList.remove("modal-open");
+    }
+
     plannerOverlay.addEventListener("click", e => {
       if(e.target === plannerOverlay) closePlanner();
     });
+    manualPlannerOverlay.addEventListener("click", e => {
+      if(e.target === manualPlannerOverlay) closeManualPlanner();
+    });
+
     document.getElementById("closePlannerBtn").addEventListener("click", closePlanner);
+    document.getElementById("closeManualPlannerBtn").addEventListener("click", closeManualPlanner);
 
     document.getElementById("mapBtn").addEventListener("click", () => {
       mapModal.classList.add("show");
@@ -1316,9 +1752,11 @@
         }).addTo(mapLayer);
 
         const levelText = s.level === "core" ? "🔥 TOP" : s.level === "secondary" ? "⭐ Bello" : "• Extra";
+        const fitText = weatherSuitability(s).label;
         marker.bindPopup(`
           <strong>${escapeHtml(s.name)}</strong><br>
           ${levelText} • ${escapeHtml(s.light)} • ${escapeHtml(s.zone)}<br>
+          ${escapeHtml(fitText)}<br>
           <button onclick="openDetailFromPlanner('${s.id}')">Dettagli</button>
         `);
 
@@ -1340,6 +1778,20 @@
       return "#71b8ff";
     }
 
+    function slotLabel(slot){
+      if(slot === "alba") return "alba";
+      if(slot === "main") return "attività";
+      return "tramonto";
+    }
+
+    function showToastLikeMessage(text){
+      weatherBox.innerHTML = `
+        <div class="weather-main">✅ Azione eseguita</div>
+        <div class="weather-sub">${escapeHtml(text)}</div>
+      `;
+      setTimeout(() => renderWeatherBox(), 1400);
+    }
+
     function escapeHtml(str){
       return String(str)
         .replaceAll("&","&amp;")
@@ -1349,39 +1801,91 @@
         .replaceAll("'","&#039;");
     }
 
+    function renderWeatherBox(){
+      const w = state.weatherData;
+      if(!w){
+        weatherBox.innerHTML = `
+          <div class="weather-main">⚠️ Meteo non disponibile</div>
+          <div class="weather-sub">Non sono riuscito a leggere le condizioni attuali.</div>
+        `;
+        return;
+      }
+
+      const tags = [];
+      tags.push(`<span class="weather-tag">🌡️ ${Math.round(w.temp)}°</span>`);
+      tags.push(`<span class="weather-tag">🌬️ ${Math.round(w.wind)} km/h</span>`);
+      tags.push(`<span class="weather-tag">☁️ ${Math.round(w.cloud)}%</span>`);
+      tags.push(`<span class="weather-tag">🌧️ ${Math.round(w.rain)}%</span>`);
+      tags.push(`<span class="weather-tag">${w.periodIcon} ${escapeHtml(w.periodLabel)}</span>`);
+
+      weatherBox.innerHTML = `
+        <div class="weather-main">${escapeHtml(w.headline)}</div>
+        <div class="weather-sub">${escapeHtml(w.advice)}</div>
+        <div class="weather-tags">${tags.join("")}</div>
+      `;
+    }
+
     async function loadWeather(){
       try{
         const lat = 32.75;
         const lon = -16.95;
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=precipitation_probability,windspeed_10m`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,cloud_cover&hourly=precipitation_probability&forecast_days=1`;
         const res = await fetch(url);
         const data = await res.json();
 
-        const wind = data?.current_weather?.windspeed ?? 0;
-        const temp = data?.current_weather?.temperature ?? 0;
+        const temp = data?.current?.temperature_2m ?? 0;
+        const wind = data?.current?.wind_speed_10m ?? 0;
+        const cloud = data?.current?.cloud_cover ?? 0;
         const rain = data?.hourly?.precipitation_probability?.[0] ?? 0;
 
-        let text = "";
+        const period = currentPeriod();
+        const periodLabel = period === "alba" ? "momento alba" : period === "tramonto" ? "momento tramonto" : "fascia giorno";
+        const periodIcon = period === "alba" ? "🌅" : period === "tramonto" ? "🌇" : "☀️";
 
-        if(rain > 60){
-          text = "🌧️ Pioggia probabile → meglio foreste o zone relax";
-        }else if(wind > 30){
-          text = "🌬️ Vento forte → evita creste e punti molto esposti";
-        }else if(temp > 22 && wind < 20){
-          text = "☀️ Ottimo meteo → giornata perfetta outdoor";
-        }else{
-          text = "🌤️ Meteo buono → giornata abbastanza flessibile";
+        let headline = "🌤️ Meteo flessibile";
+        let advice = "Giornata abbastanza aperta: puoi muoverti tra view, trekking e spot relax.";
+
+        if(rain >= 55){
+          headline = "🌧️ Pioggia probabile";
+          advice = "Meglio foreste, levada più riparate, paesi o spot relax. Evita creste esposte e viewpoint troppo aperti.";
+        }else if(wind >= 32){
+          headline = "🌬️ Vento forte";
+          advice = "Meglio zone riparate, paesi o passeggiate facili. Evita picchi, creste e punti molto esposti.";
+        }else if(cloud >= 70){
+          headline = "☁️ Cielo chiuso o molto coperto";
+          advice = "Buona giornata per foreste, atmosfere nebbiose e trekking immersivi. Meno ideale per tramonti puliti.";
+        }else if(cloud <= 35 && rain < 25){
+          if(period === "tramonto"){
+            headline = "🔥 Finestra ottima per tramonto";
+            advice = "Punta viewpoint forti, scogliere e costa ovest/sud: oggi la luce può rendere molto bene.";
+          }else if(period === "alba"){
+            headline = "🌅 Finestra ottima per alba";
+            advice = "Punta spot est, montagne o viewpoint iconici: condizioni buone per partire forte.";
+          }else{
+            headline = "☀️ Ottimo meteo outdoor";
+            advice = "Giornata buona per panorami, trekking e spot fotografici aperti.";
+          }
         }
 
-        weatherBox.textContent = text;
-        state.weatherNote = text;
+        state.weatherData = {
+          temp, wind, cloud, rain,
+          period, periodLabel, periodIcon,
+          headline, advice
+        };
+
+        state.weatherNote = `${headline} — ${advice}`;
+        renderWeatherBox();
+        render();
       }catch(e){
-        weatherBox.textContent = "⚠️ Meteo non disponibile";
+        state.weatherData = null;
         state.weatherNote = "";
+        renderWeatherBox();
       }
     }
 
     render();
+    renderManualPlanner();
+    updateCounts();
     loadWeather();
 
     if ("serviceWorker" in navigator) {
