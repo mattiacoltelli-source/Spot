@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>Madeira Planner PRO</title>
 
   <link rel="manifest" href="manifest.json">
@@ -14,46 +14,56 @@
   <style>
     :root{
       --bg:#0b0f14;
+      --bg2:#0f1521;
       --panel:#121824;
       --panel2:#171f2e;
-      --panel3:#0f1522;
+      --line:#233049;
       --text:#f5f7fb;
       --muted:#9aa7b5;
       --accent:#f5c451;
-      --line:#233049;
-      --ok:#6fe0a7;
-      --chip:#1a2437;
-      --blue:#6bb7ff;
-      --green:#62d39c;
-      --orange:#ffba66;
-      --red:#ff8d8d;
-      --shadow:0 12px 32px rgba(0,0,0,.28);
+      --blue:#71b8ff;
+      --green:#69daa4;
+      --orange:#ffbf6f;
+      --red:#ff9696;
+      --shadow:0 14px 34px rgba(0,0,0,.30);
       --radius:18px;
     }
 
     *{box-sizing:border-box}
     html,body{
       margin:0;
+      min-height:100%;
       background:
-        radial-gradient(circle at top right, rgba(107,183,255,.08), transparent 25%),
-        radial-gradient(circle at top left, rgba(245,196,81,.08), transparent 20%),
-        linear-gradient(180deg,#0b0f14,#090d13);
+        radial-gradient(circle at top right, rgba(113,184,255,.08), transparent 24%),
+        radial-gradient(circle at top left, rgba(245,196,81,.08), transparent 22%),
+        linear-gradient(180deg,#0b0f14,#090d13 100%);
       color:var(--text);
       font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      -webkit-tap-highlight-color:transparent;
     }
 
     body.modal-open{overflow:hidden}
 
-    .container{
-      max-width:760px;
+    button{
+      font:inherit;
+      border:none;
+      cursor:pointer;
+      transition:transform .15s ease, opacity .15s ease, background .15s ease, border-color .15s ease;
+    }
+    button:active{transform:scale(.985)}
+
+    .app{
+      max-width:860px;
       margin:0 auto;
       padding:16px 16px 28px;
     }
 
     .hero{
-      background:linear-gradient(180deg,rgba(18,24,36,.96),rgba(13,18,28,.98));
+      background:
+        radial-gradient(circle at 85% 0%, rgba(113,184,255,.12), transparent 22%),
+        linear-gradient(180deg,rgba(18,24,36,.96),rgba(12,17,26,.98));
       border:1px solid rgba(255,255,255,.05);
-      border-radius:24px;
+      border-radius:26px;
       padding:18px;
       box-shadow:var(--shadow);
       margin-bottom:16px;
@@ -67,21 +77,22 @@
       border-radius:999px;
       background:rgba(255,255,255,.05);
       border:1px solid rgba(255,255,255,.06);
-      color:#dce7ff;
+      color:#dbe7fb;
       font-size:.82rem;
       margin-bottom:12px;
     }
 
     h1{
-      font-size:2rem;
       margin:0 0 8px;
+      font-size:2rem;
       letter-spacing:-.04em;
+      line-height:1.02;
     }
 
     .sub{
+      margin:0 0 14px;
       color:var(--muted);
       line-height:1.45;
-      margin:0 0 16px;
     }
 
     .main-actions{
@@ -89,26 +100,23 @@
       gap:10px;
     }
 
-    .grid-2{
+    .main-actions .row{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:10px;
     }
 
-    button{
-      border:none;
-      border-radius:16px;
+    .btn-main,
+    .btn-secondary,
+    .btn-ghost{
       min-height:48px;
+      border-radius:16px;
       padding:0 14px;
       font-weight:800;
-      cursor:pointer;
-      transition:transform .15s ease, opacity .15s ease, background .15s ease;
     }
 
-    button:active{transform:scale(.985)}
-
     .btn-main{
-      background:linear-gradient(135deg,var(--accent),#e8ae2f);
+      background:linear-gradient(135deg,var(--accent),#eab034);
       color:#11161d;
       box-shadow:0 10px 24px rgba(245,196,81,.16);
     }
@@ -125,63 +133,11 @@
       border:1px solid var(--line);
     }
 
-    .section{
-      margin-top:18px;
-    }
-
-    .section-head{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      margin-bottom:10px;
-    }
-
-    .section-title{
-      font-size:1.05rem;
-      font-weight:800;
-      margin:0;
-    }
-
-    .section-note{
-      color:var(--muted);
-      font-size:.88rem;
-    }
-
-    .chips{
-      display:flex;
-      gap:8px;
-      overflow:auto;
-      padding-bottom:2px;
-      scrollbar-width:none;
-      margin-bottom:12px;
-    }
-
-    .chips::-webkit-scrollbar{display:none}
-
-    .chip{
-      white-space:nowrap;
-      padding:10px 13px;
-      border-radius:999px;
-      background:var(--chip);
-      color:#dfe8f8;
-      border:1px solid rgba(255,255,255,.05);
-      font-size:.88rem;
-      font-weight:700;
-      cursor:pointer;
-    }
-
-    .chip.active{
-      background:rgba(245,196,81,.14);
-      border-color:rgba(245,196,81,.25);
-      color:#ffe4a2;
-    }
-
-    .stats-row{
+    .stats{
       display:grid;
-      grid-template-columns:repeat(3,1fr);
+      grid-template-columns:repeat(4,1fr);
       gap:10px;
-      margin-top:10px;
+      margin-top:12px;
     }
 
     .stat{
@@ -193,18 +149,68 @@
 
     .stat .label{
       color:var(--muted);
-      font-size:.78rem;
-      margin-bottom:5px;
+      font-size:.76rem;
+      margin-bottom:4px;
     }
 
     .stat .value{
-      font-weight:800;
       font-size:1rem;
+      font-weight:800;
+    }
+
+    .section{
+      margin-top:16px;
+    }
+
+    .section-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:10px;
+    }
+
+    .section-title{
+      margin:0;
+      font-size:1.05rem;
+      font-weight:800;
+    }
+
+    .section-note{
+      color:var(--muted);
+      font-size:.86rem;
+    }
+
+    .chips{
+      display:flex;
+      gap:8px;
+      overflow:auto;
+      padding-bottom:2px;
+      scrollbar-width:none;
+    }
+    .chips::-webkit-scrollbar{display:none}
+
+    .chip{
+      white-space:nowrap;
+      padding:10px 13px;
+      border-radius:999px;
+      background:#182133;
+      color:#dfe8f8;
+      border:1px solid rgba(255,255,255,.05);
+      font-size:.86rem;
+      font-weight:700;
+    }
+
+    .chip.active{
+      background:rgba(245,196,81,.14);
+      color:#ffe6ab;
+      border-color:rgba(245,196,81,.22);
     }
 
     .list{
       display:grid;
       gap:12px;
+      margin-top:12px;
     }
 
     .spot{
@@ -213,32 +219,44 @@
       border-radius:20px;
       padding:14px;
       box-shadow:var(--shadow);
-      transition:transform .16s ease;
     }
-
-    .spot:hover{transform:translateY(-1px)}
 
     .spot-top{
       display:flex;
       justify-content:space-between;
       align-items:flex-start;
       gap:10px;
-      margin-bottom:10px;
+      margin-bottom:8px;
     }
 
     .spot-name{
-      font-size:1.08rem;
-      font-weight:800;
-      letter-spacing:-.02em;
-      line-height:1.15;
       margin:0;
+      font-size:1.06rem;
+      line-height:1.15;
+      letter-spacing:-.02em;
     }
 
-    .spot-distance{
+    .spot-sub{
       color:var(--muted);
       font-size:.86rem;
       margin-top:5px;
     }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:.74rem;
+      font-weight:800;
+      white-space:nowrap;
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    .lvl-core{background:rgba(245,196,81,.12); color:#ffe7b6; border-color:rgba(245,196,81,.18)}
+    .lvl-secondary{background:rgba(113,184,255,.12); color:#d8ecff; border-color:rgba(113,184,255,.18)}
+    .lvl-extra{background:rgba(255,255,255,.07); color:#d5dcea}
 
     .badge-row{
       display:flex;
@@ -258,11 +276,11 @@
     }
 
     .b-light{background:rgba(245,196,81,.12); color:#ffe4a2; border-color:rgba(245,196,81,.18)}
-    .b-zone{background:rgba(107,183,255,.12); color:#cae4ff; border-color:rgba(107,183,255,.18)}
-    .b-act{background:rgba(98,211,156,.12); color:#d8ffee; border-color:rgba(98,211,156,.18)}
-    .b-diff-easy{background:rgba(98,211,156,.12); color:#d8ffee}
-    .b-diff-medium{background:rgba(255,186,102,.12); color:#ffe5c2}
-    .b-diff-hard{background:rgba(255,141,141,.12); color:#ffd1d1}
+    .b-zone{background:rgba(113,184,255,.12); color:#cae4ff; border-color:rgba(113,184,255,.18)}
+    .b-act{background:rgba(105,218,164,.12); color:#d8ffee; border-color:rgba(105,218,164,.18)}
+    .b-easy{background:rgba(105,218,164,.12); color:#d8ffee}
+    .b-medium{background:rgba(255,191,111,.12); color:#ffe5c2}
+    .b-hard{background:rgba(255,150,150,.12); color:#ffd4d4}
 
     .spot-desc{
       color:#d8e0ee;
@@ -284,9 +302,10 @@
       padding:24px;
       color:var(--muted);
       text-align:center;
+      margin-top:12px;
+      display:none;
     }
 
-    /* modal base */
     .overlay{
       display:none;
       position:fixed;
@@ -303,7 +322,7 @@
 
     .modal-box{
       width:100%;
-      max-width:680px;
+      max-width:720px;
       background:linear-gradient(180deg,#121824,#0f141e);
       border:1px solid rgba(255,255,255,.06);
       border-radius:24px;
@@ -365,12 +384,21 @@
       margin-top:8px;
     }
 
-    /* mappa */
-    #mapModal{
-      align-items:stretch;
-      padding:0;
+    .mini-row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
     }
 
+    .mini-btn{
+      min-height:38px;
+      padding:0 12px;
+      border-radius:12px;
+      font-weight:700;
+    }
+
+    #mapModal{padding:0}
     #mapWrap{
       width:100%;
       height:100%;
@@ -378,7 +406,6 @@
       display:flex;
       flex-direction:column;
     }
-
     #mapTop{
       padding:12px;
       background:rgba(11,15,20,.94);
@@ -386,17 +413,8 @@
       display:flex;
       gap:10px;
     }
+    #map{flex:1}
 
-    #map{
-      flex:1;
-    }
-
-    .map-btn{
-      min-height:44px;
-      border-radius:14px;
-    }
-
-    /* giornata/top10 */
     .day-list{
       display:grid;
       gap:10px;
@@ -428,61 +446,62 @@
       font-size:.92rem;
     }
 
-    .mini-row{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      margin-top:10px;
-    }
-
-    .mini-btn{
-      min-height:38px;
-      padding:0 12px;
-      border-radius:12px;
-    }
-
-    @media (min-width:760px){
-      .grid-2{grid-template-columns:repeat(4,1fr)}
-      .stats-row{grid-template-columns:repeat(4,1fr)}
+    @media (max-width:740px){
+      .stats{grid-template-columns:repeat(2,1fr)}
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="app">
     <section class="hero">
-      <div class="eyebrow">📸 Madeira travel & outdoor planner</div>
+      <div class="eyebrow">📸 Madeira outdoor travel guide</div>
       <h1>Madeira Planner PRO</h1>
       <p class="sub">
-        Fotografia, trekking, mountain bike e spot naturali. Filtra per zona, luce, attività e difficoltà, apri la mappa o fatti creare una giornata già sensata.
+        Guida fotografica e outdoor per Madeira con priorità chiare: spot top, spot validi e spot extra. Filtra per luce, zona, attività e difficoltà, poi apri dettagli, mappa o una giornata già ragionata.
       </p>
 
       <div class="main-actions">
         <button class="btn-main" id="spotNowBtn">🔥 Spot ora</button>
-        <div class="grid-2">
+        <div class="row">
           <button class="btn-main" id="dayBtn">📅 Crea giornata</button>
           <button class="btn-main" id="sportDayBtn">🚵 Giornata sportiva</button>
+        </div>
+        <div class="row">
           <button class="btn-main" id="topBtn">⭐ Top 10</button>
           <button class="btn-main" id="mapBtn">🗺️ Mappa</button>
         </div>
       </div>
 
-      <div class="stats-row">
+      <div class="stats">
         <div class="stat">
           <div class="label">Spot totali</div>
           <div class="value" id="spotCount">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Livelli</div>
+          <div class="value">40 / 30 / 20</div>
         </div>
         <div class="stat">
           <div class="label">Filtro attivo</div>
           <div class="value" id="filterState">Tutti</div>
         </div>
         <div class="stat">
-          <div class="label">Zona migliore</div>
-          <div class="value">Madeira</div>
-        </div>
-        <div class="stat">
-          <div class="label">Mood</div>
+          <div class="label">Modalità</div>
           <div class="value">Outdoor</div>
         </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">Priorità</h2>
+        <div class="section-note">importanza dello spot</div>
+      </div>
+      <div class="chips" id="levelChips">
+        <button class="chip active" data-level="all">Tutti</button>
+        <button class="chip" data-level="core">🔥 Top</button>
+        <button class="chip" data-level="secondary">⭐ Belli</button>
+        <button class="chip" data-level="extra">• Extra</button>
       </div>
     </section>
 
@@ -547,30 +566,23 @@
         <div class="section-note" id="resultNote">Tutti gli spot</div>
       </div>
       <div class="list" id="list"></div>
-      <div class="empty" id="emptyState" style="display:none">
-        Nessuno spot con questi filtri. Prova a rilassare uno dei filtri.
-      </div>
+      <div class="empty" id="emptyState">Nessuno spot con questi filtri. Prova a rilassarne uno.</div>
     </section>
   </div>
 
-  <!-- MODAL SPOT -->
+  <!-- MODAL DETTAGLI -->
   <div class="overlay" id="detailOverlay">
     <div class="modal-box">
       <div class="handle"></div>
       <img id="detailImg" class="modal-cover" alt="">
       <h3 id="detailTitle" class="modal-title"></h3>
-
       <div class="badge-row" id="detailBadges"></div>
-
       <p id="detailDesc" class="modal-text"></p>
-
       <div class="tip-box" id="detailTip"></div>
-
       <div class="modal-actions">
         <button class="btn-main" id="googlePhotosBtn">📸 Vedi foto reali</button>
         <button class="btn-secondary" id="mapsBtn">🗺️ Apri in Maps</button>
       </div>
-
       <div class="mini-row">
         <button class="btn-ghost mini-btn" id="closeDetailBtn">Chiudi</button>
       </div>
@@ -594,108 +606,259 @@
   <div class="overlay" id="mapModal">
     <div id="mapWrap">
       <div id="mapTop">
-        <button class="btn-main map-btn" id="closeMapBtn">Chiudi</button>
-        <button class="btn-secondary map-btn" id="fitMapBtn">Adatta vista</button>
+        <button class="btn-main" id="closeMapBtn">Chiudi</button>
+        <button class="btn-secondary" id="fitMapBtn">Adatta vista</button>
       </div>
       <div id="map"></div>
     </div>
   </div>
 
   <script>
-    const SPOTS = [
-      // EST
-      {name:"Ponta de São Lourenço", lat:32.7440, lon:-16.7040, light:"alba", zone:"est", activity:"trekking", difficulty:"medio", desc:"Il promontorio più scenografico dell'isola, perfetto per creste, oceano e luce drammatica.", tip:"Vai molto presto: l'alba qui cambia davvero la resa del paesaggio."},
-      {name:"Miradouro da Ponta do Rosto", lat:32.7433, lon:-16.7086, light:"alba", zone:"est", activity:"view", difficulty:"facile", desc:"Belvedere immediato e potentissimo, con vista sulle due coste del promontorio.", tip:"Perfetto se vuoi un colpo d'occhio wow senza fare trekking lungo."},
-      {name:"Caniçal Harbor View", lat:32.7388, lon:-16.7384, light:"giorno", zone:"est", activity:"view", difficulty:"facile", desc:"Atmosfera portuale, linee industriali e mare, molto diverso dal resto di Madeira.", tip:"Bello nelle ore centrali se vuoi colori netti e scene meno turistiche."},
-      {name:"Prainha do Caniçal", lat:32.7397, lon:-16.7167, light:"alba", zone:"est", activity:"relax", difficulty:"facile", desc:"Piccola spiaggia vulcanica, ottima per un inizio giornata tranquillo ma fotogenico.", tip:"Meglio presto, quando la luce è pulita e c'è poca gente."},
-      {name:"Miradouro do Guindaste", lat:32.8217, lon:-16.8606, light:"alba", zone:"est", activity:"view", difficulty:"facile", desc:"Uno dei viewpoint più scenici sul lato est, con scogliera e oceano aperto.", tip:"Qui l'alba funziona molto bene anche con nuvole leggere."},
-      {name:"Faial Coast View", lat:32.8172, lon:-16.8590, light:"alba", zone:"est", activity:"view", difficulty:"facile", desc:"Vista costiera molto ampia, ideale per scatti puliti e fotografici.", tip:"Ottimo se vuoi restare in zona Guindaste senza fare molta strada."},
-      {name:"Machico Bay", lat:32.7167, lon:-16.7667, light:"giorno", zone:"est", activity:"relax", difficulty:"facile", desc:"Baia ampia e molto ordinata, perfetta per passeggiare e fotografare il waterfront.", tip:"Meglio in luce diurna piena per acqua e contesto urbano."},
-      {name:"Miradouro Francisco Álvares Nóbrega", lat:32.7432, lon:-16.8240, light:"alba", zone:"est", activity:"view", difficulty:"facile", desc:"Belvedere alto con costa e montagne, molto utile per vista panoramica senza trekking lungo.", tip:"Ideale se vuoi una tappa rapida sulla costa orientale."},
-      {name:"Porto da Cruz Waterfront", lat:32.7661, lon:-16.8299, light:"giorno", zone:"est", activity:"relax", difficulty:"facile", desc:"Lungomare piacevole con oceano e atmosfera locale.", tip:"Bello come tappa lenta tra est e nord-est."},
-      {name:"Penha d'Águia View", lat:32.7633, lon:-16.8244, light:"giorno", zone:"est", activity:"view", difficulty:"medio", desc:"Grande massa rocciosa iconica che domina Porto da Cruz.", tip:"Funziona bene se vuoi forme forti e paesaggio drammatico."},
-      {name:"Levada do Caniçal Trailhead", lat:32.7390, lon:-16.7448, light:"giorno", zone:"est", activity:"trekking", difficulty:"medio", desc:"Accesso a percorsi secchi e panoramici nella zona orientale.", tip:"Meglio non nelle ore più ventose."},
-      {name:"Miradouro do Facho", lat:32.7175, lon:-16.7635, light:"tramonto", zone:"est", activity:"view", difficulty:"facile", desc:"Belvedere sopra Machico con visuale ampia sulla baia.", tip:"Bello nel tardo pomeriggio e verso il tramonto."},
-      {name:"São Lourenço Ridge Start", lat:32.7468, lon:-16.7019, light:"alba", zone:"est", activity:"trekking", difficulty:"medio", desc:"Inizio della cresta più famosa di Madeira.", tip:"Se vuoi luce forte e poca gente, parti molto presto."},
-      {name:"Cais do Sardinha", lat:32.7457, lon:-16.6889, light:"alba", zone:"est", activity:"trekking", difficulty:"medio", desc:"Fine spettacolare del percorso São Lourenço, mare ovunque.", tip:"Perfetto se vuoi premiare il trekking con un finale davvero scenico."},
-      {name:"Boca do Risco Access", lat:32.7860, lon:-16.8460, light:"giorno", zone:"est", activity:"trekking", difficulty:"impegnativo", desc:"Percorso costiero più selvaggio, bellissimo per chi cerca natura e fatica.", tip:"Da fare con gambe buone e meteo stabile."},
-
-      // NORD
-      {name:"Seixal Beach", lat:32.8246, lon:-17.1082, light:"alba", zone:"nord", activity:"view", difficulty:"facile", desc:"Una delle spiagge più scenografiche di Madeira, con sabbia scura e montagne verdi.", tip:"L'alba qui è fortissima se vuoi contrasto tra mare e pendii."},
-      {name:"Seixal Natural Pools", lat:32.8241, lon:-17.1085, light:"giorno", zone:"nord", activity:"relax", difficulty:"facile", desc:"Piscine naturali e costa rocciosa, ottime per pausa e foto semplici.", tip:"Belle nelle ore centrali se il mare è tranquillo."},
-      {name:"Ribeira da Janela", lat:32.8652, lon:-17.1446, light:"alba", zone:"nord", activity:"view", difficulty:"facile", desc:"Iconico stack roccioso in mare, uno dei punti più fotografici del nord.", tip:"Meglio con luce bassa e mare vivo."},
-      {name:"Porto Moniz Pools", lat:32.8664, lon:-17.1666, light:"tramonto", zone:"nord", activity:"view", difficulty:"facile", desc:"Piscine vulcaniche e tramonto oceanico, classico intramontabile.", tip:"Vai sul tardi e resta fino a luce bassa."},
-      {name:"Miradouro da Santinha", lat:32.8695, lon:-17.1662, light:"tramonto", zone:"nord", activity:"view", difficulty:"facile", desc:"Belvedere alto su Porto Moniz, molto utile per capire il contesto della costa.", tip:"Ottimo pre-tramonto prima di scendere alle piscine."},
-      {name:"Santana Houses", lat:32.8046, lon:-16.8821, light:"giorno", zone:"nord", activity:"relax", difficulty:"facile", desc:"Le casette tradizionali di Santana sono perfette per una tappa leggera ma iconica.", tip:"Da fare in orari tranquilli per evitare troppo affollamento."},
-      {name:"Levada do Caldeirão Verde", lat:32.8072, lon:-16.9050, light:"giorno", zone:"nord", activity:"trekking", difficulty:"medio", desc:"Uno dei trekking più famosi, con gallerie, pareti verdi e cascata finale.", tip:"Porta una lampada frontale se fai le gallerie."},
-      {name:"Levada do Caldeirão do Inferno", lat:32.8070, lon:-16.9042, light:"giorno", zone:"nord", activity:"trekking", difficulty:"impegnativo", desc:"Prosecuzione più forte e spettacolare del Caldeirão Verde.", tip:"Meglio se sei già abituato a sentieri lunghi."},
-      {name:"São Jorge Coast View", lat:32.8290, lon:-16.9030, light:"giorno", zone:"nord", activity:"view", difficulty:"facile", desc:"Costa verde e ripida, super rappresentativa del lato nord.", tip:"Molto bella anche con cielo nuvoloso."},
-      {name:"Arco de São Jorge View", lat:32.8158, lon:-16.9168, light:"giorno", zone:"nord", activity:"view", difficulty:"facile", desc:"Balcone panoramico sulla costa con tanta profondità.", tip:"Ottimo se vuoi scatti puliti di costa e terrazze."},
-      {name:"Ponta Delgada Waterfront", lat:32.8241, lon:-16.9297, light:"giorno", zone:"nord", activity:"relax", difficulty:"facile", desc:"Piccolo centro costiero buono per tappa breve e mare.", tip:"Valido come pausa tra viewpoint più importanti."},
-      {name:"Boaventura Viewpoint", lat:32.8207, lon:-16.9726, light:"giorno", zone:"nord", activity:"view", difficulty:"facile", desc:"Costa nord molto scenografica e meno mainstream.", tip:"Perfetto se vuoi una Madeira più calma e autentica."},
-      {name:"Ilhéus da Ribeira da Janela", lat:32.8684, lon:-17.1498, light:"alba", zone:"nord", activity:"view", difficulty:"facile", desc:"Formazioni rocciose in mare tra le più iconiche dell'isola.", tip:"Se c'è movimento d'acqua, rende ancora meglio."},
-      {name:"Achadas da Cruz View", lat:32.8648, lon:-17.2176, light:"tramonto", zone:"nord", activity:"view", difficulty:"medio", desc:"Scogliera estremamente scenica, tra i punti più forti dell'ovest-nordovest.", tip:"Bellissima nel tardo pomeriggio, anche senza scendere in basso."},
-      {name:"Teleférico Achadas da Cruz Top", lat:32.8639, lon:-17.2172, light:"tramonto", zone:"nord", activity:"view", difficulty:"facile", desc:"Punto panoramico sulla funivia e sulla costa ripidissima.", tip:"Perfetto per una tappa wow senza trekking duro."},
-
-      // SUD
-      {name:"Câmara de Lobos", lat:32.6488, lon:-16.9777, light:"tramonto", zone:"sud", activity:"relax", difficulty:"facile", desc:"Villaggio di pescatori fotogenico, con barche, case e mare.", tip:"Al tramonto è una delle zone più belle del sud."},
-      {name:"Cabo Girão", lat:32.6558, lon:-17.0048, light:"tramonto", zone:"sud", activity:"view", difficulty:"facile", desc:"Falesia iconica e panorama fortissimo sul sud di Madeira.", tip:"Vai quando il sole inizia a scendere per avere più atmosfera."},
-      {name:"Pico dos Barcelos", lat:32.6656, lon:-16.9372, light:"tramonto", zone:"sud", activity:"view", difficulty:"facile", desc:"Belvedere molto accessibile sopra Funchal.", tip:"Ottimo per vista ampia senza fare fatica."},
-      {name:"Funchal Old Town", lat:32.6482, lon:-16.9036, light:"giorno", zone:"sud", activity:"relax", difficulty:"facile", desc:"Centro storico utile per passeggiare, mangiare e fotografare atmosfera urbana.", tip:"Meglio tra tardo pomeriggio e sera iniziale."},
-      {name:"Funchal Marina", lat:32.6440, lon:-16.9137, light:"tramonto", zone:"sud", activity:"relax", difficulty:"facile", desc:"Porto turistico ideale per una passeggiata semplice con luce serale.", tip:"Buono come chiusura giornata comoda."},
-      {name:"CR7 Promenade", lat:32.6418, lon:-16.9197, light:"tramonto", zone:"sud", activity:"relax", difficulty:"facile", desc:"Passeggiata moderna sul fronte mare di Funchal.", tip:"Valida se vuoi stare leggero vicino alla città."},
-      {name:"Monte Palace Area", lat:32.6765, lon:-16.9008, light:"giorno", zone:"sud", activity:"relax", difficulty:"facile", desc:"Giardini e scorci molto ricchi, perfetti per una mezza giornata soft.", tip:"Ottimo se vuoi qualcosa di bello ma meno sportivo."},
-      {name:"Botanical Garden", lat:32.6652, lon:-16.8905, light:"giorno", zone:"sud", activity:"relax", difficulty:"facile", desc:"Giardino botanico con viste e colori, comodo e molto ordinato.", tip:"Perfetto per una giornata più lenta o se sei stanco."},
-      {name:"Miradouro do Pináculo", lat:32.6555, lon:-16.8794, light:"tramonto", zone:"sud", activity:"view", difficulty:"facile", desc:"Belvedere utile per vedere Funchal dall'alto con contesto urbano.", tip:"Molto bene verso il tramonto e blue hour."},
-      {name:"Garajau Viewpoint", lat:32.6372, lon:-16.8501, light:"tramonto", zone:"sud", activity:"view", difficulty:"facile", desc:"Grande statua e mare aperto, tappa classica del sud-est vicino a Funchal.", tip:"Luce serale più interessante della centrale."},
-      {name:"Praia Formosa", lat:32.6359, lon:-16.9492, light:"tramonto", zone:"sud", activity:"relax", difficulty:"facile", desc:"Spiaggia urbana molto buona per tramonto easy.", tip:"Se vuoi concludere senza guidare troppo, è perfetta."},
-      {name:"Ribeira Brava Waterfront", lat:32.6758, lon:-17.0622, light:"giorno", zone:"sud", activity:"relax", difficulty:"facile", desc:"Piccolo lungomare comodo come tappa di passaggio.", tip:"Funziona bene in giornate di spostamento."},
-      {name:"Ponta do Sol Center", lat:32.6790, lon:-17.1012, light:"tramonto", zone:"sud", activity:"relax", difficulty:"facile", desc:"Uno dei paesi più piacevoli del sud, molto bello con luce calda.", tip:"Ottima sosta per golden hour e aperitivo."},
-      {name:"Madalena do Mar Waterfront", lat:32.7028, lon:-17.1433, light:"tramonto", zone:"sud", activity:"relax", difficulty:"facile", desc:"Lungomare calmo e fotogenico sul lato sud-ovest.", tip:"Perfetto per una chiusura giornata tranquilla."},
-      {name:"Jardim do Mar View", lat:32.7385, lon:-17.2118, light:"tramonto", zone:"sud", activity:"view", difficulty:"facile", desc:"Paesino e costa rocciosa tra i più interessanti del sud-ovest.", tip:"Valido se vuoi un tramonto meno turistico."},
-
-      // OVEST
-      {name:"Fanal Forest", lat:32.7603, lon:-17.1476, light:"giorno", zone:"ovest", activity:"trekking", difficulty:"facile", desc:"Foresta magica famosa per alberi, nebbia e atmosfera unica.", tip:"Se trovi foschia o nuvole basse, è uno spot enorme."},
-      {name:"Paul da Serra", lat:32.7630, lon:-17.1330, light:"tramonto", zone:"ovest", activity:"mtb", difficulty:"medio", desc:"Altipiano aperto e potentissimo, ottimo per MTB e luci lunghe.", tip:"Molto bello nel tardo pomeriggio e con cielo ampio."},
-      {name:"Rabaçal / 25 Fontes", lat:32.7524, lon:-17.1318, light:"giorno", zone:"ovest", activity:"trekking", difficulty:"medio", desc:"Uno dei trekking più famosi, molto verde e soddisfacente.", tip:"Parti presto per evitare affollamento."},
-      {name:"Levada do Risco", lat:32.7528, lon:-17.1321, light:"giorno", zone:"ovest", activity:"trekking", difficulty:"facile", desc:"Percorso breve e molto scenico verso una cascata impressionante.", tip:"Ottimo se vuoi una mattina forte ma non troppo lunga."},
-      {name:"Levada dos Cedros", lat:32.7628, lon:-17.1510, light:"giorno", zone:"ovest", activity:"trekking", difficulty:"medio", desc:"Levada bellissima, più tranquilla di altre super famose.", tip:"Scelta ottima se vuoi verde e meno folla."},
-      {name:"Levada do Alecrim", lat:32.7601, lon:-17.1327, light:"giorno", zone:"ovest", activity:"trekking", difficulty:"facile", desc:"Sentiero piacevole in zona Rabaçal, con laghetti e verde.", tip:"Perfetto se vuoi qualcosa di accessibile."},
-      {name:"Bica da Cana", lat:32.7781, lon:-17.1128, light:"alba", zone:"ovest", activity:"view", difficulty:"facile", desc:"Uno dei migliori sunrise point dell'isola con possibilità di nuvole sotto.", tip:"Vai davvero presto: rende moltissimo all'alba."},
-      {name:"Miradouro da Eira da Achada", lat:32.8415, lon:-17.2161, light:"tramonto", zone:"ovest", activity:"view", difficulty:"facile", desc:"Belvedere impressionante sull'ovest, molto scenografico.", tip:"Molto bene con luce bassa e aria limpida."},
-      {name:"Prazeres Viewpoint", lat:32.7575, lon:-17.2110, light:"tramonto", zone:"ovest", activity:"view", difficulty:"facile", desc:"Sud-ovest dolce e panoramico, ottimo verso sera.", tip:"Buona alternativa a spot più noti e affollati."},
-      {name:"Calheta Beach", lat:32.7182, lon:-17.1760, light:"tramonto", zone:"ovest", activity:"relax", difficulty:"facile", desc:"Spiaggia e marina, perfetta per chiudere una giornata sportiva.", tip:"Ottima se vuoi tramonto comodo e servizi vicini."},
-      {name:"Ponta do Pargo Lighthouse", lat:32.8120, lon:-17.2623, light:"tramonto", zone:"ovest", activity:"view", difficulty:"facile", desc:"Uno dei punti più forti per il tramonto oceanico puro.", tip:"Se vuoi un tramonto serio a Madeira, questo conta."},
-      {name:"Miradouro Garganta Funda", lat:32.8133, lon:-17.2638, light:"tramonto", zone:"ovest", activity:"view", difficulty:"facile", desc:"Cascata e falesia, molto scenografico sul lato più estremo dell'isola.", tip:"Meglio con acqua e luce tardo pomeridiana."},
-      {name:"Porto do Seixal Upper View", lat:32.8255, lon:-17.1052, light:"giorno", zone:"ovest", activity:"view", difficulty:"facile", desc:"Vista alta sulla costa nord-ovest in area Seixal.", tip:"Buona tappa tra Fanal e Porto Moniz."},
-      {name:"Vereda do Fanal Access", lat:32.7641, lon:-17.1457, light:"giorno", zone:"ovest", activity:"mtb", difficulty:"medio", desc:"Zona molto interessante per uscite outdoor non solo fotografiche.", tip:"Bella area se vuoi combinare natura e attività."},
-      {name:"Lombo do Mouro", lat:32.7770, lon:-17.1385, light:"tramonto", zone:"ovest", activity:"mtb", difficulty:"medio", desc:"Area aperta e scenica con orizzonte ampio.", tip:"Ottima per finali di giornata all'aperto."},
-
-      // MONTAGNA
-      {name:"Pico do Arieiro", lat:32.7354, lon:-16.9281, light:"alba", zone:"montagna", activity:"view", difficulty:"facile", desc:"Il grande classico sopra le nuvole: accessibile e di impatto totale.", tip:"Se sei a Madeira e vuoi un'alba forte, questo è uno dei punti chiave."},
-      {name:"PR1 Pico do Arieiro → Pico Ruivo", lat:32.7355, lon:-16.9288, light:"alba", zone:"montagna", activity:"trekking", difficulty:"impegnativo", desc:"Il trekking simbolo dell'isola, tra creste, tunnel e panorami enormi.", tip:"Da fare se vuoi un'esperienza memorabile e hai gambe."},
-      {name:"Pico Ruivo Summit", lat:32.7591, lon:-16.9431, light:"alba", zone:"montagna", activity:"trekking", difficulty:"impegnativo", desc:"Cima più alta di Madeira, panorama gigantesco.", tip:"In giornate limpide è uno dei top assoluti."},
-      {name:"Achada do Teixeira", lat:32.7583, lon:-16.9332, light:"alba", zone:"montagna", activity:"view", difficulty:"facile", desc:"Accesso più semplice per vedere l'area del Pico Ruivo senza trekking completo.", tip:"Scelta intelligente se vuoi alta quota ma meno fatica."},
-      {name:"Miradouro da Portela", lat:32.7399, lon:-16.8297, light:"giorno", zone:"montagna", activity:"view", difficulty:"facile", desc:"Vista profonda su Penha d'Águia e nord-est.", tip:"Bel compromesso tra facilità e panorama."},
-      {name:"Eira do Serrado", lat:32.7040, lon:-16.9697, light:"tramonto", zone:"montagna", activity:"view", difficulty:"facile", desc:"Belvedere potentissimo sulla valle di Curral das Freiras.", tip:"Molto bene verso sera se vuoi ombre e profondità."},
-      {name:"Curral das Freiras View", lat:32.7119, lon:-16.9702, light:"giorno", zone:"montagna", activity:"view", difficulty:"facile", desc:"Valle chiusa e spettacolare, una delle immagini più forti dell'interno.", tip:"Funziona bene anche con cielo nuvoloso."},
-      {name:"Boca dos Namorados", lat:32.7057, lon:-16.9690, light:"tramonto", zone:"montagna", activity:"view", difficulty:"facile", desc:"Alternativa molto buona alla zona Eira do Serrado.", tip:"Ottimo per chi cerca vista forte senza impegno fisico."},
-      {name:"Boca da Corrida", lat:32.7061, lon:-16.9902, light:"tramonto", zone:"montagna", activity:"mtb", difficulty:"medio", desc:"Area montana aperta e scenica, interessante anche outdoor.", tip:"Bella per una giornata più sportiva con vista."},
-      {name:"Levada do Rei", lat:32.8068, lon:-16.9075, light:"giorno", zone:"montagna", activity:"trekking", difficulty:"medio", desc:"Levada molto appagante e verde, perfetta per trekking classico Madeira.", tip:"Buona se vuoi qualcosa di forte ma non estremo."},
-      {name:"PR9 Levada do Caldeirão Verde Area", lat:32.8075, lon:-16.9060, light:"giorno", zone:"montagna", activity:"trekking", difficulty:"medio", desc:"Area sentieristica iconica del lato interno.", tip:"Una delle zone più riconoscibili per il trekking dell'isola."},
-      {name:"Encumeada Pass", lat:32.7491, lon:-17.0320, light:"giorno", zone:"montagna", activity:"view", difficulty:"facile", desc:"Passo centrale con grande lettura dell'orografia di Madeira.", tip:"Molto utile per spostarsi e fare una sosta panoramica."},
-      {name:"Vereda da Boca do Risco Access", lat:32.7899, lon:-16.8464, light:"giorno", zone:"montagna", activity:"trekking", difficulty:"impegnativo", desc:"Percorso costiero/montano di grande carattere.", tip:"Per chi vuole un trekking serio con panorama."},
-      {name:"Chão dos Louros", lat:32.7494, lon:-16.9898, light:"giorno", zone:"montagna", activity:"mtb", difficulty:"medio", desc:"Zona outdoor interessante per natura e attività.", tip:"Buona area per chi vuole alternare sport e vista."},
-      {name:"Balcões", lat:32.7368, lon:-16.8970, light:"alba", zone:"montagna", activity:"view", difficulty:"facile", desc:"Viewpoint molto accessibile e forte sulle vallate verdi.", tip:"Perfetto se vuoi una mattina semplice ma bella."}
+    const CORE = [
+      ["Ponta de São Lourenço","est","alba","trekking","medio","Il promontorio più scenografico dell'isola, perfetto per creste, mare e luce forte.","Parti molto presto: rende davvero all'alba."],
+      ["Miradouro da Ponta do Rosto","est","alba","view","facile","Belvedere immediato e potentissimo sul lato est, con oceano da entrambi i lati.","Ottimo se vuoi un wow rapido senza trekking lungo."],
+      ["Pico do Arieiro","montagna","alba","view","facile","Il classico sopra le nuvole, uno dei punti più iconici di Madeira.","Meglio arrivare prima dell'alba: vento e freddo frequenti."],
+      ["PR1 Arieiro → Ruivo","montagna","alba","trekking","impegnativo","Il trekking simbolo di Madeira, tra creste, tunnel e panorami enormi.","Da fare con gambe buone e meteo stabile."],
+      ["Pico Ruivo Summit","montagna","alba","trekking","impegnativo","La cima più alta dell'isola, con vista ampissima se il cielo regge.","In giornate limpide è uno dei top assoluti."],
+      ["Fanal Forest","ovest","giorno","trekking","facile","Foresta magica con alberi contorti e nebbia, unica per atmosfera.","Se trovi foschia o nuvole basse, qui giochi in casa."],
+      ["Bica da Cana","ovest","alba","view","facile","Sunrise point molto forte sopra un mare di nuvole.","Uno dei migliori punti alba facili dell'isola."],
+      ["Ribeira da Janela","nord","alba","view","facile","Formazioni rocciose in mare iconiche, molto fotogeniche.","Ottimo con onde e luce bassa."],
+      ["Porto Moniz Pools","nord","tramonto","view","facile","Piscine vulcaniche e oceano aperto, classico intramontabile.","Resta fino a luce bassa per il meglio."],
+      ["Cabo Girão","sud","tramonto","view","facile","Grande falesia con panorama fortissimo sul sud.","Perfetto verso sera, meno bello a luce dura."],
+      ["Câmara de Lobos","sud","tramonto","relax","facile","Villaggio di pescatori molto scenografico e piacevole da vivere.","Perfetto per tramonto e cena leggera."],
+      ["Seixal Beach","nord","alba","view","facile","Spiaggia nera con montagne verdi alle spalle, molto forte visivamente.","Molto bella al mattino presto."],
+      ["Levada do Caldeirão Verde","nord","giorno","trekking","medio","Uno dei trekking più famosi di Madeira, verde e molto immersivo.","Porta una luce se affronti tunnel bui."],
+      ["25 Fontes","ovest","giorno","trekking","medio","Trekking molto celebre, con cascata finale e tanta vegetazione.","Parti presto se vuoi evitare affollamento."],
+      ["Levada do Risco","ovest","giorno","trekking","facile","Percorso breve verso una cascata scenica, perfetto come mezza mattina.","Ottimo se vuoi qualcosa di bello senza tirarti troppo."],
+      ["Eira do Serrado","montagna","tramonto","view","facile","Belvedere forte sulla valle di Curral das Freiras.","Molto bene nel tardo pomeriggio."],
+      ["Boca dos Namorados","montagna","tramonto","view","facile","Alternativa molto valida alla zona Eira do Serrado.","Se vuoi una vista forte senza sbatti, funziona bene."],
+      ["Achadas da Cruz View","nord","tramonto","view","medio","Una delle scogliere più scenografiche dell'isola.","Bellissima anche restando solo in alto."],
+      ["Ponta do Pargo Lighthouse","ovest","tramonto","view","facile","Uno dei tramonti più seri e puliti di Madeira.","Se vuoi il tramonto forte, qui vai bene."],
+      ["Ponta do Sol","sud","tramonto","relax","facile","Paese molto piacevole sul sud, con luce calda molto bella.","Perfetto per fine giornata semplice."],
+      ["Calheta Beach","ovest","tramonto","relax","facile","Spiaggia e marina comode per chiudere una giornata sportiva.","Molto valida come stop finale senza stress."],
+      ["Porto da Cruz Waterfront","est","giorno","relax","facile","Waterfront piacevole e ottimo come pausa nel nord-est.","Buono come stop tra spot più intensi."],
+      ["Miradouro do Guindaste","est","alba","view","facile","Uno dei viewpoint più puliti e scenici sul lato est.","Ottimo sunrise facile."],
+      ["Santana Houses","nord","giorno","relax","facile","Le casette tradizionali sono una tappa iconica e rilassata.","Meglio in orari non troppo pieni."],
+      ["Balcões","montagna","alba","view","facile","Belvedere accessibile con panorama molto forte sulle vallate.","Perfetto se vuoi una mattina facile ma bella."],
+      ["Ribeiro Frio","montagna","giorno","trekking","facile","Area verde e fresca, ottima per combinare vista e cammino leggero.","Funziona bene anche nelle giornate più nuvolose."],
+      ["Curral das Freiras View","montagna","giorno","view","facile","Valle chiusa e scenografica, molto rappresentativa dell'interno.","Molto forte anche con nuvole."],
+      ["Prainha do Caniçal","est","alba","relax","facile","Piccola spiaggia vulcanica, bella per inizio giornata tranquillo.","Meglio presto e con poca folla."],
+      ["Paul da Serra","ovest","tramonto","mtb","medio","Altipiano aperto perfetto per uscite outdoor e luce lunga.","Bellissimo con orizzonte largo nel tardo pomeriggio."],
+      ["Levada do Rei","montagna","giorno","trekking","medio","Levada molto bella e appagante, con tanto verde.","Ottima se vuoi trekking classico Madeira."],
+      ["Funchal Old Town","sud","giorno","relax","facile","Centro storico utile per passeggiare, mangiare e respirare l'atmosfera.","Buono tra tardo pomeriggio e sera."],
+      ["Botanical Garden","sud","giorno","relax","facile","Giardino ordinato e piacevole con tante visuali su Funchal.","Perfetto per una giornata più soft."],
+      ["Monte Palace Area","sud","giorno","relax","facile","Giardini e scorci molto ricchi, bella tappa tranquilla.","Ideale se vuoi rallentare ma vedere cose belle."],
+      ["Garajau Cristo Rei","sud","tramonto","view","facile","Scogliera e statua sul mare, molto valida verso sera.","Bel tramonto semplice vicino a Funchal."],
+      ["Praia Formosa","sud","tramonto","relax","facile","Spiaggia urbana molto comoda per chiudere bene senza allontanarsi.","Perfetta se vuoi poco sbatti."],
+      ["Pico dos Barcelos","sud","tramonto","view","facile","Belvedere accessibile con vista ampia su Funchal.","Soluzione easy ma forte."],
+      ["Miradouro do Pináculo","sud","tramonto","view","facile","Vista alta sulla città e sul lato est di Funchal.","Molto valido in luce serale."],
+      ["Miradouro da Portela","montagna","giorno","view","facile","Belvedere molto leggibile su costa e rilievi del nord-est.","Ottima tappa da trasferimento."],
+      ["Ponta do Pargo / Garganta Funda","ovest","tramonto","view","facile","Zona molto scenica tra faro, falesia e cascata.","Se vuoi ovest forte, è tra i migliori."],
+      ["Levada dos Cedros","ovest","giorno","trekking","medio","Levada bellissima e meno banale di altre più famose.","Ottima se vuoi verde con meno caos."]
     ];
 
+    const SECONDARY = [
+      ["Machico Bay","est","giorno","relax","facile","Baia ordinata e piacevole per una tappa semplice."],
+      ["Miradouro do Facho","est","tramonto","view","facile","Belvedere sopra Machico, valido verso sera."],
+      ["Caniçal Harbor View","est","giorno","view","facile","Atmosfera portuale diversa dal resto dell'isola."],
+      ["Faial Coast View","est","alba","view","facile","Vista costiera molto pulita sul nord-est."],
+      ["Rocha do Navio","nord","giorno","view","medio","Scogliera e teleferica, molto scenica."],
+      ["São Jorge Coast View","nord","giorno","view","facile","Costa verde e ripida, molto rappresentativa del nord."],
+      ["Arco de São Jorge View","nord","giorno","view","facile","Balcone panoramico con grande profondità."],
+      ["Ponta Delgada Waterfront","nord","giorno","relax","facile","Piccolo centro costiero buono per una pausa."],
+      ["Boaventura Viewpoint","nord","giorno","view","facile","Nord più quieto e autentico."],
+      ["Seixal Natural Pools","nord","giorno","relax","facile","Piscine naturali utili per stop tranquillo."],
+      ["Miradouro da Santinha","nord","tramonto","view","facile","Vista alta su Porto Moniz prima del tramonto."],
+      ["Teleférico Achadas da Cruz Top","nord","tramonto","view","facile","Scogliera fortissima senza scendere in basso."],
+      ["Levada do Alecrim","ovest","giorno","trekking","facile","Trekking semplice e piacevole in zona Rabaçal."],
+      ["Encumeada Pass","montagna","giorno","view","facile","Passo centrale molto utile per leggere l'isola."],
+      ["Boca da Corrida","montagna","tramonto","mtb","medio","Area montana aperta e outdoor-friendly."],
+      ["Achada do Teixeira","montagna","alba","view","facile","Accesso più semplice verso il Pico Ruivo."],
+      ["Vereda do Larano","est","giorno","trekking","medio","Sentiero costiero con grande panorama."],
+      ["Boca do Risco","est","giorno","trekking","impegnativo","Percorso più tosto ma molto scenico."],
+      ["Penha d'Águia View","est","giorno","view","medio","Roccia iconica sul lato nord-est."],
+      ["Funchal Marina","sud","tramonto","relax","facile","Passeggiata semplice e comoda vicino al centro."],
+      ["CR7 Promenade","sud","tramonto","relax","facile","Fronte mare urbano, rilassato e ordinato."],
+      ["Jardim do Mar View","sud","tramonto","view","facile","Paesino e costa molto piacevoli verso sera."],
+      ["Madalena do Mar Waterfront","sud","tramonto","relax","facile","Lungomare tranquillo sul sud-ovest."],
+      ["Paul do Mar","sud","tramonto","relax","facile","Costa più ruvida e piacevole per una chiusura semplice."],
+      ["Ribeira Brava Waterfront","sud","giorno","relax","facile","Stop comodo in una giornata di spostamenti."],
+      ["Palheiro Gardens","sud","giorno","relax","facile","Giardini tranquilli e molto curati."],
+      ["Santo da Serra","montagna","giorno","relax","facile","Zona verde alta e più morbida dell'isola."],
+      ["Miradouro da Eira da Achada","ovest","tramonto","view","facile","Belvedere forte sull'ovest."],
+      ["Rabaçal Plateau","ovest","giorno","mtb","medio","Area aperta ottima per outdoor e transito."],
+      ["Cais do Sardinha","est","alba","trekking","medio","Finale bellissimo del trekking São Lourenço."]
+    ];
+
+    const EXTRA = [
+      ["Cais da Ribeira Brava","sud","giorno","relax","facile"],
+      ["Miradouro da Neves","sud","tramonto","view","facile"],
+      ["Miradouro das Cabanas","est","giorno","view","facile"],
+      ["Miradouro do Véu da Noiva","nord","giorno","view","facile"],
+      ["Miradouro da Boa Morte","ovest","tramonto","view","facile"],
+      ["Miradouro da Raposeira","ovest","tramonto","view","facile"],
+      ["Miradouro do Ilhéu de Câmara de Lobos","sud","tramonto","view","facile"],
+      ["Santa Cruz Waterfront","sud","giorno","relax","facile"],
+      ["Levada da Serra do Faial","est","giorno","trekking","facile"],
+      ["Miradouro do Teleférico das Achadas","nord","tramonto","view","facile"],
+      ["Miradouro da Tabua","sud","giorno","view","facile"],
+      ["Miradouro do Massapez","sud","tramonto","view","facile"],
+      ["Vereda dos Balcões Access","montagna","giorno","trekking","facile"],
+      ["Levada da Referta","est","giorno","trekking","medio"],
+      ["Miradouro da Beira da Quinta","nord","giorno","view","facile"],
+      ["Praia da Alagoa","nord","giorno","relax","facile"],
+      ["Miradouro do Pico Vermelho","ovest","giorno","mtb","medio"],
+      ["Lombo do Mouro","ovest","tramonto","mtb","medio"],
+      ["Chão dos Louros","montagna","giorno","mtb","medio"],
+      ["Garajau Cable Car Area","sud","giorno","view","medio"]
+    ];
+
+    function toObjects(level, arr){
+      return arr.map((item, i) => {
+        const hasFull = item.length >= 7;
+        return {
+          id: `${level}-${i}`,
+          name: item[0],
+          zone: item[1],
+          light: item[2],
+          activity: item[3],
+          difficulty: item[4],
+          desc: hasFull ? item[5] : "Spot secondario o extra utile per ampliare scelta e copertura della zona.",
+          tip: hasFull ? item[6] : "Usalo come tappa bonus o come alternativa nella stessa zona.",
+          level
+        };
+      });
+    }
+
+    const SPOTS = [
+      ...toObjects("core", CORE),
+      ...toObjects("secondary", SECONDARY),
+      ...toObjects("extra", EXTRA)
+    ].map((s, i) => ({
+      ...s,
+      ...coordsFor(s.name, s.zone, i)
+    }));
+
+    function coordsFor(name, zone, i){
+      const known = {
+        "Ponta de São Lourenço":[32.7440,-16.7040],
+        "Miradouro da Ponta do Rosto":[32.7433,-16.7086],
+        "Pico do Arieiro":[32.7354,-16.9281],
+        "PR1 Arieiro → Ruivo":[32.7355,-16.9288],
+        "Pico Ruivo Summit":[32.7591,-16.9431],
+        "Fanal Forest":[32.7603,-17.1476],
+        "Bica da Cana":[32.7781,-17.1128],
+        "Ribeira da Janela":[32.8652,-17.1446],
+        "Porto Moniz Pools":[32.8664,-17.1666],
+        "Cabo Girão":[32.6558,-17.0048],
+        "Câmara de Lobos":[32.6488,-16.9777],
+        "Seixal Beach":[32.8246,-17.1082],
+        "Levada do Caldeirão Verde":[32.8072,-16.9050],
+        "25 Fontes":[32.7524,-17.1318],
+        "Levada do Risco":[32.7528,-17.1321],
+        "Eira do Serrado":[32.7040,-16.9697],
+        "Boca dos Namorados":[32.7057,-16.9690],
+        "Achadas da Cruz View":[32.8648,-17.2176],
+        "Ponta do Pargo Lighthouse":[32.8120,-17.2623],
+        "Ponta do Sol":[32.6790,-17.1012],
+        "Calheta Beach":[32.7182,-17.1760],
+        "Porto da Cruz Waterfront":[32.7661,-16.8299],
+        "Miradouro do Guindaste":[32.8217,-16.8606],
+        "Santana Houses":[32.8046,-16.8821],
+        "Balcões":[32.7368,-16.8970],
+        "Ribeiro Frio":[32.7403,-16.8906],
+        "Curral das Freiras View":[32.7119,-16.9702],
+        "Prainha do Caniçal":[32.7397,-16.7167],
+        "Paul da Serra":[32.7630,-17.1330],
+        "Levada do Rei":[32.8068,-16.9075],
+        "Funchal Old Town":[32.6482,-16.9036],
+        "Botanical Garden":[32.6652,-16.8905],
+        "Monte Palace Area":[32.6765,-16.9008],
+        "Garajau Cristo Rei":[32.6372,-16.8501],
+        "Praia Formosa":[32.6359,-16.9492],
+        "Pico dos Barcelos":[32.6656,-16.9372],
+        "Miradouro do Pináculo":[32.6555,-16.8794],
+        "Miradouro da Portela":[32.7399,-16.8297],
+        "Ponta do Pargo / Garganta Funda":[32.8133,-17.2638],
+        "Levada dos Cedros":[32.7628,-17.1510],
+
+        "Machico Bay":[32.7167,-16.7667],
+        "Miradouro do Facho":[32.7175,-16.7635],
+        "Caniçal Harbor View":[32.7388,-16.7384],
+        "Faial Coast View":[32.8172,-16.8590],
+        "Rocha do Navio":[32.8164,-16.8850],
+        "São Jorge Coast View":[32.8290,-16.9030],
+        "Arco de São Jorge View":[32.8158,-16.9168],
+        "Ponta Delgada Waterfront":[32.8241,-16.9297],
+        "Boaventura Viewpoint":[32.8207,-16.9726],
+        "Seixal Natural Pools":[32.8241,-17.1085],
+        "Miradouro da Santinha":[32.8695,-17.1662],
+        "Teleférico Achadas da Cruz Top":[32.8639,-17.2172],
+        "Levada do Alecrim":[32.7601,-17.1327],
+        "Encumeada Pass":[32.7491,-17.0320],
+        "Boca da Corrida":[32.7061,-16.9902],
+        "Achada do Teixeira":[32.7583,-16.9332],
+        "Vereda do Larano":[32.7733,-16.8445],
+        "Boca do Risco":[32.7860,-16.8460],
+        "Penha d'Águia":[32.7633,-16.8244],
+        "Funchal Marina":[32.6440,-16.9137],
+        "CR7 Promenade":[32.6418,-16.9197],
+        "Jardim do Mar View":[32.7385,-17.2118],
+        "Madalena do Mar Waterfront":[32.7028,-17.1433],
+        "Paul do Mar":[32.7605,-17.2291],
+        "Ribeira Brava Waterfront":[32.6758,-17.0622],
+        "Palheiro Gardens":[32.6684,-16.8515],
+        "Santo da Serra":[32.7064,-16.8149],
+        "Miradouro da Eira da Achada":[32.8415,-17.2161],
+        "Rabaçal Plateau":[32.7526,-17.1330],
+        "Cais do Sardinha":[32.7457,-16.6889],
+
+        "Cais da Ribeira Brava":[32.6755,-17.0620],
+        "Miradouro da Neves":[32.6608,-16.8787],
+        "Miradouro das Cabanas":[32.7504,-16.7768],
+        "Miradouro do Véu da Noiva":[32.8335,-17.1258],
+        "Miradouro da Boa Morte":[32.7914,-17.2268],
+        "Miradouro da Raposeira":[32.7818,-17.2152],
+        "Miradouro do Ilhéu de Câmara de Lobos":[32.6448,-16.9795],
+        "Santa Cruz Waterfront":[32.6917,-16.7932],
+        "Levada da Serra do Faial":[32.7700,-16.8630],
+        "Miradouro do Teleférico das Achadas":[32.8642,-17.2170],
+        "Miradouro da Tabua":[32.6887,-17.0845],
+        "Miradouro do Massapez":[32.7446,-17.2146],
+        "Vereda dos Balcões Access":[32.7370,-16.8965],
+        "Levada da Referta":[32.7552,-16.8142],
+        "Miradouro da Beira da Quinta":[32.8352,-16.9370],
+        "Praia da Alagoa":[32.7722,-16.8290],
+        "Miradouro do Pico Vermelho":[32.7738,-17.1565],
+        "Lombo do Mouro":[32.7770,-17.1385],
+        "Chão dos Louros":[32.7494,-16.9898],
+        "Garajau Cable Car Area":[32.6375,-16.8490]
+      };
+
+      if(known[name]) return { lat: known[name][0], lon: known[name][1] };
+
+      const bases = {
+        est:[32.755,-16.79],
+        nord:[32.830,-17.03],
+        sud:[32.660,-16.95],
+        ovest:[32.780,-17.17],
+        montagna:[32.740,-16.95]
+      };
+
+      const base = bases[zone] || [32.75,-16.95];
+      const lat = base[0] + (((i * 13) % 9) - 4) * 0.007;
+      const lon = base[1] + (((i * 17) % 9) - 4) * 0.007;
+      return { lat, lon };
+    }
+
     const state = {
-      light: "all",
-      zone: "all",
-      activity: "all",
-      difficulty: "all",
-      userPos: null,
-      currentSpot: null
+      level:"all",
+      light:"all",
+      zone:"all",
+      activity:"all",
+      difficulty:"all",
+      userPos:null,
+      currentSpot:null
     };
 
     let mapInstance = null;
@@ -704,8 +867,8 @@
     const listEl = document.getElementById("list");
     const emptyEl = document.getElementById("emptyState");
     const resultNoteEl = document.getElementById("resultNote");
-    const spotCountEl = document.getElementById("spotCount");
     const filterStateEl = document.getElementById("filterState");
+    const spotCountEl = document.getElementById("spotCount");
 
     const detailOverlay = document.getElementById("detailOverlay");
     const plannerOverlay = document.getElementById("plannerOverlay");
@@ -716,7 +879,6 @@
     const detailDesc = document.getElementById("detailDesc");
     const detailTip = document.getElementById("detailTip");
     const detailBadges = document.getElementById("detailBadges");
-
     const plannerTitle = document.getElementById("plannerTitle");
     const plannerIntro = document.getElementById("plannerIntro");
     const plannerList = document.getElementById("plannerList");
@@ -725,27 +887,23 @@
 
     navigator.geolocation.getCurrentPosition(
       pos => {
-        state.userPos = {
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude
-        };
+        state.userPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
         render();
       },
       () => render(),
       { enableHighAccuracy:true, timeout:8000 }
     );
 
-    // chips events
-    bindChipGroup("lightChips", "light");
-    bindChipGroup("zoneChips", "zone");
-    bindChipGroup("activityChips", "activity");
-    bindChipGroup("difficultyChips", "difficulty");
+    bindChipGroup("levelChips","level");
+    bindChipGroup("lightChips","light");
+    bindChipGroup("zoneChips","zone");
+    bindChipGroup("activityChips","activity");
+    bindChipGroup("difficultyChips","difficulty");
 
-    function bindChipGroup(id, key){
+    function bindChipGroup(id,key){
       document.getElementById(id).addEventListener("click", e => {
         const btn = e.target.closest("[data-" + key + "]");
         if(!btn) return;
-
         [...document.querySelectorAll("#" + id + " .chip")].forEach(x => x.classList.remove("active"));
         btn.classList.add("active");
         state[key] = btn.dataset[key];
@@ -766,6 +924,7 @@
 
     function filteredSpots(){
       return SPOTS.filter(s =>
+        (state.level === "all" || s.level === state.level) &&
         (state.light === "all" || s.light === state.light) &&
         (state.zone === "all" || s.zone === state.zone) &&
         (state.activity === "all" || s.activity === state.activity) &&
@@ -775,11 +934,48 @@
 
     function currentFilterLabel(){
       const parts = [];
+      if(state.level !== "all") parts.push(levelLabel(state.level));
       if(state.light !== "all") parts.push(state.light);
       if(state.zone !== "all") parts.push(state.zone);
       if(state.activity !== "all") parts.push(state.activity);
       if(state.difficulty !== "all") parts.push(state.difficulty);
       return parts.length ? parts.join(" • ") : "Tutti";
+    }
+
+    function levelLabel(v){
+      if(v === "core") return "top";
+      if(v === "secondary") return "belli";
+      return "extra";
+    }
+
+    function levelBadge(v){
+      if(v === "core") return {txt:"🔥 TOP", cls:"lvl-core"};
+      if(v === "secondary") return {txt:"⭐ BELLO", cls:"lvl-secondary"};
+      return {txt:"• EXTRA", cls:"lvl-extra"};
+    }
+
+    function difficultyClass(v){
+      if(v === "facile") return "b-easy";
+      if(v === "medio") return "b-medium";
+      return "b-hard";
+    }
+
+    function badgeIconLight(v){
+      if(v === "alba") return "🌅";
+      if(v === "tramonto") return "🌇";
+      return "☀️";
+    }
+
+    function badgeIconActivity(v){
+      if(v === "trekking") return "🥾";
+      if(v === "mtb") return "🚵";
+      if(v === "relax") return "🌴";
+      return "📍";
+    }
+
+    function displayDistance(d){
+      if(d == null) return "distanza non disponibile";
+      return `${d.toFixed(1)} km da te`;
     }
 
     function render(){
@@ -789,6 +985,8 @@
       }));
 
       items.sort((a,b) => {
+        const levelOrder = { core:0, secondary:1, extra:2 };
+        if(levelOrder[a.level] !== levelOrder[b.level]) return levelOrder[a.level] - levelOrder[b.level];
         if(a.distance == null && b.distance == null) return a.name.localeCompare(b.name);
         if(a.distance == null) return 1;
         if(b.distance == null) return -1;
@@ -806,65 +1004,45 @@
 
       emptyEl.style.display = "none";
 
-      listEl.innerHTML = items.map(s => `
-        <article class="spot">
-          <div class="spot-top">
-            <div>
-              <h3 class="spot-name">${escapeHtml(s.name)}</h3>
-              <div class="spot-distance">${distanceLabel(s.distance)}</div>
+      listEl.innerHTML = items.map(s => {
+        const lvl = levelBadge(s.level);
+        return `
+          <article class="spot">
+            <div class="spot-top">
+              <div>
+                <h3 class="spot-name">${escapeHtml(s.name)}</h3>
+                <div class="spot-sub">${displayDistance(s.distance)}</div>
+              </div>
+              <span class="pill ${lvl.cls}">${lvl.txt}</span>
             </div>
-          </div>
 
-          <div class="badge-row">
-            <span class="badge b-light">${badgeIconLight(s.light)} ${escapeHtml(s.light)}</span>
-            <span class="badge b-zone">🧭 ${escapeHtml(s.zone)}</span>
-            <span class="badge b-act">${badgeIconActivity(s.activity)} ${escapeHtml(s.activity)}</span>
-            <span class="badge ${difficultyClass(s.difficulty)}">⚡ ${escapeHtml(s.difficulty)}</span>
-          </div>
+            <div class="badge-row">
+              <span class="badge b-light">${badgeIconLight(s.light)} ${escapeHtml(s.light)}</span>
+              <span class="badge b-zone">🧭 ${escapeHtml(s.zone)}</span>
+              <span class="badge b-act">${badgeIconActivity(s.activity)} ${escapeHtml(s.activity)}</span>
+              <span class="badge ${difficultyClass(s.difficulty)}">⚡ ${escapeHtml(s.difficulty)}</span>
+            </div>
 
-          <div class="spot-desc">${escapeHtml(s.desc)}</div>
+            <div class="spot-desc">${escapeHtml(s.desc)}</div>
 
-          <div class="spot-actions">
-            <button class="btn-secondary" onclick="openDetail('${encodeURIComponent(s.name)}')">Dettagli</button>
-            <button class="btn-main" onclick="openMapsByName('${encodeURIComponent(s.name)}')">Apri Maps</button>
-          </div>
-        </article>
-      `).join("");
+            <div class="spot-actions">
+              <button class="btn-secondary" onclick="openDetail('${s.id}')">Dettagli</button>
+              <button class="btn-main" onclick="openMapsById('${s.id}')">Apri Maps</button>
+            </div>
+          </article>
+        `;
+      }).join("");
     }
 
-    function distanceLabel(d){
-      if(d == null) return "distanza non disponibile";
-      return `${d.toFixed(1)} km da te`;
+    function findSpot(id){
+      return SPOTS.find(s => s.id === id);
     }
 
-    function badgeIconLight(v){
-      if(v === "alba") return "🌅";
-      if(v === "tramonto") return "🌇";
-      return "☀️";
-    }
-
-    function badgeIconActivity(v){
-      if(v === "trekking") return "🥾";
-      if(v === "mtb") return "🚵";
-      if(v === "relax") return "🌴";
-      return "📍";
-    }
-
-    function difficultyClass(v){
-      if(v === "facile") return "b-diff-easy";
-      if(v === "medio") return "b-diff-medium";
-      return "b-diff-hard";
-    }
-
-    function findByName(encoded){
-      const name = decodeURIComponent(encoded);
-      return SPOTS.find(s => s.name === name);
-    }
-
-    window.openDetail = function(encoded){
-      const s = findByName(encoded);
+    window.openDetail = function(id){
+      const s = findSpot(id);
       if(!s) return;
       state.currentSpot = s;
+      const lvl = levelBadge(s.level);
 
       detailTitle.textContent = s.name;
       detailImg.src = `https://picsum.photos/seed/${encodeURIComponent(s.name)}/900/600`;
@@ -873,6 +1051,7 @@
       detailTip.textContent = `Suggerimento: ${s.tip}`;
 
       detailBadges.innerHTML = `
+        <span class="pill ${lvl.cls}">${lvl.txt}</span>
         <span class="badge b-light">${badgeIconLight(s.light)} ${escapeHtml(s.light)}</span>
         <span class="badge b-zone">🧭 ${escapeHtml(s.zone)}</span>
         <span class="badge b-act">${badgeIconActivity(s.activity)} ${escapeHtml(s.activity)}</span>
@@ -888,15 +1067,10 @@
       document.body.classList.remove("modal-open");
     }
 
-    document.getElementById("closeDetailBtn").addEventListener("click", closeDetail);
     detailOverlay.addEventListener("click", e => {
       if(e.target === detailOverlay) closeDetail();
     });
-
-    document.getElementById("mapsBtn").addEventListener("click", () => {
-      if(!state.currentSpot) return;
-      openMaps(state.currentSpot.lat, state.currentSpot.lon);
-    });
+    document.getElementById("closeDetailBtn").addEventListener("click", closeDetail);
 
     document.getElementById("googlePhotosBtn").addEventListener("click", () => {
       if(!state.currentSpot) return;
@@ -904,17 +1078,21 @@
       window.open(`https://www.google.com/search?q=${q}&tbm=isch`, "_blank");
     });
 
+    document.getElementById("mapsBtn").addEventListener("click", () => {
+      if(!state.currentSpot) return;
+      openMaps(state.currentSpot.lat, state.currentSpot.lon);
+    });
+
     function openMaps(lat, lon){
       window.open(`https://www.google.com/maps?q=${lat},${lon}`, "_blank");
     }
 
-    window.openMapsByName = function(encoded){
-      const s = findByName(encoded);
+    window.openMapsById = function(id){
+      const s = findSpot(id);
       if(!s) return;
       openMaps(s.lat, s.lon);
     };
 
-    // spot ora
     document.getElementById("spotNowBtn").addEventListener("click", () => {
       const h = new Date().getHours();
       let desired = "giorno";
@@ -922,60 +1100,60 @@
       else if(h >= 17) desired = "tramonto";
 
       let pool = SPOTS.filter(s => s.light === desired);
-      if(state.activity !== "all") pool = pool.filter(s => s.activity === state.activity);
       if(state.zone !== "all") pool = pool.filter(s => s.zone === state.zone);
+      if(state.activity !== "all") pool = pool.filter(s => s.activity === state.activity);
       if(state.difficulty !== "all") pool = pool.filter(s => s.difficulty === state.difficulty);
-
+      if(state.level !== "all") pool = pool.filter(s => s.level === state.level);
       if(!pool.length) pool = SPOTS.filter(s => s.light === desired);
       if(!pool.length) pool = [...SPOTS];
 
       if(state.userPos){
         pool = pool
           .map(s => ({...s, d: distKm(state.userPos.lat, state.userPos.lon, s.lat, s.lon)}))
-          .sort((a,b) => a.d - b.d);
-        openDetail(encodeURIComponent(pool[0].name));
-      } else {
-        openDetail(encodeURIComponent(pool[0].name));
+          .sort((a,b) => {
+            const levelOrder = { core:0, secondary:1, extra:2 };
+            if(levelOrder[a.level] !== levelOrder[b.level]) return levelOrder[a.level] - levelOrder[b.level];
+            return a.d - b.d;
+          });
       }
+
+      openDetail(pool[0].id);
     });
 
-    // crea giornata
     document.getElementById("dayBtn").addEventListener("click", () => {
       const alba = bestSpot({ light:"alba", activity:["view","trekking"] });
-      const main = bestSpot({ activity:["trekking","view","relax","mtb"], exclude:[alba?.name] });
-      const tram = bestSpot({ light:"tramonto", activity:["view","relax"], exclude:[alba?.name, main?.name] });
+      const main = bestSpot({ activity:["trekking","view","relax","mtb"], exclude:[alba?.id] });
+      const tram = bestSpot({ light:"tramonto", activity:["view","relax"], exclude:[alba?.id, main?.id] });
 
       showPlanner(
         "Giornata Madeira",
-        "Una giornata semplice ma molto sensata, costruita con alba + attività centrale + chiusura forte.",
+        "Una giornata semplice ma molto sensata: partenza forte, attività centrale, chiusura bella ma comoda.",
         [
-          { kicker:"🌅 Alba", spot:alba, note:"Partenza forte con luce bella e poco caos." },
-          { kicker:"🥾 Attività centrale", spot:main, note:"La parte più piena della giornata, outdoor o viewpoint." },
-          { kicker:"🌇 Chiusura", spot:tram, note:"Finale comodo e visivamente forte." }
+          { kicker:"🌅 Alba", spot:alba, note:"Parti con la luce migliore e poca gente." },
+          { kicker:"🥾 Attività centrale", spot:main, note:"Qui metti il blocco principale della giornata." },
+          { kicker:"🌇 Chiusura", spot:tram, note:"Chiudi con un posto forte ma più rilassato." }
         ]
       );
     });
 
-    // giornata sportiva
     document.getElementById("sportDayBtn").addEventListener("click", () => {
-      const alba = bestSpot({ light:"alba", activity:["view"] });
-      const sport = bestSpot({ activity:["trekking","mtb"], difficulty:["medio","impegnativo"], exclude:[alba?.name] });
-      const tram = bestSpot({ light:"tramonto", activity:["view","relax"], exclude:[alba?.name, sport?.name] });
+      const warmup = bestSpot({ light:"alba", activity:["view"], exclude:[] });
+      const sport = bestSpot({ activity:["trekking","mtb"], difficulty:["medio","impegnativo"], exclude:[warmup?.id] });
+      const finish = bestSpot({ light:"tramonto", activity:["view","relax"], exclude:[warmup?.id, sport?.id] });
 
       showPlanner(
         "Giornata sportiva",
-        "Pensata per chi vuole movimento vero, ma anche un inizio e una chiusura belli.",
+        "Pensata per chi vuole movimento vero ma anche una bella apertura e una chiusura forte.",
         [
-          { kicker:"🌅 Inizio", spot:alba, note:"Viewpoint rapido o alba forte per partire bene." },
-          { kicker:"🚵 Core activity", spot:sport, note:"Il blocco più sportivo della giornata." },
-          { kicker:"🌇 Recovery spot", spot:tram, note:"Un finale visivo e più rilassato." }
+          { kicker:"🌅 Start", spot:warmup, note:"Viewpoint rapido o alba forte per iniziare bene." },
+          { kicker:"🚵 Core outdoor", spot:sport, note:"La parte più sportiva della giornata." },
+          { kicker:"🌇 Finish", spot:finish, note:"Un finale panoramico o relax ben piazzato." }
         ]
       );
     });
 
-    // top 10
     document.getElementById("topBtn").addEventListener("click", () => {
-      const topNames = [
+      const topIds = [
         "Ponta de São Lourenço",
         "Pico do Arieiro",
         "Pico Ruivo Summit",
@@ -988,18 +1166,17 @@
         "Eira do Serrado"
       ];
 
-      const items = topNames.map(n => SPOTS.find(s => s.name === n)).filter(Boolean);
-
+      const items = topIds.map(name => SPOTS.find(s => s.name === name)).filter(Boolean);
       plannerTitle.textContent = "Top 10 Madeira";
-      plannerIntro.textContent = "Questi sono i 10 spot/luoghi più forti se vuoi vedere il meglio di Madeira senza perderti.";
+      plannerIntro.textContent = "I 10 spot più forti se vuoi vedere il meglio di Madeira senza perdere tempo in dubbi inutili.";
       plannerList.innerHTML = items.map((s, i) => `
         <div class="day-item">
           <div class="day-kicker">#${i+1}</div>
           <div class="day-main">${escapeHtml(s.name)}</div>
           <div class="day-sub">${escapeHtml(s.desc)}</div>
           <div class="mini-row">
-            <button class="btn-secondary mini-btn" onclick="openDetailFromPlanner('${encodeURIComponent(s.name)}')">Dettagli</button>
-            <button class="btn-main mini-btn" onclick="openMapsByName('${encodeURIComponent(s.name)}')">Maps</button>
+            <button class="btn-secondary mini-btn" onclick="openDetailFromPlanner('${s.id}')">Dettagli</button>
+            <button class="btn-main mini-btn" onclick="openMapsById('${s.id}')">Maps</button>
           </div>
         </div>
       `).join("");
@@ -1008,24 +1185,32 @@
     });
 
     function bestSpot({ light=null, activity=null, difficulty=null, exclude=[] }){
-      let pool = SPOTS.filter(s => !exclude.includes(s.name));
+      let pool = SPOTS.filter(s => !exclude.includes(s.id));
 
-      if(light){
-        pool = pool.filter(s => s.light === light);
-      }
-      if(activity){
-        pool = pool.filter(s => activity.includes(s.activity));
-      }
-      if(difficulty){
-        pool = pool.filter(s => difficulty.includes(s.difficulty));
+      if(light) pool = pool.filter(s => s.light === light);
+      if(activity) pool = pool.filter(s => activity.includes(s.activity));
+      if(difficulty) pool = pool.filter(s => difficulty.includes(s.difficulty));
+      if(state.zone !== "all") pool = pool.filter(s => s.zone === state.zone);
+
+      if(!pool.length){
+        pool = SPOTS.filter(s => !exclude.includes(s.id));
+        if(activity) pool = pool.filter(s => activity.includes(s.activity));
+        if(light) pool = pool.filter(s => s.light === light);
       }
 
       if(!pool.length) return null;
 
+      const levelOrder = { core:0, secondary:1, extra:2 };
+
       if(state.userPos){
         pool = pool
           .map(s => ({...s, d: distKm(state.userPos.lat, state.userPos.lon, s.lat, s.lon)}))
-          .sort((a,b) => a.d - b.d);
+          .sort((a,b) => {
+            if(levelOrder[a.level] !== levelOrder[b.level]) return levelOrder[a.level] - levelOrder[b.level];
+            return a.d - b.d;
+          });
+      } else {
+        pool = pool.sort((a,b) => levelOrder[a.level] - levelOrder[b.level]);
       }
 
       return pool[0];
@@ -1040,19 +1225,18 @@
             <div class="day-item">
               <div class="day-kicker">${row.kicker}</div>
               <div class="day-main">Nessuna proposta</div>
-              <div class="day-sub">Con i filtri attuali non ho trovato nulla di coerente.</div>
+              <div class="day-sub">Con i filtri attuali non ho trovato una tappa coerente.</div>
             </div>
           `;
         }
-
         return `
           <div class="day-item">
             <div class="day-kicker">${row.kicker}</div>
             <div class="day-main">${escapeHtml(row.spot.name)}</div>
             <div class="day-sub">${escapeHtml(row.note)} ${escapeHtml(row.spot.desc)}</div>
             <div class="mini-row">
-              <button class="btn-secondary mini-btn" onclick="openDetailFromPlanner('${encodeURIComponent(row.spot.name)}')">Dettagli</button>
-              <button class="btn-main mini-btn" onclick="openMapsByName('${encodeURIComponent(row.spot.name)}')">Maps</button>
+              <button class="btn-secondary mini-btn" onclick="openDetailFromPlanner('${row.spot.id}')">Dettagli</button>
+              <button class="btn-main mini-btn" onclick="openMapsById('${row.spot.id}')">Maps</button>
             </div>
           </div>
         `;
@@ -1062,9 +1246,9 @@
       document.body.classList.add("modal-open");
     }
 
-    window.openDetailFromPlanner = function(encoded){
+    window.openDetailFromPlanner = function(id){
       plannerOverlay.classList.remove("show");
-      openDetail(encoded);
+      openDetail(id);
     };
 
     function closePlanner(){
@@ -1072,12 +1256,11 @@
       document.body.classList.remove("modal-open");
     }
 
-    document.getElementById("closePlannerBtn").addEventListener("click", closePlanner);
     plannerOverlay.addEventListener("click", e => {
       if(e.target === plannerOverlay) closePlanner();
     });
+    document.getElementById("closePlannerBtn").addEventListener("click", closePlanner);
 
-    // mappa
     document.getElementById("mapBtn").addEventListener("click", () => {
       mapModal.classList.add("show");
       document.body.classList.add("modal-open");
@@ -1109,17 +1292,18 @@
 
       items.forEach(s => {
         const marker = L.circleMarker([s.lat, s.lon], {
-          radius:7,
+          radius: s.level === "core" ? 8 : s.level === "secondary" ? 7 : 6,
           color: markerColor(s.light),
-          weight:2,
+          weight: s.level === "core" ? 3 : 2,
           fillColor: markerColor(s.light),
           fillOpacity:.85
         }).addTo(mapLayer);
 
+        const levelText = s.level === "core" ? "🔥 TOP" : s.level === "secondary" ? "⭐ Bello" : "• Extra";
         marker.bindPopup(`
           <strong>${escapeHtml(s.name)}</strong><br>
-          ${escapeHtml(s.light)} • ${escapeHtml(s.zone)} • ${escapeHtml(s.activity)}<br>
-          <button onclick="openDetailFromPlanner('${encodeURIComponent(s.name)}')">Dettagli</button>
+          ${levelText} • ${escapeHtml(s.light)} • ${escapeHtml(s.zone)}<br>
+          <button onclick="openDetailFromPlanner('${s.id}')">Dettagli</button>
         `);
 
         latlngs.push([s.lat, s.lon]);
@@ -1136,8 +1320,8 @@
 
     function markerColor(light){
       if(light === "alba") return "#f5c451";
-      if(light === "tramonto") return "#ff8d8d";
-      return "#6bb7ff";
+      if(light === "tramonto") return "#ff9696";
+      return "#71b8ff";
     }
 
     function escapeHtml(str){
