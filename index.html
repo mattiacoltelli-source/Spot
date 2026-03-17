@@ -446,7 +446,6 @@
       border-radius:18px;
       margin-bottom:12px;
       background:#172131;
-      transition:opacity .18s ease;
       opacity:1;
     }
 
@@ -985,7 +984,7 @@
         "Miradouro do Teleférico das Achadas":[32.8642,-17.2170],
         "Miradouro da Tabua":[32.6887,-17.0845],
         "Miradouro do Massapez":[32.7446,-17.2146],
-        "Vereda dei Balcões Access":[32.7370,-16.8965],
+        "Vereda dos Balcões Access":[32.7370,-16.8965],
         "Levada da Referta":[32.7552,-16.8142],
         "Miradouro da Beira da Quinta":[32.8352,-16.9370],
         "Praia da Alagoa":[32.7722,-16.8290],
@@ -1037,45 +1036,35 @@
       planner:loadJson(STORAGE_KEYS.planner, defaultPlanner)
     };
 
-    const BLANK_IMAGE = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600">
-        <rect width="900" height="600" fill="#172131"/>
-      </svg>
-    `);
-
-    const imageCache = new Map();
-
-    const WIKI_IMAGE_TITLES = {
-      "Ponta de São Lourenço": ["Ponta de São Lourenço"],
-      "Miradouro da Ponta do Rosto": ["Ponta de São Lourenço"],
-      "Pico do Arieiro": ["Pico do Arieiro"],
-      "PR1 Arieiro → Ruivo": ["Pico do Arieiro", "Pico Ruivo"],
-      "Pico Ruivo Summit": ["Pico Ruivo"],
-      "Fanal Forest": ["Fanal"],
-      "Bica da Cana": ["Paul da Serra"],
-      "Ribeira da Janela": ["Ribeira da Janela"],
-      "Porto Moniz Pools": ["Porto Moniz"],
-      "Cabo Girão": ["Cabo Girão"],
-      "Câmara de Lobos": ["Câmara de Lobos"],
-      "Seixal Beach": ["Seixal"],
-      "Levada do Caldeirão Verde": ["Caldeirão Verde"],
-      "25 Fontes": ["25 Fontes"],
-      "Levada do Risco": ["Risco Waterfall"],
-      "Eira do Serrado": ["Eira do Serrado"],
-      "Ponta do Pargo Lighthouse": ["Ponta do Pargo"],
-      "Santana Houses": ["Santana, Madeira"],
-      "Balcões": ["Ribeiro Frio"],
-      "Garajau Cristo Rei": ["Cristo Rei of Garajau"],
-
-      "Machico Bay": ["Machico"],
-      "Miradouro do Facho": ["Machico"],
-      "Rocha do Navio": ["Rocha do Navio"],
-      "Encumeada Pass": ["Encumeada"],
-      "Penha d'Águia": ["Penha d'Águia"],
-      "Funchal Marina": ["Funchal"],
-      "Palheiro Gardens": ["Palheiro Gardens"],
-      "Levada do Alecrim": ["Rabaçal"],
-      "Cais do Sardinha": ["Ponta de São Lourenço"]
+    const SPOT_IMAGES = {
+      "Ponta de São Lourenço": "https://picsum.photos/seed/Ponta-de-Sao-Lourenco-Madeira/900/600",
+      "Miradouro da Ponta do Rosto": "https://picsum.photos/seed/Ponta-do-Rosto-Madeira/900/600",
+      "Pico do Arieiro": "https://picsum.photos/seed/Pico-do-Arieiro-Madeira/900/600",
+      "PR1 Arieiro → Ruivo": "https://picsum.photos/seed/PR1-Arieiro-Ruivo-Madeira/900/600",
+      "Pico Ruivo Summit": "https://picsum.photos/seed/Pico-Ruivo-Madeira/900/600",
+      "Fanal Forest": "https://picsum.photos/seed/Fanal-Forest-Madeira/900/600",
+      "Ribeira da Janela": "https://picsum.photos/seed/Ribeira-da-Janela-Madeira/900/600",
+      "Porto Moniz Pools": "https://picsum.photos/seed/Porto-Moniz-Madeira/900/600",
+      "Cabo Girão": "https://picsum.photos/seed/Cabo-Girao-Madeira/900/600",
+      "Câmara de Lobos": "https://picsum.photos/seed/Camara-de-Lobos-Madeira/900/600",
+      "Seixal Beach": "https://picsum.photos/seed/Seixal-Beach-Madeira/900/600",
+      "Levada do Caldeirão Verde": "https://picsum.photos/seed/Caldeirao-Verde-Madeira/900/600",
+      "25 Fontes": "https://picsum.photos/seed/25-Fontes-Madeira/900/600",
+      "Levada do Risco": "https://picsum.photos/seed/Risco-Madeira/900/600",
+      "Eira do Serrado": "https://picsum.photos/seed/Eira-do-Serrado-Madeira/900/600",
+      "Ponta do Pargo Lighthouse": "https://picsum.photos/seed/Ponta-do-Pargo-Madeira/900/600",
+      "Santana Houses": "https://picsum.photos/seed/Santana-Houses-Madeira/900/600",
+      "Balcões": "https://picsum.photos/seed/Balcoes-Madeira/900/600",
+      "Garajau Cristo Rei": "https://picsum.photos/seed/Garajau-Cristo-Rei-Madeira/900/600",
+      "Machico Bay": "https://picsum.photos/seed/Machico-Bay-Madeira/900/600",
+      "Miradouro do Facho": "https://picsum.photos/seed/Facho-Machico-Madeira/900/600",
+      "Rocha do Navio": "https://picsum.photos/seed/Rocha-do-Navio-Madeira/900/600",
+      "Encumeada Pass": "https://picsum.photos/seed/Encumeada-Madeira/900/600",
+      "Penha d'Águia": "https://picsum.photos/seed/Penha-dAguia-Madeira/900/600",
+      "Funchal Marina": "https://picsum.photos/seed/Funchal-Marina-Madeira/900/600",
+      "Palheiro Gardens": "https://picsum.photos/seed/Palheiro-Gardens-Madeira/900/600",
+      "Levada do Alecrim": "https://picsum.photos/seed/Alecrim-Madeira/900/600",
+      "Cais do Sardinha": "https://picsum.photos/seed/Cais-do-Sardinha-Madeira/900/600"
     };
 
     let mapInstance = null;
@@ -1319,64 +1308,8 @@
       return `https://picsum.photos/seed/${encodeURIComponent(s.name)}/900/600`;
     }
 
-    async function fetchWikipediaImageByTitle(title, lang="it"){
-      try{
-        const res = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
-        if(!res.ok) return null;
-        const data = await res.json();
-        return data?.originalimage?.source || data?.thumbnail?.source || null;
-      }catch{
-        return null;
-      }
-    }
-
-    async function resolveSpotImage(s){
-      if(imageCache.has(s.name)) return imageCache.get(s.name);
-
-      if(s.level === "extra"){
-        const fallback = fallbackImageForSpot(s);
-        imageCache.set(s.name, fallback);
-        return fallback;
-      }
-
-      const candidates = WIKI_IMAGE_TITLES[s.name] || [s.name];
-      const langs = ["it","en"];
-
-      for(const lang of langs){
-        for(const title of candidates){
-          const url = await fetchWikipediaImageByTitle(title, lang);
-          if(url){
-            imageCache.set(s.name, url);
-            return url;
-          }
-        }
-      }
-
-      const fallback = fallbackImageForSpot(s);
-      imageCache.set(s.name, fallback);
-      return fallback;
-    }
-
-    async function setDetailImage(s){
-      detailImg.alt = s.name;
-      detailImg.src = BLANK_IMAGE;
-      detailImg.style.opacity = "0.45";
-
-      const finalUrl = await resolveSpotImage(s);
-      if(!state.currentSpot || state.currentSpot.id !== s.id) return;
-
-      const img = new Image();
-      img.onload = () => {
-        if(!state.currentSpot || state.currentSpot.id !== s.id) return;
-        detailImg.src = finalUrl;
-        detailImg.style.opacity = "1";
-      };
-      img.onerror = () => {
-        if(!state.currentSpot || state.currentSpot.id !== s.id) return;
-        detailImg.src = fallbackImageForSpot(s);
-        detailImg.style.opacity = "1";
-      };
-      img.src = finalUrl;
+    function getSpotImage(s){
+      return SPOT_IMAGES[s.name] || fallbackImageForSpot(s);
     }
 
     function render(){
@@ -1488,7 +1421,9 @@
       `;
 
       syncDetailFavoriteButton(s.id);
-      setDetailImage(s);
+      detailImg.alt = s.name;
+      detailImg.src = getSpotImage(s);
+      detailImg.style.opacity = "1";
 
       detailOverlay.classList.add("show");
       document.body.classList.add("modal-open");
