@@ -6,85 +6,112 @@
   <title>PhotoSpot Planner</title>
 
   <meta name="theme-color" content="#0b1020" />
-  <meta name="description" content="Trova spot fotogenici, scopri il momento migliore per fotografarli e crea il tuo itinerario." />
+  <meta name="description" content="Scopri spot fotogenici, salva i preferiti e crea il tuo itinerario fotografico perfetto." />
 
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
 
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""
   />
 
   <style>
     :root{
-      --bg:#070b14;
-      --bg2:#0b1120;
+      --bg:#060912;
+      --bg2:#0b1020;
       --panel:#101827;
       --panel2:#131d2f;
-      --panel3:#18253b;
+      --panel3:#18243a;
+      --panel4:#1d2a43;
       --text:#eef3ff;
       --muted:#9fb0cc;
       --line:#263247;
+      --line2:rgba(255,255,255,.08);
       --accent:#ffd166;
       --accent2:#62b6ff;
       --accent3:#7ef0c4;
       --danger:#ff6b7a;
-      --warn:#ffb84d;
       --ok:#35d08a;
-      --shadow:0 16px 40px rgba(0,0,0,.34);
-      --radius:22px;
-      --maxw:1320px;
+      --shadow:0 18px 46px rgba(0,0,0,.34);
+      --shadow-soft:0 10px 28px rgba(0,0,0,.22);
+      --radius-xl:28px;
+      --radius-lg:22px;
+      --radius-md:18px;
+      --radius-sm:14px;
+      --maxw:1340px;
+      --nav-h:84px;
     }
 
     *{box-sizing:border-box}
-
     html,body{
       margin:0;
       padding:0;
       min-height:100%;
       background:
-        radial-gradient(circle at top right, rgba(98,182,255,.14), transparent 28%),
-        radial-gradient(circle at top left, rgba(255,209,102,.10), transparent 30%),
-        linear-gradient(180deg, var(--bg), #09111d 45%, #0a1120 100%);
+        radial-gradient(circle at top right, rgba(98,182,255,.14), transparent 25%),
+        radial-gradient(circle at top left, rgba(255,209,102,.10), transparent 26%),
+        linear-gradient(180deg, var(--bg), #0a1120 44%, #09111d 100%);
       color:var(--text);
       font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    a{ color:inherit; text-decoration:none; }
-    img{ display:block; max-width:100%; }
+    body.modal-open{
+      overflow:hidden;
+    }
+
+    img{display:block;max-width:100%}
+    button,input{font:inherit}
+    button{transition:transform .18s ease, opacity .18s ease, background .18s ease, border-color .18s ease}
+    button:active{transform:scale(.985)}
 
     .app{
       max-width:var(--maxw);
       margin:0 auto;
-      padding:18px 14px 110px;
-    }
-
-    .topbar{
-      position:relative;
-      top:auto;
-      z-index:1;
-      backdrop-filter:none;
-      background:transparent;
-      padding:0;
-      margin:0 0 16px;
-      border-bottom:none;
+      padding:18px 14px calc(var(--nav-h) + 26px);
     }
 
     .hero{
+      position:relative;
+      overflow:hidden;
       display:flex;
       flex-direction:column;
-      gap:14px;
+      gap:16px;
       padding:18px;
-      border-radius:28px;
+      border-radius:var(--radius-xl);
       background:
-        linear-gradient(140deg, rgba(255,209,102,.14), rgba(98,182,255,.10) 45%, rgba(126,240,196,.08)),
-        linear-gradient(180deg, rgba(21,31,49,.95), rgba(10,15,26,.95));
+        radial-gradient(circle at 15% 10%, rgba(255,209,102,.14), transparent 24%),
+        radial-gradient(circle at 85% 0%, rgba(98,182,255,.16), transparent 22%),
+        linear-gradient(145deg, rgba(255,255,255,.04), rgba(255,255,255,.01)),
+        linear-gradient(180deg, rgba(21,31,49,.96), rgba(10,15,26,.98));
       border:1px solid rgba(255,255,255,.06);
       box-shadow:var(--shadow);
-      margin-bottom:8px;
+      margin-bottom:18px;
+      isolation:isolate;
+    }
+
+    .hero::after{
+      content:"";
+      position:absolute;
+      right:-60px;
+      top:-60px;
+      width:180px;
+      height:180px;
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(126,240,196,.12), transparent 70%);
+      z-index:0;
+      pointer-events:none;
+    }
+
+    .hero-top,
+    .hero-controls,
+    .hero-stats{
+      position:relative;
+      z-index:1;
     }
 
     .eyebrow{
@@ -98,51 +125,62 @@
       border:1px solid rgba(255,255,255,.06);
       color:#d9e8ff;
       font-size:.82rem;
+      box-shadow:var(--shadow-soft);
     }
 
-    h1{
+    .hero-title{
       margin:0;
-      font-size:1.95rem;
-      line-height:1.02;
-      letter-spacing:-.03em;
+      font-size:2.05rem;
+      line-height:1;
+      letter-spacing:-.04em;
     }
 
-    .subtitle{
+    .hero-subtitle{
       margin:0;
       color:var(--muted);
-      line-height:1.5;
+      line-height:1.55;
       font-size:.98rem;
+      max-width:640px;
+    }
+
+    .hero-controls{
+      display:grid;
+      gap:12px;
     }
 
     .searchbar{
       display:grid;
       grid-template-columns:1fr auto;
       gap:10px;
-      margin-top:8px;
     }
 
     .searchbar input{
       width:100%;
-      min-height:52px;
+      min-height:54px;
       border:1px solid var(--line);
       background:rgba(255,255,255,.04);
       color:var(--text);
       border-radius:18px;
       padding:0 16px;
-      font-size:1rem;
       outline:none;
+      box-shadow:inset 0 0 0 1px transparent;
+    }
+
+    .searchbar input:focus{
+      border-color:rgba(98,182,255,.45);
+      box-shadow:inset 0 0 0 1px rgba(98,182,255,.15);
     }
 
     .btn{
       border:none;
       border-radius:18px;
-      min-height:52px;
+      min-height:54px;
       padding:0 16px;
-      font-weight:700;
+      font-weight:800;
+      cursor:pointer;
       color:#08111d;
       background:linear-gradient(135deg, var(--accent), #ffb84d);
-      cursor:pointer;
-      box-shadow:0 10px 26px rgba(255,209,102,.16);
+      box-shadow:0 12px 28px rgba(255,209,102,.16);
     }
 
     .btn.secondary{
@@ -164,6 +202,7 @@
       border-radius:14px;
       padding:0 12px;
       font-size:.88rem;
+      font-weight:700;
     }
 
     .search-actions{
@@ -194,102 +233,45 @@
     }
 
     .chip.active{
-      border-color:rgba(255,209,102,.45);
+      border-color:rgba(255,209,102,.38);
       background:rgba(255,209,102,.14);
       color:#ffe8a6;
+      box-shadow:0 8px 20px rgba(255,209,102,.08);
     }
 
-    .sun-panel{
+    .hero-stats{
       display:grid;
       grid-template-columns:repeat(2,1fr);
       gap:10px;
     }
 
     .sun-box{
-      background:rgba(255,255,255,.04);
+      background:rgba(255,255,255,.045);
       border:1px solid rgba(255,255,255,.05);
       border-radius:18px;
       padding:14px;
+      backdrop-filter:blur(4px);
     }
 
     .sun-label{
-      font-size:.82rem;
+      font-size:.8rem;
       color:var(--muted);
-      margin-bottom:6px;
+      margin-bottom:7px;
     }
 
     .sun-time{
       font-weight:800;
-      letter-spacing:-.02em;
       font-size:1rem;
-    }
-
-    .debug-panel{
-      display:grid;
-      gap:10px;
-      padding:14px;
-      border-radius:20px;
-      background:rgba(255,255,255,.04);
-      border:1px solid rgba(255,255,255,.06);
-    }
-
-    .debug-head{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-    }
-
-    .debug-title{
-      font-weight:800;
       letter-spacing:-.02em;
     }
 
-    .debug-status{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:8px 12px;
-      border-radius:999px;
-      font-size:.84rem;
-      font-weight:700;
-      border:1px solid rgba(255,255,255,.08);
-      background:rgba(255,255,255,.04);
+    .layout{
+      display:block;
     }
 
-    .debug-status.ok{ color:#baf5d9; border-color:rgba(53,208,138,.25); background:rgba(53,208,138,.08); }
-    .debug-status.warn{ color:#ffe1a6; border-color:rgba(255,184,77,.25); background:rgba(255,184,77,.08); }
-    .debug-status.err{ color:#ffc3cb; border-color:rgba(255,107,122,.25); background:rgba(255,107,122,.08); }
-
-    .debug-grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
+    .section{
+      margin-top:18px;
     }
-
-    .debug-box{
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.05);
-      border-radius:16px;
-      padding:12px;
-      min-width:0;
-    }
-
-    .debug-box .label{
-      font-size:.78rem;
-      color:var(--muted);
-      margin-bottom:6px;
-    }
-
-    .debug-box .value{
-      font-size:.9rem;
-      font-weight:700;
-      line-height:1.35;
-      word-break:break-word;
-    }
-
-    .layout{ display:block; }
-    .section{ margin-top:18px; }
 
     .section-head{
       display:flex;
@@ -305,7 +287,14 @@
       letter-spacing:-.02em;
     }
 
-    .muted{ color:var(--muted); }
+    .muted{
+      color:var(--muted);
+    }
+
+    .section-note{
+      font-size:.9rem;
+      color:var(--muted);
+    }
 
     .grid{
       display:grid;
@@ -313,12 +302,23 @@
     }
 
     .spot-card{
-      background:linear-gradient(180deg, rgba(20,29,46,.95), rgba(13,20,33,.96));
+      position:relative;
+      overflow:hidden;
+      background:
+        linear-gradient(180deg, rgba(21,30,46,.96), rgba(13,20,33,.98));
       border:1px solid rgba(255,255,255,.06);
       border-radius:24px;
-      overflow:hidden;
       box-shadow:var(--shadow);
-      position:relative;
+      transform:translateY(14px);
+      opacity:0;
+      animation:cardIn .5s ease forwards;
+    }
+
+    @keyframes cardIn{
+      to{
+        opacity:1;
+        transform:translateY(0);
+      }
     }
 
     .spot-cover{
@@ -332,11 +332,19 @@
       width:100%;
       height:100%;
       object-fit:cover;
-      transition:transform .35s ease;
+      transition:transform .45s ease;
     }
 
     .spot-card:hover .spot-cover img{
-      transform:scale(1.04);
+      transform:scale(1.05);
+    }
+
+    .cover-gradient{
+      position:absolute;
+      inset:auto 0 0 0;
+      height:46%;
+      background:linear-gradient(180deg, transparent, rgba(4,8,14,.82));
+      pointer-events:none;
     }
 
     .overlay-top{
@@ -357,12 +365,12 @@
       display:inline-flex;
       align-items:center;
       gap:8px;
-      background:rgba(10,15,26,.78);
+      background:rgba(10,15,26,.76);
       border:1px solid rgba(255,255,255,.08);
       color:#fff2c7;
       border-radius:999px;
       padding:8px 12px;
-      font-size:.86rem;
+      font-size:.84rem;
       font-weight:800;
       backdrop-filter:blur(8px);
     }
@@ -397,8 +405,8 @@
 
     .spot-title{
       margin:0;
-      font-size:1.08rem;
-      line-height:1.15;
+      font-size:1.1rem;
+      line-height:1.12;
       letter-spacing:-.02em;
     }
 
@@ -409,7 +417,8 @@
       color:#bfe0ff;
       border:1px solid rgba(98,182,255,.2);
       white-space:nowrap;
-      font-size:.8rem;
+      font-size:.79rem;
+      font-weight:700;
     }
 
     .spot-meta{
@@ -419,7 +428,7 @@
     }
 
     .meta-pill{
-      font-size:.8rem;
+      font-size:.79rem;
       color:#d6e5ff;
       background:rgba(255,255,255,.05);
       border:1px solid rgba(255,255,255,.05);
@@ -434,7 +443,7 @@
     }
 
     .tag{
-      font-size:.78rem;
+      font-size:.76rem;
       padding:8px 10px;
       border-radius:999px;
       background:rgba(255,209,102,.09);
@@ -445,20 +454,21 @@
     .best-time-box{
       padding:12px;
       border-radius:18px;
-      background:linear-gradient(135deg, rgba(126,240,196,.08), rgba(98,182,255,.08));
+      background:
+        linear-gradient(135deg, rgba(126,240,196,.09), rgba(98,182,255,.09));
       border:1px solid rgba(255,255,255,.06);
     }
 
     .best-time-title{
-      font-size:.84rem;
+      font-size:.82rem;
       color:var(--muted);
       margin-bottom:5px;
     }
 
     .best-time-main{
-      font-size:.97rem;
+      font-size:.96rem;
       font-weight:800;
-      line-height:1.3;
+      line-height:1.34;
       color:#e8fff8;
     }
 
@@ -473,13 +483,15 @@
       border:1px dashed rgba(255,255,255,.1);
       color:var(--muted);
       border-radius:22px;
-      padding:22px;
+      padding:24px;
       text-align:center;
+      line-height:1.55;
     }
 
     .planner-card,
     .favorites-card{
-      background:linear-gradient(180deg, rgba(17,26,42,.96), rgba(11,18,30,.98));
+      background:
+        linear-gradient(180deg, rgba(17,26,42,.97), rgba(11,18,30,.99));
       border:1px solid rgba(255,255,255,.06);
       border-radius:24px;
       padding:16px;
@@ -494,7 +506,7 @@
     }
 
     .planner-stat{
-      background:rgba(255,255,255,.04);
+      background:rgba(255,255,255,.045);
       border:1px solid rgba(255,255,255,.05);
       border-radius:18px;
       padding:12px;
@@ -511,11 +523,6 @@
       font-weight:800;
     }
 
-    .planner-map-wrap{
-      margin-top:8px;
-      margin-bottom:14px;
-    }
-
     .planner-map{
       width:100%;
       height:240px;
@@ -523,13 +530,14 @@
       overflow:hidden;
       border:1px solid rgba(255,255,255,.06);
       background:#0f1726;
+      margin-bottom:14px;
     }
 
     .route-list{
       display:flex;
       flex-direction:column;
       gap:10px;
-      margin-top:10px;
+      margin-top:8px;
     }
 
     .route-item{
@@ -541,6 +549,12 @@
       border:1px solid rgba(255,255,255,.05);
       border-radius:18px;
       padding:12px;
+      transition:background .18s ease, border-color .18s ease;
+    }
+
+    .route-item:hover{
+      background:rgba(255,255,255,.055);
+      border-color:rgba(255,255,255,.08);
     }
 
     .route-index{
@@ -571,6 +585,13 @@
       color:#ffb2ba;
       cursor:pointer;
       font-size:1rem;
+      width:34px;
+      height:34px;
+      border-radius:50%;
+    }
+
+    .route-remove:hover{
+      background:rgba(255,107,122,.08);
     }
 
     .favorites-list{
@@ -603,7 +624,7 @@
 
     .favorite-sub{
       color:var(--muted);
-      font-size:.85rem;
+      font-size:.84rem;
     }
 
     .detail-modal{
@@ -624,11 +645,24 @@
       width:100%;
       max-height:92vh;
       overflow:auto;
-      background:linear-gradient(180deg, #0d1524, #0b1220);
+      background:
+        linear-gradient(180deg, #0d1524, #0b1220);
       border-radius:28px 28px 0 0;
       border-top:1px solid rgba(255,255,255,.08);
       box-shadow:0 -20px 40px rgba(0,0,0,.35);
       padding:14px 14px 30px;
+      animation:sheetUp .24s ease;
+    }
+
+    @keyframes sheetUp{
+      from{
+        transform:translateY(24px);
+        opacity:0;
+      }
+      to{
+        transform:translateY(0);
+        opacity:1;
+      }
     }
 
     .sheet-handle{
@@ -656,13 +690,13 @@
 
     .detail-title{
       margin:0 0 8px;
-      font-size:1.4rem;
+      font-size:1.42rem;
       letter-spacing:-.03em;
     }
 
     .detail-desc{
       color:var(--muted);
-      line-height:1.55;
+      line-height:1.58;
       margin:0 0 12px;
     }
 
@@ -705,13 +739,13 @@
       left:12px;
       right:12px;
       bottom:12px;
-      z-index:50;
+      z-index:60;
       display:grid;
       grid-template-columns:repeat(3,1fr);
       gap:10px;
       padding:10px;
       border-radius:24px;
-      background:rgba(10,15,25,.88);
+      background:rgba(10,15,25,.9);
       border:1px solid rgba(255,255,255,.07);
       backdrop-filter:blur(14px);
       box-shadow:var(--shadow);
@@ -723,13 +757,63 @@
       border-radius:18px;
       background:transparent;
       color:var(--muted);
-      font-weight:700;
+      font-weight:800;
       cursor:pointer;
     }
 
     .nav-btn.active{
       background:rgba(255,255,255,.07);
       color:var(--text);
+    }
+
+    .toast-wrap{
+      position:fixed;
+      left:14px;
+      right:14px;
+      bottom:calc(var(--nav-h) + 16px);
+      z-index:300;
+      display:grid;
+      gap:10px;
+      pointer-events:none;
+    }
+
+    .toast{
+      pointer-events:auto;
+      background:rgba(9,14,24,.92);
+      border:1px solid rgba(255,255,255,.08);
+      color:var(--text);
+      padding:12px 14px;
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      animation:toastIn .25s ease;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .toast.ok{
+      border-color:rgba(53,208,138,.22);
+    }
+
+    .toast.err{
+      border-color:rgba(255,107,122,.22);
+    }
+
+    .toast-msg{
+      font-size:.92rem;
+      line-height:1.4;
+    }
+
+    @keyframes toastIn{
+      from{
+        transform:translateY(12px);
+        opacity:0;
+      }
+      to{
+        transform:translateY(0);
+        opacity:1;
+      }
     }
 
     .startup{
@@ -755,10 +839,10 @@
     }
 
     .startup-logo{
-      width:86px;
-      height:86px;
+      width:88px;
+      height:88px;
       margin:0 auto 16px;
-      border-radius:26px;
+      border-radius:28px;
       display:grid;
       place-items:center;
       background:linear-gradient(135deg, rgba(255,209,102,.18), rgba(98,182,255,.18));
@@ -769,7 +853,7 @@
 
     .startup h3{
       margin:0 0 8px;
-      font-size:1.35rem;
+      font-size:1.4rem;
       letter-spacing:-.03em;
     }
 
@@ -778,7 +862,7 @@
       color:var(--muted);
     }
 
-    .hidden{ display:none !important; }
+    .hidden{display:none !important}
 
     @media (min-width:780px){
       .app{
@@ -786,14 +870,9 @@
         padding-right:20px;
       }
 
-      .topbar{
-        margin:0 0 16px;
-        padding:0;
-      }
-
       .layout{
         display:grid;
-        grid-template-columns:1.15fr .85fr;
+        grid-template-columns:1.12fr .88fr;
         gap:18px;
         align-items:start;
       }
@@ -802,16 +881,34 @@
         grid-template-columns:repeat(2,1fr);
       }
 
+      .hero{
+        padding:22px;
+      }
+
+      .hero-controls{
+        grid-template-columns:1fr;
+      }
+
       .sheet{
         width:min(760px,100%);
         margin:0 auto;
         border-radius:28px;
       }
+
+      .toast-wrap{
+        left:auto;
+        right:20px;
+        width:min(360px, calc(100vw - 40px));
+      }
     }
 
-    @media (min-width:1100px){
+    @media (min-width:1120px){
       .grid{
         grid-template-columns:repeat(3,1fr);
+      }
+
+      .hero-title{
+        font-size:2.2rem;
       }
     }
   </style>
@@ -821,19 +918,21 @@
     <div class="startup-inner">
       <div class="startup-logo">📸</div>
       <h3>PhotoSpot Planner</h3>
-      <p>Scopri i migliori spot e pianifica il tuo itinerario fotografico.</p>
+      <p>Scopri luoghi bellissimi e pianifica il tuo percorso fotografico.</p>
     </div>
   </div>
 
   <div class="app">
-    <div class="topbar">
-      <div class="hero">
+    <section class="hero">
+      <div class="hero-top">
         <div class="eyebrow">✨ Assistente fotografico da viaggio</div>
-        <h1>PhotoSpot Planner</h1>
-        <p class="subtitle">
-          Trova luoghi fotogenici, scopri il momento migliore per fotografarli e costruisci il tuo itinerario ideale.
+        <h1 class="hero-title">PhotoSpot Planner</h1>
+        <p class="hero-subtitle">
+          Trova spot fotogenici, scopri il momento migliore per fotografarli e crea un itinerario elegante, rapido e utile da usare davvero in viaggio.
         </p>
+      </div>
 
+      <div class="hero-controls">
         <div class="searchbar">
           <input id="cityInput" type="text" placeholder="Cerca una città o un luogo..." />
           <button class="btn" id="searchBtn">Cerca</button>
@@ -854,62 +953,38 @@
           <button class="chip" data-filter="street">Street</button>
           <button class="chip" data-filter="sunset">Sunset</button>
         </div>
+      </div>
 
-        <div class="sun-panel" id="sunPanel">
-          <div class="sun-box">
-            <div class="sun-label">Alba</div>
-            <div class="sun-time">—</div>
-          </div>
-          <div class="sun-box">
-            <div class="sun-label">Tramonto</div>
-            <div class="sun-time">—</div>
-          </div>
-          <div class="sun-box">
-            <div class="sun-label">Golden hour</div>
-            <div class="sun-time">—</div>
-          </div>
-          <div class="sun-box">
-            <div class="sun-label">Blue hour</div>
-            <div class="sun-time">—</div>
-          </div>
+      <div class="hero-stats" id="sunPanel">
+        <div class="sun-box">
+          <div class="sun-label">Alba</div>
+          <div class="sun-time">—</div>
         </div>
-
-        <div class="debug-panel">
-          <div class="debug-head">
-            <div class="debug-title">Debug API</div>
-            <div class="debug-status warn" id="debugStatus">In attesa</div>
-          </div>
-
-          <div class="debug-grid">
-            <div class="debug-box">
-              <div class="label">Ultimo stato</div>
-              <div class="value" id="debugMessage">Nessuna richiesta ancora</div>
-            </div>
-            <div class="debug-box">
-              <div class="label">HTTP status</div>
-              <div class="value" id="debugHttp">—</div>
-            </div>
-            <div class="debug-box">
-              <div class="label">Modalità query</div>
-              <div class="value" id="debugMode">—</div>
-            </div>
-            <div class="debug-box">
-              <div class="label">Fallback</div>
-              <div class="value" id="debugFallback">No</div>
-            </div>
-          </div>
+        <div class="sun-box">
+          <div class="sun-label">Tramonto</div>
+          <div class="sun-time">—</div>
+        </div>
+        <div class="sun-box">
+          <div class="sun-label">Golden hour</div>
+          <div class="sun-time">—</div>
+        </div>
+        <div class="sun-box">
+          <div class="sun-label">Blue hour</div>
+          <div class="sun-time">—</div>
         </div>
       </div>
-    </div>
+    </section>
 
     <div class="layout">
       <div>
         <section class="section" id="spotsSection">
           <div class="section-head">
             <h2>Spot fotogenici</h2>
-            <div class="muted" id="resultInfo">Nessuna ricerca ancora</div>
+            <div class="section-note" id="resultInfo">Nessuna ricerca ancora</div>
           </div>
+
           <div class="grid" id="spotsGrid"></div>
+
           <div class="empty hidden" id="spotsEmpty">
             Nessuno spot trovato. Prova con una città diversa o usa la geolocalizzazione.
           </div>
@@ -939,14 +1014,11 @@
               </div>
             </div>
 
-            <div class="planner-map-wrap">
-              <div class="planner-map" id="plannerMap"></div>
-            </div>
-
+            <div class="planner-map" id="plannerMap"></div>
             <div class="route-list" id="plannerList"></div>
 
             <div class="empty" id="plannerEmpty">
-              Aggiungi alcuni spot e l'app ti suggerirà un mini itinerario.
+              Aggiungi alcuni spot e l’app ti suggerirà un mini itinerario.
             </div>
           </div>
         </section>
@@ -975,20 +1047,18 @@
     </div>
   </div>
 
+  <div class="toast-wrap" id="toastWrap"></div>
+
   <div class="bottom-nav">
     <button class="nav-btn active" data-scroll="#spotsSection">Spot</button>
     <button class="nav-btn" data-scroll="#plannerSection">Planner</button>
     <button class="nav-btn" data-scroll="#favoritesSection">Preferiti</button>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
 
   <script>
-    const OPEN_TRIP_MAP_KEY = "5ae2e3f221c38a28845f05b632bd443d1525ce06c6230f0f750d8c8d";
-
     const state = {
       currentPlaceName: "",
       center: null,
@@ -996,20 +1066,13 @@
       filter: "all",
       sortByScore: true,
       favorites: loadLocal("photospot_favorites", []),
-      planner: loadLocal("photospot_planner", []),
-      imageCache: loadLocal("photospot_image_cache", {}),
-      debug: {
-        status: "warn",
-        message: "Nessuna richiesta ancora",
-        http: "—",
-        mode: "—",
-        fallback: false
-      }
+      planner: loadLocal("photospot_planner", [])
     };
 
     let detailMapInstance = null;
     let plannerMapInstance = null;
     let plannerMapLayer = null;
+    let toastTimer = null;
 
     const cityInput = document.getElementById("cityInput");
     const searchBtn = document.getElementById("searchBtn");
@@ -1031,12 +1094,7 @@
     const detailContent = document.getElementById("detailContent");
     const sunPanel = document.getElementById("sunPanel");
     const startupScreen = document.getElementById("startupScreen");
-
-    const debugStatus = document.getElementById("debugStatus");
-    const debugMessage = document.getElementById("debugMessage");
-    const debugHttp = document.getElementById("debugHttp");
-    const debugMode = document.getElementById("debugMode");
-    const debugFallback = document.getElementById("debugFallback");
+    const toastWrap = document.getElementById("toastWrap");
 
     setTimeout(() => startupScreen.classList.add("hide"), 900);
 
@@ -1047,6 +1105,7 @@
       state.sortByScore = !state.sortByScore;
       sortBtn.textContent = state.sortByScore ? "Ordina: score" : "Ordina: distanza";
       renderSpots();
+      showToast(state.sortByScore ? "Ordinamento per score attivato" : "Ordinamento per distanza attivato");
     });
 
     cityInput.addEventListener("keydown", (e) => {
@@ -1077,6 +1136,7 @@
       saveLocal("photospot_planner", state.planner);
       renderPlanner();
       renderSpots();
+      showToast("Planner svuotato");
     });
 
     clearFavoritesBtn.addEventListener("click", () => {
@@ -1084,6 +1144,7 @@
       saveLocal("photospot_favorites", state.favorites);
       renderFavorites();
       renderSpots();
+      showToast("Preferiti rimossi");
     });
 
     detailModal.addEventListener("click", (e) => {
@@ -1091,7 +1152,6 @@
     });
 
     initPlannerMap();
-    renderDebug();
     renderFavorites();
     renderPlanner();
     updateSunPanel(null);
@@ -1101,13 +1161,11 @@
       if (!query) return;
 
       resultInfo.textContent = "Ricerca in corso...";
-      setDebug("warn", "Geocoding città in corso...", "—", "geocode", false);
-
       try{
         const place = await geocodePlace(query);
         if (!place) {
           resultInfo.textContent = "Luogo non trovato";
-          setDebug("err", "Nominatim non ha trovato il luogo", "200", "geocode", false);
+          showToast("Luogo non trovato", "err");
           return;
         }
 
@@ -1122,7 +1180,7 @@
       }catch(err){
         console.error(err);
         resultInfo.textContent = "Errore nella ricerca";
-        setDebug("err", "Errore durante il geocoding", "fetch error", "geocode", false);
+        showToast("Errore nella ricerca", "err");
       }
     }
 
@@ -1133,8 +1191,6 @@
       }
 
       resultInfo.textContent = "Recupero posizione...";
-      setDebug("warn", "Recupero geolocalizzazione...", "—", "geolocation", false);
-
       navigator.geolocation.getCurrentPosition(async (pos) => {
         state.center = {
           lat: pos.coords.latitude,
@@ -1145,7 +1201,7 @@
         await loadPhotoSpots();
       }, () => {
         resultInfo.textContent = "Impossibile ottenere la posizione";
-        setDebug("err", "Geolocalizzazione negata o non disponibile", "browser", "geolocation", false);
+        showToast("Impossibile ottenere la posizione", "err");
       }, {
         enableHighAccuracy:true,
         timeout:10000
@@ -1168,166 +1224,89 @@
       spotsGrid.innerHTML = "";
       spotsEmpty.classList.add("hidden");
 
-      const fullKinds = [
-        "view_points",
-        "interesting_places",
-        "architecture",
-        "historic",
-        "bridges",
-        "squares",
-        "towers",
-        "monuments"
-      ].join(",");
-
-      const safeKinds = [
-        "interesting_places",
-        "historic",
-        "architecture"
-      ].join(",");
-
       try{
-        setDebug("warn", "Tentativo query completa OpenTripMap...", "—", "full", false);
-        let data = await fetchOpenTripMap(fullKinds, false);
+        const query = buildOverpassQuery(state.center.lat, state.center.lon, 6000);
+        const res = await fetch("https://overpass-api.de/api/interpreter", {
+          method: "POST",
+          body: query
+        });
 
-        let features = (data && data.features) ? data.features : [];
+        if (!res.ok) throw new Error("Overpass error");
 
-        if (!features.length){
-          setDebug("warn", "Nessun risultato con query completa, provo fallback...", "200", "fallback", true);
-          data = await fetchOpenTripMap(safeKinds, true);
-          features = (data && data.features) ? data.features : [];
-        }
+        const data = await res.json();
+        const elements = data.elements || [];
 
-        const cleaned = features
-          .map((f, index) => normalizeSpot(f, index))
+        const cleaned = elements
+          .map((el, index) => normalizeSpot(el, index))
+          .filter(Boolean)
           .filter(s => s.name && s.name.trim().length > 2)
-          .filter((spot, index, arr) => arr.findIndex(a => a.name.toLowerCase() === spot.name.toLowerCase()) === index);
+          .filter((spot, index, arr) => arr.findIndex(a => a.name.toLowerCase() === spot.name.toLowerCase()) === index)
+          .slice(0, 30);
+
+        state.spots = cleaned;
 
         if (!cleaned.length){
           resultInfo.textContent = "Nessuno spot trovato";
           spotsEmpty.classList.remove("hidden");
-          setDebug("warn", "API raggiunta ma nessuno spot utile trovato", "200", "parsed", true);
+          showToast("Nessuno spot trovato");
           return;
         }
 
-        state.spots = cleaned;
         resultInfo.textContent = `${cleaned.length} spot vicino a ${shortPlaceName(state.currentPlaceName)}`;
-        setDebug("ok", `${cleaned.length} spot caricati correttamente`, "200", "success", state.debug.fallback);
         renderSpots();
-        hydrateSpotImages(cleaned);
-
+        showToast(`${cleaned.length} spot caricati`, "ok");
       }catch(err){
-        console.error("OpenTripMap error:", err);
-
+        console.error(err);
         state.spots = [];
-        spotsGrid.innerHTML = "";
+        resultInfo.textContent = "Errore nel caricamento degli spot";
         spotsEmpty.classList.remove("hidden");
-
-        const status = err && err.httpStatus ? String(err.httpStatus) : "fetch error";
-        const friendly = getFriendlyApiError(status);
-
-        resultInfo.textContent = friendly.short;
-        setDebug("err", friendly.long, status, "error", state.debug.fallback);
+        showToast("Errore nel caricamento degli spot", "err");
       }
     }
 
-    async function fetchOpenTripMap(kinds, isFallback){
-      const radius = 6000;
-      const url = `https://api.opentripmap.com/0.1/en/places/radius?radius=${radius}&lon=${state.center.lon}&lat=${state.center.lat}&kinds=${encodeURIComponent(kinds)}&limit=30&format=geojson&apikey=${OPEN_TRIP_MAP_KEY}`;
-
-      console.log("OpenTripMap URL:", url);
-
-      const res = await fetch(url);
-      console.log("OpenTripMap status:", res.status);
-
-      state.debug.fallback = isFallback;
-      renderDebug();
-
-      if (!res.ok){
-        const err = new Error(`HTTP ${res.status}`);
-        err.httpStatus = res.status;
-        throw err;
-      }
-
-      const data = await res.json();
-      return data;
+    function buildOverpassQuery(lat, lon, radius){
+      return `
+[out:json][timeout:25];
+(
+  node(around:${radius},${lat},${lon})["tourism"="viewpoint"];
+  node(around:${radius},${lat},${lon})["historic"="monument"];
+  node(around:${radius},${lat},${lon})["historic"="memorial"];
+  node(around:${radius},${lat},${lon})["man_made"="tower"];
+  node(around:${radius},${lat},${lon})["tourism"="attraction"];
+  node(around:${radius},${lat},${lon})["tourism"="artwork"];
+  node(around:${radius},${lat},${lon})["place"="square"];
+  way(around:${radius},${lat},${lon})["bridge"];
+  way(around:${radius},${lat},${lon})["historic"];
+  way(around:${radius},${lat},${lon})["building"]["name"];
+);
+out center tags;`;
     }
 
-    function getFriendlyApiError(status){
-      const code = String(status);
+    function normalizeSpot(el, index){
+      const tags = el.tags || {};
+      const name = tags.name || tags["name:it"] || null;
+      if (!name) return null;
 
-      if (code === "401" || code === "403"){
-        return {
-          short: "Chiave API non valida o bloccata",
-          long: "OpenTripMap ha rifiutato la richiesta. Probabile chiave API non valida, limitata o bloccata."
-        };
-      }
+      const lat = Number(el.lat || el.center?.lat);
+      const lon = Number(el.lon || el.center?.lon);
+      if (!lat || !lon) return null;
 
-      if (code === "429"){
-        return {
-          short: "Troppe richieste all'API",
-          long: "OpenTripMap sta limitando le richieste. Riprova tra poco oppure usa la ricerca meno frequentemente."
-        };
-      }
-
-      if (code === "400"){
-        return {
-          short: "Richiesta API non valida",
-          long: "OpenTripMap ha restituito 400. Potrebbero esserci parametri non accettati per questa combinazione di query."
-        };
-      }
-
-      return {
-        short: "Errore nel caricamento degli spot",
-        long: "La richiesta verso OpenTripMap è fallita o non è stata completata correttamente."
-      };
-    }
-
-    function setDebug(status, message, http, mode, fallback){
-      state.debug = {
-        status,
-        message,
-        http,
-        mode,
-        fallback
-      };
-      renderDebug();
-    }
-
-    function renderDebug(){
-      debugStatus.className = `debug-status ${state.debug.status}`;
-      debugStatus.textContent =
-        state.debug.status === "ok" ? "OK" :
-        state.debug.status === "err" ? "Errore" : "Attenzione";
-
-      debugMessage.textContent = state.debug.message;
-      debugHttp.textContent = state.debug.http;
-      debugMode.textContent = state.debug.mode;
-      debugFallback.textContent = state.debug.fallback ? "Sì" : "No";
-    }
-
-    function normalizeSpot(feature, index){
-      const props = feature.properties || {};
-      const coords = feature.geometry?.coordinates || [0,0];
-      const lon = Number(coords[0]);
-      const lat = Number(coords[1]);
-      const name = props.name || "Spot senza nome";
-      const category = detectCategory(props.kinds || "", name);
+      const category = detectCategory(tags, name);
       const distanceKm = calcDistanceKm(state.center?.lat || 0, state.center?.lon || 0, lat, lon);
-      const image = getInitialSpotImage(name, index);
-      const tags = buildPhotoTags(category, name);
+      const image = getSpotImage(name, index);
+      const photoTags = buildPhotoTags(category, name, tags);
       const bestTime = suggestBestTime(category);
-      const score = computeSpotScore({ category, distanceKm, image, tags, name });
+      const score = computeSpotScore({ category, distanceKm, image, tags: photoTags, name });
 
       return {
-        id: props.xid || `${name}-${lat}-${lon}`,
-        xid: props.xid || null,
+        id: `${el.type}-${el.id}`,
         name,
         category,
         lat,
         lon,
         distanceKm,
         image,
-        tags,
+        tags: photoTags,
         score,
         bestTime,
         description: buildDescription(name, category),
@@ -1335,19 +1314,18 @@
       };
     }
 
-    function detectCategory(kinds, name){
-      const k = (kinds + " " + name).toLowerCase();
+    function detectCategory(tags, name){
+      const text = `${JSON.stringify(tags)} ${name}`.toLowerCase();
 
-      if (k.includes("view") || k.includes("panorama") || k.includes("belvedere")) return "Panorama";
-      if (k.includes("bridge") || k.includes("ponte")) return "Bridge";
-      if (k.includes("square") || k.includes("piazza")) return "Square";
-      if (k.includes("tower") || k.includes("torre")) return "Tower";
-      if (k.includes("monument") || k.includes("statue") || k.includes("memorial")) return "Monument";
-      if (k.includes("church") || k.includes("cathedral") || k.includes("historic") || k.includes("architecture")) return "Monument";
+      if (text.includes("viewpoint") || text.includes("belvedere") || text.includes("panorama")) return "Panorama";
+      if (text.includes("bridge") || text.includes("ponte")) return "Bridge";
+      if (text.includes("square") || text.includes("piazza")) return "Square";
+      if (text.includes("tower") || text.includes("torre")) return "Tower";
+      if (text.includes("monument") || text.includes("memorial") || text.includes("historic")) return "Monument";
       return "Street";
     }
 
-    function buildPhotoTags(category, name){
+    function buildPhotoTags(category, name, tagsObj){
       const lower = name.toLowerCase();
       const map = {
         Panorama: ["panorama", "sunset", "wide shot"],
@@ -1359,8 +1337,8 @@
       };
 
       const base = map[category] ? [...map[category]] : ["street", "city", "urban"];
-      if (lower.includes("river") || lower.includes("canal") || lower.includes("porto")) base.push("reflections");
       if (lower.includes("duomo") || lower.includes("cathedral")) base.push("facade light");
+      if (JSON.stringify(tagsObj).toLowerCase().includes("water")) base.push("reflections");
       return [...new Set(base)].slice(0,4);
     }
 
@@ -1440,58 +1418,8 @@
       return Math.max(60, Math.min(99, score));
     }
 
-    function getInitialSpotImage(name, index){
-      const cacheKey = normalizeCacheKey(name);
-      if (state.imageCache[cacheKey]) return state.imageCache[cacheKey];
+    function getSpotImage(name, index){
       return `https://picsum.photos/seed/${encodeURIComponent(name || ("spot" + index))}/900/600`;
-    }
-
-    async function hydrateSpotImages(spots){
-      const subset = spots.slice(0, 8);
-      for (const spot of subset){
-        try{
-          const betterImage = await findWikimediaImage(spot.name, state.currentPlaceName);
-          if (betterImage){
-            spot.image = betterImage;
-            state.imageCache[normalizeCacheKey(spot.name)] = betterImage;
-            saveLocal("photospot_image_cache", state.imageCache);
-            syncSpotAcrossCollections(spot);
-            renderSpots();
-            renderFavorites();
-          }
-        }catch(err){
-          console.warn("Immagine Wikimedia non trovata per", spot.name, err);
-        }
-      }
-    }
-
-    async function findWikimediaImage(name, placeName){
-      const queries = [
-        `${name} ${shortPlaceName(placeName)}`,
-        `${name}`
-      ];
-
-      for (const q of queries){
-        const api = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(q)}&gsrnamespace=6&prop=imageinfo&iiprop=url&iiurlwidth=1200&format=json&origin=*`;
-        const res = await fetch(api);
-        const data = await res.json();
-        const pages = data?.query?.pages ? Object.values(data.query.pages) : [];
-        const valid = pages
-          .map(p => p?.imageinfo?.[0]?.thumburl || p?.imageinfo?.[0]?.url)
-          .filter(Boolean);
-
-        if (valid.length) return valid[0];
-      }
-
-      return null;
-    }
-
-    function syncSpotAcrossCollections(updatedSpot){
-      state.spots = state.spots.map(s => s.id === updatedSpot.id ? { ...s, image: updatedSpot.image } : s);
-      state.favorites = state.favorites.map(s => s.id === updatedSpot.id ? { ...s, image: updatedSpot.image } : s);
-      state.planner = state.planner.map(s => s.id === updatedSpot.id ? { ...s, image: updatedSpot.image } : s);
-      saveLocal("photospot_favorites", state.favorites);
-      saveLocal("photospot_planner", state.planner);
     }
 
     function buildDescription(name, category){
@@ -1527,15 +1455,17 @@
 
       spotsEmpty.classList.add("hidden");
 
-      spots.forEach(spot => {
+      spots.forEach((spot, idx) => {
         const isFav = isFavorite(spot.id);
         const isInPlanner = isInPlanner(spot.id);
 
         const card = document.createElement("article");
         card.className = "spot-card";
+        card.style.animationDelay = `${Math.min(idx * 35, 240)}ms`;
         card.innerHTML = `
           <div class="spot-cover">
             <img src="${spot.image}" alt="${escapeHtml(spot.name)}" loading="lazy" />
+            <div class="cover-gradient"></div>
             <div class="overlay-top">
               <div class="score-pill">📍 Score ${spot.score}</div>
               <button class="fav-btn" data-action="favorite" title="Preferito">
@@ -1639,6 +1569,7 @@
       `;
 
       detailModal.classList.add("show");
+      document.body.classList.add("modal-open");
 
       setTimeout(() => {
         if (detailMapInstance) {
@@ -1667,6 +1598,7 @@
 
     function closeDetail(){
       detailModal.classList.remove("show");
+      document.body.classList.remove("modal-open");
       if (detailMapInstance) {
         detailMapInstance.remove();
         detailMapInstance = null;
@@ -1678,8 +1610,10 @@
       const exists = state.favorites.find(s => s.id === spot.id);
       if (exists){
         state.favorites = state.favorites.filter(s => s.id !== spot.id);
+        showToast("Rimosso dai preferiti");
       } else {
         state.favorites.unshift({ ...spot });
+        showToast("Salvato nei preferiti", "ok");
       }
       saveLocal("photospot_favorites", state.favorites);
       renderFavorites();
@@ -1690,8 +1624,10 @@
       const exists = state.planner.find(s => s.id === spot.id);
       if (exists){
         state.planner = state.planner.filter(s => s.id !== spot.id);
+        showToast("Rimosso dal planner");
       } else {
         state.planner.push({ ...spot });
+        showToast("Aggiunto al planner", "ok");
       }
       state.planner = sortPlannerRoute(state.planner);
       saveLocal("photospot_planner", state.planner);
@@ -1768,6 +1704,7 @@
           saveLocal("photospot_planner", state.planner);
           renderPlanner();
           renderSpots();
+          showToast("Rimosso dal planner");
         });
 
         plannerList.appendChild(item);
@@ -1777,7 +1714,7 @@
     }
 
     function initPlannerMap(){
-      plannerMapInstance = L.map("plannerMap", { zoomControl:false, attributionControl:true }).setView([45.4642, 9.19], 5);
+      plannerMapInstance = L.map("plannerMap", { zoomControl:false }).setView([45.4642, 9.19], 5);
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap"
@@ -1870,10 +1807,10 @@
 
       if (f === "all") return true;
       if (f === "panorama") return text.includes("panorama");
-      if (f === "monument") return text.includes("monument") || text.includes("iconic") || spot.category === "Monument";
+      if (f === "monument") return text.includes("iconic") || spot.category === "Monument";
       if (f === "bridge") return text.includes("bridge") || spot.category === "Bridge";
-      if (f === "square") return text.includes("square") || spot.category === "Square";
-      if (f === "tower") return text.includes("tower") || spot.category === "Tower";
+      if (f === "square") return text.includes("people") || spot.category === "Square";
+      if (f === "tower") return text.includes("telephoto") || spot.category === "Tower";
       if (f === "street") return text.includes("street") || spot.category === "Street";
       if (f === "sunset") return text.includes("sunset") || text.includes("golden");
       return true;
@@ -1887,8 +1824,26 @@
       return state.planner.some(s => s.id === id);
     }
 
-    function normalizeCacheKey(str){
-      return String(str || "").trim().toLowerCase();
+    function showToast(message, type=""){
+      toastWrap.innerHTML = "";
+      clearTimeout(toastTimer);
+
+      const toast = document.createElement("div");
+      toast.className = `toast ${type}`.trim();
+      toast.innerHTML = `
+        <div class="toast-msg">${escapeHtml(message)}</div>
+        <button class="btn ghost small">OK</button>
+      `;
+
+      toast.querySelector("button").addEventListener("click", () => {
+        toast.remove();
+      });
+
+      toastWrap.appendChild(toast);
+
+      toastTimer = setTimeout(() => {
+        toast.remove();
+      }, 2200);
     }
 
     function calcDistanceKm(lat1, lon1, lat2, lon2){
