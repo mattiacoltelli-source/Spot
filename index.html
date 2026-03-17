@@ -3,204 +3,1604 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>PhotoSpot Planner PRO</title>
+  <title>PhotoSpot Planner</title>
 
-  <meta name="theme-color" content="#0b1220" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="PhotoSpot" />
+  <meta name="theme-color" content="#0b1020" />
+  <meta name="description" content="Trova spot fotogenici, scopri il momento migliore per fotografarli e crea il tuo itinerario." />
 
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
 
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
   />
-  <link rel="stylesheet" href="style.css?v=pro9" />
+
+  <style>
+    :root{
+      --bg:#070b14;
+      --bg2:#0c1220;
+      --panel:#101827;
+      --panel2:#151f31;
+      --panel3:#1b2740;
+      --text:#eef3ff;
+      --muted:#9fb0cc;
+      --line:#263247;
+      --accent:#ffd166;
+      --accent2:#62b6ff;
+      --accent3:#7ef0c4;
+      --danger:#ff6b7a;
+      --ok:#35d08a;
+      --shadow:0 16px 40px rgba(0,0,0,.34);
+      --radius:22px;
+      --radius-sm:16px;
+      --maxw:1280px;
+    }
+
+    *{ box-sizing:border-box; }
+
+    html,body{
+      margin:0;
+      padding:0;
+      background:
+        radial-gradient(circle at top right, rgba(98,182,255,.14), transparent 28%),
+        radial-gradient(circle at top left, rgba(255,209,102,.10), transparent 30%),
+        linear-gradient(180deg, var(--bg), #09111d 45%, #0a1120 100%);
+      color:var(--text);
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      min-height:100%;
+    }
+
+    a{ color:inherit; text-decoration:none; }
+    img{ max-width:100%; display:block; }
+
+    .app{
+      max-width:var(--maxw);
+      margin:0 auto;
+      padding:18px 14px 110px;
+    }
+
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:30;
+      backdrop-filter:blur(16px);
+      background:linear-gradient(180deg, rgba(7,11,20,.94), rgba(7,11,20,.72));
+      padding:14px 14px 12px;
+      margin:-18px -14px 16px;
+      border-bottom:1px solid rgba(255,255,255,.04);
+    }
+
+    .hero{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      padding:18px;
+      border-radius:28px;
+      background:
+        linear-gradient(140deg, rgba(255,209,102,.14), rgba(98,182,255,.10) 45%, rgba(126,240,196,.08)),
+        linear-gradient(180deg, rgba(21,31,49,.95), rgba(10,15,26,.95));
+      border:1px solid rgba(255,255,255,.06);
+      box-shadow:var(--shadow);
+    }
+
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      width:max-content;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.06);
+      color:#d9e8ff;
+      font-size:.82rem;
+    }
+
+    h1{
+      font-size:1.9rem;
+      line-height:1.02;
+      margin:0;
+      letter-spacing:-.03em;
+    }
+
+    .subtitle{
+      color:var(--muted);
+      margin:0;
+      line-height:1.5;
+      font-size:.98rem;
+    }
+
+    .searchbar{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:10px;
+      margin-top:8px;
+    }
+
+    .searchbar input{
+      width:100%;
+      min-height:52px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      border-radius:18px;
+      padding:0 16px;
+      font-size:1rem;
+      outline:none;
+    }
+
+    .btn{
+      border:none;
+      border-radius:18px;
+      min-height:52px;
+      padding:0 16px;
+      font-weight:700;
+      color:#08111d;
+      background:linear-gradient(135deg, var(--accent), #ffb84d);
+      cursor:pointer;
+      box-shadow:0 10px 26px rgba(255,209,102,.16);
+    }
+
+    .btn.secondary{
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      box-shadow:none;
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    .btn.ghost{
+      background:transparent;
+      color:var(--muted);
+      border:1px solid var(--line);
+      box-shadow:none;
+    }
+
+    .search-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .quick-filters{
+      display:flex;
+      gap:10px;
+      overflow:auto;
+      padding-bottom:4px;
+      margin-top:2px;
+      scrollbar-width:none;
+    }
+
+    .quick-filters::-webkit-scrollbar{ display:none; }
+
+    .chip{
+      white-space:nowrap;
+      padding:11px 14px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.05);
+      color:#dbe8ff;
+      font-size:.92rem;
+      cursor:pointer;
+    }
+
+    .chip.active{
+      border-color:rgba(255,209,102,.45);
+      background:rgba(255,209,102,.14);
+      color:#ffe8a6;
+    }
+
+    .sun-panel{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:10px;
+      margin-top:4px;
+    }
+
+    .sun-box{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:18px;
+      padding:14px;
+    }
+
+    .sun-label{
+      font-size:.82rem;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+
+    .sun-time{
+      font-weight:800;
+      letter-spacing:-.02em;
+      font-size:1rem;
+    }
+
+    .section{ margin-top:18px; }
+
+    .section-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:12px;
+    }
+
+    .section-head h2{
+      margin:0;
+      font-size:1.12rem;
+      letter-spacing:-.02em;
+    }
+
+    .muted{ color:var(--muted); }
+
+    .grid{
+      display:grid;
+      gap:14px;
+    }
+
+    .spot-card{
+      background:linear-gradient(180deg, rgba(20,29,46,.95), rgba(13,20,33,.96));
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:24px;
+      overflow:hidden;
+      box-shadow:var(--shadow);
+      position:relative;
+    }
+
+    .spot-cover{
+      position:relative;
+      aspect-ratio:16 / 10;
+      background:#101827;
+      overflow:hidden;
+    }
+
+    .spot-cover img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+    }
+
+    .overlay-top{
+      position:absolute;
+      inset:0 auto auto 0;
+      width:100%;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:8px;
+      padding:12px;
+      background:linear-gradient(180deg, rgba(0,0,0,.35), transparent);
+      pointer-events:none;
+    }
+
+    .score-pill{
+      pointer-events:auto;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      background:rgba(10,15,26,.76);
+      border:1px solid rgba(255,255,255,.08);
+      color:#fff2c7;
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:.86rem;
+      font-weight:800;
+      backdrop-filter:blur(8px);
+    }
+
+    .fav-btn{
+      pointer-events:auto;
+      width:40px;
+      height:40px;
+      border-radius:50%;
+      border:none;
+      cursor:pointer;
+      background:rgba(10,15,26,.76);
+      border:1px solid rgba(255,255,255,.1);
+      color:white;
+      font-size:1rem;
+      backdrop-filter:blur(8px);
+    }
+
+    .spot-body{
+      padding:15px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .spot-title-row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+    }
+
+    .spot-title{
+      margin:0;
+      font-size:1.1rem;
+      line-height:1.15;
+      letter-spacing:-.02em;
+    }
+
+    .category-badge{
+      padding:7px 10px;
+      border-radius:999px;
+      background:rgba(98,182,255,.12);
+      color:#bfe0ff;
+      border:1px solid rgba(98,182,255,.2);
+      white-space:nowrap;
+      font-size:.8rem;
+    }
+
+    .spot-meta{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .meta-pill{
+      font-size:.8rem;
+      color:#d6e5ff;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.05);
+      padding:8px 10px;
+      border-radius:999px;
+    }
+
+    .tags{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .tag{
+      font-size:.78rem;
+      padding:8px 10px;
+      border-radius:999px;
+      background:rgba(255,209,102,.09);
+      color:#ffe39d;
+      border:1px solid rgba(255,209,102,.15);
+    }
+
+    .best-time-box{
+      padding:12px;
+      border-radius:18px;
+      background:linear-gradient(135deg, rgba(126,240,196,.08), rgba(98,182,255,.08));
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    .best-time-title{
+      font-size:.84rem;
+      color:var(--muted);
+      margin-bottom:5px;
+    }
+
+    .best-time-main{
+      font-size:.98rem;
+      font-weight:800;
+      line-height:1.3;
+      color:#e8fff8;
+    }
+
+    .card-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .empty{
+      background:rgba(255,255,255,.04);
+      border:1px dashed rgba(255,255,255,.1);
+      color:var(--muted);
+      border-radius:22px;
+      padding:22px;
+      text-align:center;
+    }
+
+    .planner-card{
+      background:linear-gradient(180deg, rgba(17,26,42,.96), rgba(11,18,30,.98));
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:24px;
+      padding:16px;
+      box-shadow:var(--shadow);
+    }
+
+    .planner-summary{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+      margin-bottom:14px;
+    }
+
+    .planner-stat{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:18px;
+      padding:12px;
+    }
+
+    .planner-stat .label{
+      font-size:.78rem;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+
+    .planner-stat .value{
+      font-size:1rem;
+      font-weight:800;
+    }
+
+    .route-list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:10px;
+    }
+
+    .route-item{
+      display:grid;
+      grid-template-columns:auto 1fr auto;
+      gap:12px;
+      align-items:center;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:18px;
+      padding:12px;
+    }
+
+    .route-index{
+      width:32px;
+      height:32px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      font-weight:800;
+      background:rgba(255,209,102,.16);
+      color:#ffe6a6;
+      border:1px solid rgba(255,209,102,.2);
+    }
+
+    .route-name{
+      font-weight:700;
+      margin-bottom:4px;
+    }
+
+    .route-sub{
+      color:var(--muted);
+      font-size:.86rem;
+    }
+
+    .route-remove{
+      border:none;
+      background:transparent;
+      color:#ffb2ba;
+      cursor:pointer;
+      font-size:1rem;
+    }
+
+    .favorites-list{
+      display:grid;
+      gap:10px;
+    }
+
+    .favorite-row{
+      display:grid;
+      grid-template-columns:56px 1fr auto;
+      gap:12px;
+      align-items:center;
+      padding:10px;
+      border-radius:18px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.05);
+    }
+
+    .favorite-row img{
+      width:56px;
+      height:56px;
+      border-radius:14px;
+      object-fit:cover;
+    }
+
+    .favorite-name{
+      font-weight:700;
+      margin-bottom:4px;
+    }
+
+    .favorite-sub{
+      color:var(--muted);
+      font-size:.85rem;
+    }
+
+    .detail-modal{
+      position:fixed;
+      inset:0;
+      background:rgba(2,6,12,.78);
+      display:none;
+      align-items:flex-end;
+      z-index:200;
+      backdrop-filter:blur(8px);
+    }
+
+    .detail-modal.show{
+      display:flex;
+    }
+
+    .sheet{
+      width:100%;
+      max-height:92vh;
+      overflow:auto;
+      background:linear-gradient(180deg, #0d1524, #0b1220);
+      border-radius:28px 28px 0 0;
+      border-top:1px solid rgba(255,255,255,.08);
+      box-shadow:0 -20px 40px rgba(0,0,0,.35);
+      padding:14px 14px 30px;
+    }
+
+    .sheet-handle{
+      width:54px;
+      height:5px;
+      border-radius:999px;
+      background:rgba(255,255,255,.14);
+      margin:2px auto 14px;
+    }
+
+    .detail-cover{
+      aspect-ratio:16 / 10;
+      border-radius:22px;
+      overflow:hidden;
+      background:#101827;
+      margin-bottom:14px;
+      position:relative;
+    }
+
+    .detail-cover img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+    }
+
+    .detail-title{
+      margin:0 0 8px;
+      font-size:1.4rem;
+      letter-spacing:-.03em;
+    }
+
+    .detail-desc{
+      color:var(--muted);
+      line-height:1.55;
+      margin:0 0 12px;
+    }
+
+    .detail-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-bottom:12px;
+    }
+
+    .detail-box{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:18px;
+      padding:12px;
+    }
+
+    .detail-box .label{
+      font-size:.78rem;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+
+    .detail-box .value{
+      font-weight:800;
+      line-height:1.3;
+    }
+
+    .mini-map{
+      width:100%;
+      height:220px;
+      border-radius:20px;
+      overflow:hidden;
+      margin:12px 0 14px;
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    .bottom-nav{
+      position:fixed;
+      left:12px;
+      right:12px;
+      bottom:12px;
+      z-index:50;
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+      padding:10px;
+      border-radius:24px;
+      background:rgba(10,15,25,.88);
+      border:1px solid rgba(255,255,255,.07);
+      backdrop-filter:blur(14px);
+      box-shadow:var(--shadow);
+    }
+
+    .nav-btn{
+      min-height:50px;
+      border:none;
+      border-radius:18px;
+      background:transparent;
+      color:var(--muted);
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    .nav-btn.active{
+      background:rgba(255,255,255,.07);
+      color:var(--text);
+    }
+
+    .startup{
+      position:fixed;
+      inset:0;
+      z-index:500;
+      display:grid;
+      place-items:center;
+      background:
+        radial-gradient(circle at center, rgba(255,209,102,.16), transparent 30%),
+        linear-gradient(180deg, #08101c, #060a13);
+      transition:opacity .45s ease, visibility .45s ease;
+    }
+
+    .startup.hide{
+      opacity:0;
+      visibility:hidden;
+    }
+
+    .startup-inner{
+      text-align:center;
+      padding:24px;
+    }
+
+    .startup-logo{
+      width:86px;
+      height:86px;
+      margin:0 auto 16px;
+      border-radius:26px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg, rgba(255,209,102,.18), rgba(98,182,255,.18));
+      border:1px solid rgba(255,255,255,.09);
+      box-shadow:var(--shadow);
+      font-size:2rem;
+    }
+
+    .startup h3{
+      margin:0 0 8px;
+      font-size:1.35rem;
+      letter-spacing:-.03em;
+    }
+
+    .startup p{
+      margin:0;
+      color:var(--muted);
+    }
+
+    .hidden{ display:none !important; }
+
+    @media (min-width:780px){
+      .app{
+        padding-left:20px;
+        padding-right:20px;
+      }
+
+      .topbar{
+        margin-left:-20px;
+        margin-right:-20px;
+        padding-left:20px;
+        padding-right:20px;
+      }
+
+      .layout{
+        display:grid;
+        grid-template-columns:1.2fr .8fr;
+        gap:18px;
+        align-items:start;
+      }
+
+      .grid{
+        grid-template-columns:repeat(2,1fr);
+      }
+
+      .sheet{
+        width:min(720px,100%);
+        margin:0 auto;
+        border-radius:28px;
+      }
+    }
+
+    @media (min-width:1100px){
+      .grid{
+        grid-template-columns:repeat(3,1fr);
+      }
+    }
+  </style>
 </head>
 <body>
-  <div class="app-shell">
-    <header class="hero">
-      <div class="hero-overlay"></div>
-
-      <div class="hero-content">
-        <p class="eyebrow">Travel Photo App</p>
-        <h1>PhotoSpot Planner</h1>
-        <p class="hero-text">
-          Cerca una città oppure usa la tua posizione e trova spot panoramici,
-          naturali, urbani e fotogenici con i momenti migliori per fotografarli.
-        </p>
-
-        <div class="search-box">
-          <input
-            id="cityInput"
-            type="text"
-            placeholder="Scrivi una città, ad esempio Bologna"
-            autocomplete="off"
-          />
-          <button id="searchBtn">Cerca</button>
-        </div>
-
-        <div class="quick-actions">
-          <button id="geoBtn" class="secondary-btn strong">Usa la mia posizione</button>
-          <button id="installBtn" class="secondary-btn hidden">Installa app</button>
-        </div>
-      </div>
-    </header>
-
-    <main class="main-content">
-      <section class="status-card">
-        <div class="status-top">
-          <h2>Stato ricerca</h2>
-          <span id="statusBadge" class="badge idle">In attesa</span>
-        </div>
-        <p id="statusText" class="status-text">
-          Inserisci una città oppure usa la geolocalizzazione.
-        </p>
-      </section>
-
-      <section id="photographerCard" class="photographer-card hidden">
-        <div class="section-head">
-          <h2>Modalità fotografo</h2>
-          <span id="photographerBadge" class="mini-badge">Analisi</span>
-        </div>
-        <p id="photographerText" class="status-text">
-          Nessuna analisi disponibile.
-        </p>
-      </section>
-
-      <section id="bestNowSection" class="best-now-section hidden">
-        <div class="section-head">
-          <h2>Spot migliori adesso</h2>
-          <span class="results-count">Golden hour</span>
-        </div>
-        <div id="bestNowGrid" class="best-now-grid"></div>
-      </section>
-
-      <section id="sunsetSection" class="best-now-section hidden">
-        <div class="section-head">
-          <h2>Migliori al tramonto</h2>
-          <span class="results-count">Sunset pick</span>
-        </div>
-        <div id="sunsetGrid" class="best-now-grid"></div>
-      </section>
-
-      <section class="lists-section">
-        <div class="section-head">
-          <h2>Le tue liste</h2>
-          <span class="results-count">Organizzazione</span>
-        </div>
-
-        <div class="lists-grid">
-          <button class="list-chip" data-list-filter="today">
-            Oggi <span id="countToday">0</span>
-          </button>
-
-          <button class="list-chip" data-list-filter="weekend">
-            Weekend <span id="countWeekend">0</span>
-          </button>
-
-          <button class="list-chip" data-list-filter="sunsets">
-            Tramonti <span id="countSunsets">0</span>
-          </button>
-
-          <button class="list-chip" data-list-filter="custom">
-            Mia lista <span id="countCustom">0</span>
-          </button>
-        </div>
-      </section>
-
-      <section id="locationCard" class="info-card hidden">
-        <h3>Luogo trovato</h3>
-
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="label">Nome</span>
-            <span id="placeName">-</span>
-          </div>
-
-          <div class="info-item">
-            <span class="label">Latitudine</span>
-            <span id="placeLat">-</span>
-          </div>
-
-          <div class="info-item">
-            <span class="label">Longitudine</span>
-            <span id="placeLon">-</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="filters-section">
-        <div class="section-head">
-          <h2>Filtri</h2>
-          <span class="results-count" id="activeFilterLabel">Tutti</span>
-        </div>
-
-        <div class="filters-row">
-          <button class="filter-btn active" data-filter="all">Tutti</button>
-          <button class="filter-btn" data-filter="natura">Natura</button>
-          <button class="filter-btn" data-filter="acqua">Acqua</button>
-          <button class="filter-btn" data-filter="panorama">Panorama</button>
-          <button class="filter-btn" data-filter="storico">Storico</button>
-          <button class="filter-btn" data-filter="viewpoint">Viewpoint</button>
-          <button class="filter-btn" data-filter="turismo">Turismo</button>
-          <button class="filter-btn" data-filter="monumenti">Monumenti</button>
-          <button class="filter-btn" data-filter="ponti">Ponti</button>
-          <button class="filter-btn" data-filter="piazze">Piazze</button>
-          <button class="filter-btn" data-filter="torri">Torri</button>
-          <button class="filter-btn" data-filter="street">Street</button>
-          <button class="filter-btn" data-filter="favorites">Preferiti</button>
-        </div>
-
-        <div class="sort-row">
-          <label for="sortSelect" class="sort-label">Ordina per</label>
-          <select id="sortSelect" class="sort-select">
-            <option value="distance">Distanza</option>
-            <option value="golden">Golden hour</option>
-            <option value="photo">Photogenic score</option>
-            <option value="name">Nome</option>
-          </select>
-        </div>
-      </section>
-
-      <section class="map-section">
-        <div class="section-head">
-          <h2>Mappa spot</h2>
-          <span id="mapStatus" class="results-count">Aspetto una ricerca</span>
-        </div>
-
-        <div class="map-actions">
-          <button id="zoomAllBtn" class="map-control-btn">Mostra tutti sulla mappa</button>
-        </div>
-
-        <div id="map" class="map-box"></div>
-      </section>
-
-      <section class="results-section">
-        <div class="section-head">
-          <h2>Spot trovati</h2>
-          <span id="resultsCount" class="results-count">0 risultati</span>
-        </div>
-
-        <div id="resultsGrid" class="results-grid"></div>
-      </section>
-    </main>
-  </div>
-
-  <div id="detailModal" class="modal hidden">
-    <div class="modal-backdrop" id="modalBackdrop"></div>
-    <div class="modal-sheet">
-      <button id="closeModalBtn" class="close-modal-btn">Chiudi</button>
-      <div id="modalContent" class="modal-content"></div>
+  <div class="startup" id="startupScreen">
+    <div class="startup-inner">
+      <div class="startup-logo">📸</div>
+      <h3>PhotoSpot Planner</h3>
+      <p>Scopri i migliori spot e pianifica il tuo itinerario fotografico.</p>
     </div>
   </div>
 
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  ></script>
-  <script src="app.js?v=pro9"></script>
+  <div class="app">
+    <div class="topbar">
+      <div class="hero">
+        <div class="eyebrow">✨ Assistente fotografico da viaggio</div>
+        <h1>PhotoSpot Planner</h1>
+        <p class="subtitle">
+          Trova luoghi fotogenici, scopri il momento migliore per fotografarli
+          e costruisci il tuo itinerario ideale.
+        </p>
+
+        <div class="searchbar">
+          <input id="cityInput" type="text" placeholder="Cerca una città o un luogo..." />
+          <button class="btn" id="searchBtn">Cerca</button>
+        </div>
+
+        <div class="search-actions">
+          <button class="btn secondary" id="geoBtn">Usa la mia posizione</button>
+          <button class="btn ghost" id="sortBtn">Ordina: score</button>
+        </div>
+
+        <div class="quick-filters" id="quickFilters">
+          <button class="chip active" data-filter="all">Tutti</button>
+          <button class="chip" data-filter="panorama">Panorami</button>
+          <button class="chip" data-filter="monument">Monumenti</button>
+          <button class="chip" data-filter="bridge">Ponti</button>
+          <button class="chip" data-filter="square">Piazze</button>
+          <button class="chip" data-filter="tower">Torri</button>
+          <button class="chip" data-filter="street">Street</button>
+          <button class="chip" data-filter="sunset">Sunset</button>
+        </div>
+
+        <div class="sun-panel" id="sunPanel">
+          <div class="sun-box">
+            <div class="sun-label">Alba</div>
+            <div class="sun-time">—</div>
+          </div>
+          <div class="sun-box">
+            <div class="sun-label">Tramonto</div>
+            <div class="sun-time">—</div>
+          </div>
+          <div class="sun-box">
+            <div class="sun-label">Golden hour</div>
+            <div class="sun-time">—</div>
+          </div>
+          <div class="sun-box">
+            <div class="sun-label">Blue hour</div>
+            <div class="sun-time">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div>
+        <section class="section" id="spotsSection">
+          <div class="section-head">
+            <h2>Spot fotogenici</h2>
+            <div class="muted" id="resultInfo">Nessuna ricerca ancora</div>
+          </div>
+          <div class="grid" id="spotsGrid"></div>
+          <div class="empty hidden" id="spotsEmpty">
+            Nessuno spot trovato. Prova con una città diversa o usa la geolocalizzazione.
+          </div>
+        </section>
+      </div>
+
+      <div>
+        <section class="section">
+          <div class="section-head">
+            <h2>Planner fotografico</h2>
+            <button class="btn ghost" id="clearPlannerBtn">Svuota</button>
+          </div>
+
+          <div class="planner-card">
+            <div class="planner-summary">
+              <div class="planner-stat">
+                <div class="label">Spot</div>
+                <div class="value" id="plannerCount">0</div>
+              </div>
+              <div class="planner-stat">
+                <div class="label">Durata stimata</div>
+                <div class="value" id="plannerDuration">0 min</div>
+              </div>
+              <div class="planner-stat">
+                <div class="label">Mood</div>
+                <div class="value" id="plannerMood">—</div>
+              </div>
+            </div>
+
+            <div class="route-list" id="plannerList"></div>
+
+            <div class="empty" id="plannerEmpty">
+              Aggiungi alcuni spot e l'app ti suggerirà un mini itinerario.
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>Preferiti</h2>
+            <button class="btn ghost" id="clearFavoritesBtn">Pulisci</button>
+          </div>
+          <div class="favorites-list" id="favoritesList"></div>
+          <div class="empty" id="favoritesEmpty">
+            Non hai ancora preferiti salvati.
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-modal" id="detailModal">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div id="detailContent"></div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-btn active" data-scroll="#spotsSection">Spot</button>
+    <button class="nav-btn" data-scroll="#plannerList">Planner</button>
+    <button class="nav-btn" data-scroll="#favoritesList">Preferiti</button>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
+
+  <script>
+    const OPEN_TRIP_MAP_KEY = "5ae2e3f221c38a28845f05b632bd443d1525ce06c6230f0f750d8c8d";
+
+    const state = {
+      currentPlaceName: "",
+      center: null,
+      spots: [],
+      filter: "all",
+      sortByScore: true,
+      favorites: loadLocal("photospot_favorites", []),
+      planner: loadLocal("photospot_planner", [])
+    };
+
+    let detailMapInstance = null;
+
+    const cityInput = document.getElementById("cityInput");
+    const searchBtn = document.getElementById("searchBtn");
+    const geoBtn = document.getElementById("geoBtn");
+    const sortBtn = document.getElementById("sortBtn");
+    const spotsGrid = document.getElementById("spotsGrid");
+    const spotsEmpty = document.getElementById("spotsEmpty");
+    const resultInfo = document.getElementById("resultInfo");
+    const plannerList = document.getElementById("plannerList");
+    const plannerEmpty = document.getElementById("plannerEmpty");
+    const favoritesList = document.getElementById("favoritesList");
+    const favoritesEmpty = document.getElementById("favoritesEmpty");
+    const plannerCount = document.getElementById("plannerCount");
+    const plannerDuration = document.getElementById("plannerDuration");
+    const plannerMood = document.getElementById("plannerMood");
+    const clearPlannerBtn = document.getElementById("clearPlannerBtn");
+    const clearFavoritesBtn = document.getElementById("clearFavoritesBtn");
+    const detailModal = document.getElementById("detailModal");
+    const detailContent = document.getElementById("detailContent");
+    const sunPanel = document.getElementById("sunPanel");
+    const startupScreen = document.getElementById("startupScreen");
+
+    setTimeout(() => startupScreen.classList.add("hide"), 900);
+
+    searchBtn.addEventListener("click", handleCitySearch);
+    geoBtn.addEventListener("click", handleGeolocation);
+
+    sortBtn.addEventListener("click", () => {
+      state.sortByScore = !state.sortByScore;
+      sortBtn.textContent = state.sortByScore ? "Ordina: score" : "Ordina: distanza";
+      renderSpots();
+    });
+
+    cityInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") handleCitySearch();
+    });
+
+    document.getElementById("quickFilters").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-filter]");
+      if (!btn) return;
+
+      document.querySelectorAll(".chip").forEach(ch => ch.classList.remove("active"));
+      btn.classList.add("active");
+      state.filter = btn.dataset.filter;
+      renderSpots();
+    });
+
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".nav-btn").forEach(n => n.classList.remove("active"));
+        btn.classList.add("active");
+        const target = document.querySelector(btn.dataset.scroll);
+        if (target) target.scrollIntoView({ behavior:"smooth", block:"start" });
+      });
+    });
+
+    clearPlannerBtn.addEventListener("click", () => {
+      state.planner = [];
+      saveLocal("photospot_planner", state.planner);
+      renderPlanner();
+      renderSpots();
+    });
+
+    clearFavoritesBtn.addEventListener("click", () => {
+      state.favorites = [];
+      saveLocal("photospot_favorites", state.favorites);
+      renderFavorites();
+      renderSpots();
+    });
+
+    detailModal.addEventListener("click", (e) => {
+      if (e.target === detailModal) closeDetail();
+    });
+
+    renderFavorites();
+    renderPlanner();
+    updateSunPanel(null);
+
+    async function handleCitySearch(){
+      const query = cityInput.value.trim();
+      if (!query) return;
+
+      resultInfo.textContent = "Ricerca in corso...";
+      try{
+        const place = await geocodePlace(query);
+        if (!place) {
+          resultInfo.textContent = "Luogo non trovato";
+          return;
+        }
+
+        state.currentPlaceName = place.display_name;
+        state.center = {
+          lat: Number(place.lat),
+          lon: Number(place.lon)
+        };
+
+        updateSunPanel(state.center);
+        await loadPhotoSpots();
+      }catch(err){
+        console.error(err);
+        resultInfo.textContent = "Errore nella ricerca";
+      }
+    }
+
+    function handleGeolocation(){
+      if (!navigator.geolocation){
+        alert("Geolocalizzazione non supportata dal browser.");
+        return;
+      }
+
+      resultInfo.textContent = "Recupero posizione...";
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        state.center = {
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude
+        };
+        state.currentPlaceName = "Vicino a te";
+        updateSunPanel(state.center);
+        await loadPhotoSpots();
+      }, () => {
+        resultInfo.textContent = "Impossibile ottenere la posizione";
+      }, {
+        enableHighAccuracy:true,
+        timeout:10000
+      });
+    }
+
+    async function geocodePlace(query){
+      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`;
+      const res = await fetch(url, {
+        headers: { "Accept-Language": "it" }
+      });
+      const data = await res.json();
+      return data[0] || null;
+    }
+
+    async function loadPhotoSpots(){
+      if (!state.center) return;
+
+      resultInfo.textContent = "Caricamento spot...";
+      spotsGrid.innerHTML = "";
+      spotsEmpty.classList.add("hidden");
+
+      const radius = 6000;
+      const kinds = [
+        "view_points",
+        "interesting_places",
+        "architecture",
+        "historic",
+        "bridges",
+        "squares",
+        "towers",
+        "monuments"
+      ].join(",");
+
+      const url = `https://api.opentripmap.com/0.1/en/places/radius?radius=${radius}&lon=${state.center.lon}&lat=${state.center.lat}&kinds=${encodeURIComponent(kinds)}&rate=2&limit=30&format=geojson&apikey=${OPEN_TRIP_MAP_KEY}`;
+
+      try{
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const cleaned = (data.features || [])
+          .map((f, index) => normalizeSpot(f, index))
+          .filter(s => s.name && s.name.trim().length > 2)
+          .filter((spot, index, arr) => arr.findIndex(a => a.name.toLowerCase() === spot.name.toLowerCase()) === index);
+
+        state.spots = cleaned;
+        resultInfo.textContent = `${cleaned.length} spot vicino a ${shortPlaceName(state.currentPlaceName)}`;
+        renderSpots();
+      }catch(err){
+        console.error(err);
+        resultInfo.textContent = "Errore nel caricamento degli spot";
+        spotsEmpty.classList.remove("hidden");
+      }
+    }
+
+    function normalizeSpot(feature, index){
+      const props = feature.properties || {};
+      const coords = feature.geometry?.coordinates || [0,0];
+      const lon = Number(coords[0]);
+      const lat = Number(coords[1]);
+      const name = props.name || "Spot senza nome";
+      const category = detectCategory(props.kinds || "", name);
+      const distanceKm = calcDistanceKm(state.center?.lat || 0, state.center?.lon || 0, lat, lon);
+      const image = getSpotImage(name, index, category);
+      const tags = buildPhotoTags(category, name);
+      const bestTime = suggestBestTime(category);
+      const score = computeSpotScore({ category, distanceKm, image, tags, name });
+
+      return {
+        id: props.xid || `${name}-${lat}-${lon}`,
+        xid: props.xid || null,
+        name,
+        category,
+        lat,
+        lon,
+        distanceKm,
+        image,
+        tags,
+        score,
+        bestTime,
+        description: buildDescription(name, category),
+        mapsUrl: `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`
+      };
+    }
+
+    function detectCategory(kinds, name){
+      const k = (kinds + " " + name).toLowerCase();
+
+      if (k.includes("view") || k.includes("panorama") || k.includes("belvedere")) return "Panorama";
+      if (k.includes("bridge") || k.includes("ponte")) return "Bridge";
+      if (k.includes("square") || k.includes("piazza")) return "Square";
+      if (k.includes("tower") || k.includes("torre")) return "Tower";
+      if (k.includes("monument") || k.includes("statue") || k.includes("memorial")) return "Monument";
+      if (k.includes("church") || k.includes("cathedral") || k.includes("historic") || k.includes("architecture")) return "Monument";
+      return "Street";
+    }
+
+    function buildPhotoTags(category, name){
+      const lower = name.toLowerCase();
+      const map = {
+        Panorama: ["panorama", "sunset", "wide shot"],
+        Bridge: ["bridge lines", "reflections", "blue hour"],
+        Square: ["street", "urban mood", "people"],
+        Tower: ["iconic", "architecture", "telephoto"],
+        Monument: ["iconic", "details", "golden hour"],
+        Street: ["street", "textures", "urban"]
+      };
+
+      const base = map[category] ? [...map[category]] : ["street", "city", "urban"];
+      if (lower.includes("river") || lower.includes("canal") || lower.includes("porto")) base.push("reflections");
+      if (lower.includes("duomo") || lower.includes("cathedral")) base.push("facade light");
+      return [...new Set(base)].slice(0,4);
+    }
+
+    function suggestBestTime(category){
+      const sun = getSunData(state.center);
+      if (!sun) {
+        return {
+          label: "Momento ideale",
+          text: "Controlla golden hour e tramonto",
+          mood: "fotografico"
+        };
+      }
+
+      const format = d => formatTime(d);
+
+      switch(category){
+        case "Panorama":
+          return {
+            label:"Perfetto per il tramonto",
+            text:`Vai tra ${format(sun.goldenEveningStart)} e ${format(sun.sunset)} per luce calda e profondità.`,
+            mood:"sunset"
+          };
+        case "Bridge":
+          return {
+            label:"Ottimo in blue hour",
+            text:`Meglio tra ${format(sun.sunset)} e ${format(sun.blueEveningEnd)} per riflessi e atmosfera.`,
+            mood:"blue-hour"
+          };
+        case "Square":
+          return {
+            label:"Ideale nel tardo pomeriggio",
+            text:`Provalo tra ${format(sun.goldenEveningStart)} e ${format(sun.sunset)} con persone e ombre lunghe.`,
+            mood:"street"
+          };
+        case "Tower":
+          return {
+            label:"Luce radente consigliata",
+            text:`Meglio poco dopo l'alba o nella golden hour serale per volume e contrasto.`,
+            mood:"golden"
+          };
+        case "Monument":
+          return {
+            label:"Grande resa in golden hour",
+            text:`Perfetto tra ${format(sun.goldenEveningStart)} e ${format(sun.sunset)} per dettagli e colore.`,
+            mood:"golden"
+          };
+        default:
+          return {
+            label:"Perfetto per street photography",
+            text:`Meglio al mattino o nel tardo pomeriggio per scene dinamiche e luce morbida.`,
+            mood:"street"
+          };
+      }
+    }
+
+    function computeSpotScore({ category, distanceKm, image, tags, name }){
+      let score = 55;
+
+      const categoryBoost = {
+        Panorama: 18,
+        Monument: 15,
+        Bridge: 14,
+        Tower: 13,
+        Square: 10,
+        Street: 9
+      };
+
+      score += categoryBoost[category] || 8;
+      score += image ? 5 : 0;
+      score += Math.max(0, 12 - Math.round(distanceKm * 1.6));
+      score += Math.min(6, tags.length * 2);
+
+      if (/duomo|cathedral|castle|ponte|bridge|tower|piazza|square|viewpoint|belvedere/i.test(name)) {
+        score += 6;
+      }
+
+      return Math.max(60, Math.min(99, score));
+    }
+
+    function getSpotImage(name, index){
+      const seed = encodeURIComponent(name || ("spot" + index));
+      return `https://picsum.photos/seed/${seed}/900/600`;
+    }
+
+    function buildDescription(name, category){
+      const templates = {
+        Panorama: `${name} è uno spot ideale per scatti ampi, skyline, profondità e tramonti spettacolari.`,
+        Bridge: `${name} offre linee prospettiche forti, atmosfera urbana e ottime possibilità di riflessi in blue hour.`,
+        Square: `${name} è perfetto per street photography, scene di vita urbana e composizioni dinamiche.`,
+        Tower: `${name} è un punto iconico per architettura, dettagli geometrici e inquadrature verticali.`,
+        Monument: `${name} è uno spot classico da fotografia di viaggio, ideale per dettagli, facciate e luce dorata.`,
+        Street: `${name} è interessante per texture urbane, angoli spontanei e storytelling fotografico.`
+      };
+      return templates[category] || `${name} è uno spot interessante per fotografia di viaggio.`;
+    }
+
+    function renderSpots(){
+      let spots = [...state.spots];
+
+      if (state.filter !== "all"){
+        spots = spots.filter(s => matchesFilter(s, state.filter));
+      }
+
+      spots.sort((a,b) => {
+        if (state.sortByScore) return b.score - a.score;
+        return a.distanceKm - b.distanceKm;
+      });
+
+      spotsGrid.innerHTML = "";
+
+      if (!spots.length){
+        spotsEmpty.classList.remove("hidden");
+        return;
+      }
+
+      spotsEmpty.classList.add("hidden");
+
+      spots.forEach(spot => {
+        const isFav = isFavorite(spot.id);
+        const isInPlanner = isInPlanner(spot.id);
+
+        const card = document.createElement("article");
+        card.className = "spot-card";
+        card.innerHTML = `
+          <div class="spot-cover">
+            <img src="${spot.image}" alt="${escapeHtml(spot.name)}" />
+            <div class="overlay-top">
+              <div class="score-pill">📍 Score ${spot.score}</div>
+              <button class="fav-btn" data-action="favorite" title="Preferito">
+                ${isFav ? "❤️" : "🤍"}
+              </button>
+            </div>
+          </div>
+
+          <div class="spot-body">
+            <div class="spot-title-row">
+              <div>
+                <h3 class="spot-title">${escapeHtml(spot.name)}</h3>
+              </div>
+              <div class="category-badge">${spot.category}</div>
+            </div>
+
+            <div class="spot-meta">
+              <div class="meta-pill">📏 ${spot.distanceKm.toFixed(1)} km</div>
+              <div class="meta-pill">📌 ${spot.lat.toFixed(4)}, ${spot.lon.toFixed(4)}</div>
+            </div>
+
+            <div class="tags">
+              ${spot.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
+            </div>
+
+            <div class="best-time-box">
+              <div class="best-time-title">${spot.bestTime.label}</div>
+              <div class="best-time-main">${spot.bestTime.text}</div>
+            </div>
+
+            <div class="card-actions">
+              <button class="btn secondary" data-action="detail">Dettagli</button>
+              <button class="btn ${isInPlanner ? "ghost" : ""}" data-action="planner">
+                ${isInPlanner ? "Nel planner" : "Aggiungi"}
+              </button>
+            </div>
+          </div>
+        `;
+
+        card.querySelector('[data-action="favorite"]').addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggleFavorite(spot);
+        });
+
+        card.querySelector('[data-action="detail"]').addEventListener("click", () => openDetail(spot));
+        card.querySelector('[data-action="planner"]').addEventListener("click", () => togglePlanner(spot));
+
+        spotsGrid.appendChild(card);
+      });
+    }
+
+    function openDetail(spot){
+      const sun = getSunData({ lat: spot.lat, lon: spot.lon });
+
+      detailContent.innerHTML = `
+        <div class="detail-cover">
+          <img src="${spot.image}" alt="${escapeHtml(spot.name)}" />
+        </div>
+
+        <h3 class="detail-title">${escapeHtml(spot.name)}</h3>
+        <p class="detail-desc">${escapeHtml(spot.description)}</p>
+
+        <div class="detail-grid">
+          <div class="detail-box">
+            <div class="label">Categoria</div>
+            <div class="value">${spot.category}</div>
+          </div>
+          <div class="detail-box">
+            <div class="label">Score fotografico</div>
+            <div class="value">${spot.score}/100</div>
+          </div>
+          <div class="detail-box">
+            <div class="label">Coordinate</div>
+            <div class="value">${spot.lat.toFixed(5)}, ${spot.lon.toFixed(5)}</div>
+          </div>
+          <div class="detail-box">
+            <div class="label">Distanza</div>
+            <div class="value">${spot.distanceKm.toFixed(1)} km</div>
+          </div>
+          <div class="detail-box">
+            <div class="label">Alba / Tramonto</div>
+            <div class="value">${sun ? `${formatTime(sun.sunrise)} / ${formatTime(sun.sunset)}` : "—"}</div>
+          </div>
+          <div class="detail-box">
+            <div class="label">Golden / Blue hour</div>
+            <div class="value">${sun ? `${formatTime(sun.goldenEveningStart)} / ${formatTime(sun.blueEveningEnd)}` : "—"}</div>
+          </div>
+        </div>
+
+        <div class="best-time-box">
+          <div class="best-time-title">Suggerimento fotografico</div>
+          <div class="best-time-main">${spot.bestTime.text}</div>
+        </div>
+
+        <div class="mini-map" id="detailMap"></div>
+
+        <div class="card-actions">
+          <button class="btn secondary" id="detailMapsBtn">Apri in mappe</button>
+          <button class="btn" id="detailPlannerBtn">${isInPlanner(spot.id) ? "Nel planner" : "Aggiungi al planner"}</button>
+        </div>
+      `;
+
+      detailModal.classList.add("show");
+
+      setTimeout(() => {
+        if (detailMapInstance) {
+          detailMapInstance.remove();
+          detailMapInstance = null;
+        }
+
+        detailMapInstance = L.map("detailMap", { zoomControl:false }).setView([spot.lat, spot.lon], 15);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(detailMapInstance);
+
+        L.marker([spot.lat, spot.lon]).addTo(detailMapInstance);
+      }, 80);
+
+      document.getElementById("detailMapsBtn").addEventListener("click", () => {
+        window.open(spot.mapsUrl, "_blank");
+      });
+
+      document.getElementById("detailPlannerBtn").addEventListener("click", () => {
+        togglePlanner(spot);
+        closeDetail();
+      });
+    }
+
+    function closeDetail(){
+      detailModal.classList.remove("show");
+      if (detailMapInstance) {
+        detailMapInstance.remove();
+        detailMapInstance = null;
+      }
+      detailContent.innerHTML = "";
+    }
+
+    function toggleFavorite(spot){
+      const exists = state.favorites.find(s => s.id === spot.id);
+      if (exists){
+        state.favorites = state.favorites.filter(s => s.id !== spot.id);
+      } else {
+        state.favorites.unshift(spot);
+      }
+      saveLocal("photospot_favorites", state.favorites);
+      renderFavorites();
+      renderSpots();
+    }
+
+    function togglePlanner(spot){
+      const exists = state.planner.find(s => s.id === spot.id);
+      if (exists){
+        state.planner = state.planner.filter(s => s.id !== spot.id);
+      } else {
+        state.planner.push(spot);
+      }
+      state.planner = sortPlannerRoute(state.planner);
+      saveLocal("photospot_planner", state.planner);
+      renderPlanner();
+      renderSpots();
+    }
+
+    function renderFavorites(){
+      favoritesList.innerHTML = "";
+
+      if (!state.favorites.length){
+        favoritesEmpty.classList.remove("hidden");
+        return;
+      }
+
+      favoritesEmpty.classList.add("hidden");
+
+      state.favorites.forEach(spot => {
+        const row = document.createElement("div");
+        row.className = "favorite-row";
+        row.innerHTML = `
+          <img src="${spot.image}" alt="${escapeHtml(spot.name)}" />
+          <div>
+            <div class="favorite-name">${escapeHtml(spot.name)}</div>
+            <div class="favorite-sub">${spot.category} • score ${spot.score}</div>
+          </div>
+          <button class="btn ghost">Apri</button>
+        `;
+        row.querySelector("button").addEventListener("click", () => openDetail(spot));
+        favoritesList.appendChild(row);
+      });
+    }
+
+    function renderPlanner(){
+      plannerList.innerHTML = "";
+
+      if (!state.planner.length){
+        plannerEmpty.classList.remove("hidden");
+        plannerCount.textContent = "0";
+        plannerDuration.textContent = "0 min";
+        plannerMood.textContent = "—";
+        return;
+      }
+
+      plannerEmpty.classList.add("hidden");
+      const sorted = sortPlannerRoute(state.planner);
+      state.planner = sorted;
+      saveLocal("photospot_planner", state.planner);
+
+      plannerCount.textContent = String(sorted.length);
+      plannerDuration.textContent = `${estimatePlannerMinutes(sorted)} min`;
+      plannerMood.textContent = guessPlannerMood(sorted);
+
+      sorted.forEach((spot, index) => {
+        const item = document.createElement("div");
+        item.className = "route-item";
+        item.innerHTML = `
+          <div class="route-index">${index + 1}</div>
+          <div>
+            <div class="route-name">${escapeHtml(spot.name)}</div>
+            <div class="route-sub">${spot.category} • ${spot.distanceKm.toFixed(1)} km • score ${spot.score}</div>
+          </div>
+          <button class="route-remove" title="Rimuovi">✕</button>
+        `;
+
+        item.addEventListener("click", (e) => {
+          if (e.target.closest(".route-remove")) return;
+          openDetail(spot);
+        });
+
+        item.querySelector(".route-remove").addEventListener("click", () => {
+          state.planner = state.planner.filter(s => s.id !== spot.id);
+          saveLocal("photospot_planner", state.planner);
+          renderPlanner();
+          renderSpots();
+        });
+
+        plannerList.appendChild(item);
+      });
+    }
+
+    function sortPlannerRoute(items){
+      if (!items.length) return [];
+
+      return [...items].sort((a,b) => {
+        const aValue = (a.distanceKm * 0.55) - (a.score * 0.12);
+        const bValue = (b.distanceKm * 0.55) - (b.score * 0.12);
+        return aValue - bValue;
+      });
+    }
+
+    function estimatePlannerMinutes(items){
+      return items.length * 18 + Math.round(items.reduce((acc, s) => acc + Math.min(12, s.distanceKm * 3), 0));
+    }
+
+    function guessPlannerMood(items){
+      const top = items[0];
+      if (!top) return "—";
+      if (items.some(i => i.bestTime.mood === "sunset")) return "sunset route";
+      if (items.some(i => i.bestTime.mood === "blue-hour")) return "city lights";
+      if (items.some(i => i.bestTime.mood === "street")) return "urban walk";
+      return "golden tour";
+    }
+
+    function updateSunPanel(center){
+      const boxes = sunPanel.querySelectorAll(".sun-box .sun-time");
+      if (!center){
+        boxes.forEach(el => el.textContent = "—");
+        return;
+      }
+
+      const sun = getSunData(center);
+      if (!sun){
+        boxes.forEach(el => el.textContent = "—");
+        return;
+      }
+
+      boxes[0].textContent = formatTime(sun.sunrise);
+      boxes[1].textContent = formatTime(sun.sunset);
+      boxes[2].textContent = formatTime(sun.goldenEveningStart);
+      boxes[3].textContent = formatTime(sun.blueEveningEnd);
+    }
+
+    function getSunData(center){
+      if (!center) return null;
+      const times = SunCalc.getTimes(new Date(), center.lat, center.lon);
+      return {
+        sunrise: times.sunrise,
+        sunset: times.sunset,
+        goldenEveningStart: times.goldenHour,
+        blueEveningEnd: times.dusk
+      };
+    }
+
+    function matchesFilter(spot, filter){
+      const f = filter.toLowerCase();
+      const text = `${spot.category} ${spot.tags.join(" ")} ${spot.bestTime.mood}`.toLowerCase();
+
+      if (f === "all") return true;
+      if (f === "panorama") return text.includes("panorama");
+      if (f === "monument") return text.includes("monument") || text.includes("iconic") || spot.category === "Monument";
+      if (f === "bridge") return text.includes("bridge") || spot.category === "Bridge";
+      if (f === "square") return text.includes("square") || spot.category === "Square";
+      if (f === "tower") return text.includes("tower") || spot.category === "Tower";
+      if (f === "street") return text.includes("street") || spot.category === "Street";
+      if (f === "sunset") return text.includes("sunset") || text.includes("golden");
+      return true;
+    }
+
+    function isFavorite(id){
+      return state.favorites.some(s => s.id === id);
+    }
+
+    function isInPlanner(id){
+      return state.planner.some(s => s.id === id);
+    }
+
+    function calcDistanceKm(lat1, lon1, lat2, lon2){
+      const R = 6371;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    function toRad(v){ return v * Math.PI / 180; }
+
+    function formatTime(date){
+      if (!(date instanceof Date) || isNaN(date)) return "—";
+      return date.toLocaleTimeString("it-IT", { hour:"2-digit", minute:"2-digit" });
+    }
+
+    function shortPlaceName(name){
+      if (!name) return "qui";
+      return name.split(",").slice(0,2).join(",").trim();
+    }
+
+    function saveLocal(key, value){
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function loadLocal(key, fallback){
+      try{
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      }catch{
+        return fallback;
+      }
+    }
+
+    function escapeHtml(str){
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    if ("serviceWorker" in navigator){
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch(console.error);
+      });
+    }
+  </script>
 </body>
 </html>

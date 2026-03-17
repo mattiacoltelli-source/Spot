@@ -1,21 +1,25 @@
 {
   "name": "PhotoSpot Planner",
   "short_name": "PhotoSpot",
-  "start_url": ".",
+  "start_url": "./",
   "display": "standalone",
-  "background_color": "#0b1220",
-  "theme_color": "#0b1220",
+  "background_color": "#070b14",
+  "theme_color": "#0b1020",
+  "description": "Trova spot fotogenici, scopri il momento migliore per fotografarli e crea il tuo itinerario.",
+  "lang": "it-IT",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "icon.svg",
+      "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "icon.svg",
+      "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
