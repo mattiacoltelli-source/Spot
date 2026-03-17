@@ -23,7 +23,6 @@
       --bg2:#0b1020;
       --panel:#101827;
       --panel2:#131d2f;
-      --panel3:#18243a;
       --text:#eef3ff;
       --muted:#9fb0cc;
       --line:#263247;
@@ -32,14 +31,12 @@
       --accent3:#7ef0c4;
       --danger:#ff6b7a;
       --ok:#35d08a;
-      --shadow:0 16px 40px rgba(0,0,0,.34);
-      --shadow-soft:0 8px 24px rgba(0,0,0,.22);
-      --radius-xl:24px;
-      --radius-lg:20px;
-      --radius-md:16px;
-      --radius-sm:12px;
-      --maxw:1320px;
-      --nav-h:74px;
+      --shadow:0 14px 34px rgba(0,0,0,.30);
+      --radius-xl:22px;
+      --radius-lg:18px;
+      --radius-md:14px;
+      --maxw:1280px;
+      --nav-h:68px;
     }
 
     *{box-sizing:border-box}
@@ -48,29 +45,23 @@
       padding:0;
       min-height:100%;
       background:
-        radial-gradient(circle at top right, rgba(98,182,255,.14), transparent 24%),
-        radial-gradient(circle at top left, rgba(255,209,102,.10), transparent 24%),
-        linear-gradient(180deg, var(--bg), #0a1120 44%, #09111d 100%);
+        radial-gradient(circle at top right, rgba(98,182,255,.12), transparent 24%),
+        radial-gradient(circle at top left, rgba(255,209,102,.08), transparent 24%),
+        linear-gradient(180deg, var(--bg), #09111d 100%);
       color:var(--text);
       font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
       -webkit-tap-highlight-color:transparent;
     }
 
-    body.modal-open{
-      overflow:hidden;
-    }
+    body.modal-open{ overflow:hidden; }
 
     img{display:block;max-width:100%}
     button,input{font:inherit}
-    button{
-      transition:transform .16s ease, opacity .16s ease, background .16s ease, border-color .16s ease;
-    }
-    button:active{transform:scale(.985)}
 
     .app{
       max-width:var(--maxw);
       margin:0 auto;
-      padding:14px 14px calc(var(--nav-h) + 24px);
+      padding:12px 12px calc(var(--nav-h) + 18px);
     }
 
     .hero{
@@ -78,38 +69,15 @@
       overflow:hidden;
       display:flex;
       flex-direction:column;
-      gap:10px;
-      padding:14px;
+      gap:9px;
+      padding:12px;
       border-radius:var(--radius-xl);
       background:
-        radial-gradient(circle at 15% 10%, rgba(255,209,102,.14), transparent 24%),
-        radial-gradient(circle at 85% 0%, rgba(98,182,255,.16), transparent 22%),
-        linear-gradient(145deg, rgba(255,255,255,.04), rgba(255,255,255,.01)),
+        radial-gradient(circle at 85% 0%, rgba(98,182,255,.14), transparent 24%),
         linear-gradient(180deg, rgba(21,31,49,.96), rgba(10,15,26,.98));
       border:1px solid rgba(255,255,255,.06);
       box-shadow:var(--shadow);
-      margin-bottom:14px;
-      isolation:isolate;
-    }
-
-    .hero::after{
-      content:"";
-      position:absolute;
-      right:-60px;
-      top:-60px;
-      width:170px;
-      height:170px;
-      border-radius:50%;
-      background:radial-gradient(circle, rgba(126,240,196,.12), transparent 70%);
-      z-index:0;
-      pointer-events:none;
-    }
-
-    .hero-top,
-    .hero-controls,
-    .hero-stats{
-      position:relative;
-      z-index:1;
+      margin-bottom:12px;
     }
 
     .eyebrow{
@@ -117,68 +85,56 @@
       align-items:center;
       gap:8px;
       width:max-content;
-      padding:7px 11px;
+      padding:6px 10px;
       border-radius:999px;
       background:rgba(255,255,255,.06);
       border:1px solid rgba(255,255,255,.06);
       color:#d9e8ff;
-      font-size:.78rem;
-      box-shadow:var(--shadow-soft);
+      font-size:.76rem;
     }
 
     .hero-title{
       margin:0;
-      font-size:1.72rem;
-      line-height:1.02;
+      font-size:1.55rem;
+      line-height:1.03;
       letter-spacing:-.04em;
     }
 
     .hero-subtitle{
       margin:0;
       color:var(--muted);
-      line-height:1.42;
-      font-size:.92rem;
-      max-width:640px;
-    }
-
-    .hero-controls{
-      display:grid;
-      gap:9px;
+      line-height:1.38;
+      font-size:.88rem;
     }
 
     .searchbar{
       display:grid;
       grid-template-columns:1fr auto;
-      gap:10px;
+      gap:8px;
+      margin-top:4px;
     }
 
     .searchbar input{
       width:100%;
-      min-height:50px;
+      min-height:48px;
       border:1px solid var(--line);
       background:rgba(255,255,255,.04);
       color:var(--text);
-      border-radius:16px;
+      border-radius:15px;
       padding:0 14px;
       outline:none;
-      box-shadow:inset 0 0 0 1px transparent;
-    }
-
-    .searchbar input:focus{
-      border-color:rgba(98,182,255,.45);
-      box-shadow:inset 0 0 0 1px rgba(98,182,255,.15);
     }
 
     .btn{
       border:none;
-      border-radius:16px;
-      min-height:50px;
-      padding:0 15px;
+      border-radius:15px;
+      min-height:48px;
+      padding:0 14px;
       font-weight:800;
       cursor:pointer;
       color:#08111d;
       background:linear-gradient(135deg, var(--accent), #ffb84d);
-      box-shadow:0 12px 28px rgba(255,209,102,.16);
+      box-shadow:0 10px 22px rgba(255,209,102,.15);
     }
 
     .btn.secondary{
@@ -196,17 +152,17 @@
     }
 
     .btn.small{
-      min-height:38px;
+      min-height:36px;
       border-radius:12px;
-      padding:0 12px;
-      font-size:.86rem;
+      padding:0 11px;
+      font-size:.84rem;
       font-weight:700;
     }
 
     .search-actions{
-      display:flex;
+      display:grid;
+      grid-template-columns:1fr 1fr;
       gap:8px;
-      flex-wrap:wrap;
     }
 
     .quick-filters{
@@ -216,17 +172,16 @@
       padding-bottom:2px;
       scrollbar-width:none;
     }
-
     .quick-filters::-webkit-scrollbar{ display:none; }
 
     .chip{
       white-space:nowrap;
-      padding:9px 13px;
+      padding:8px 12px;
       border-radius:999px;
       border:1px solid rgba(255,255,255,.08);
       background:rgba(255,255,255,.05);
       color:#dbe8ff;
-      font-size:.88rem;
+      font-size:.84rem;
       cursor:pointer;
     }
 
@@ -234,7 +189,6 @@
       border-color:rgba(255,209,102,.38);
       background:rgba(255,209,102,.14);
       color:#ffe8a6;
-      box-shadow:0 8px 20px rgba(255,209,102,.08);
     }
 
     .hero-stats{
@@ -246,30 +200,24 @@
     .sun-box{
       background:rgba(255,255,255,.045);
       border:1px solid rgba(255,255,255,.05);
-      border-radius:16px;
-      padding:12px;
-      backdrop-filter:blur(4px);
+      border-radius:14px;
+      padding:10px;
     }
 
     .sun-label{
-      font-size:.8rem;
+      font-size:.78rem;
       color:var(--muted);
-      margin-bottom:6px;
+      margin-bottom:5px;
     }
 
     .sun-time{
       font-weight:800;
-      font-size:.95rem;
+      font-size:.92rem;
       letter-spacing:-.02em;
     }
 
-    .layout{
-      display:block;
-    }
-
-    .section{
-      margin-top:16px;
-    }
+    .layout{ display:block; }
+    .section{ margin-top:14px; }
 
     .section-head{
       display:flex;
@@ -281,12 +229,12 @@
 
     .section-head h2{
       margin:0;
-      font-size:1.04rem;
+      font-size:1rem;
       letter-spacing:-.02em;
     }
 
     .section-note{
-      font-size:.88rem;
+      font-size:.84rem;
       color:var(--muted);
     }
 
@@ -296,28 +244,16 @@
     }
 
     .spot-card{
-      position:relative;
       overflow:hidden;
-      background:
-        linear-gradient(180deg, rgba(21,30,46,.96), rgba(13,20,33,.98));
+      background:linear-gradient(180deg, rgba(21,30,46,.96), rgba(13,20,33,.98));
       border:1px solid rgba(255,255,255,.06);
-      border-radius:22px;
+      border-radius:20px;
       box-shadow:var(--shadow);
-      transform:translateY(10px);
-      opacity:0;
-      animation:cardIn .45s ease forwards;
-    }
-
-    @keyframes cardIn{
-      to{
-        opacity:1;
-        transform:translateY(0);
-      }
     }
 
     .spot-cover{
       position:relative;
-      aspect-ratio:16 / 10;
+      aspect-ratio:16/10;
       background:#101827;
       overflow:hidden;
     }
@@ -326,17 +262,12 @@
       width:100%;
       height:100%;
       object-fit:cover;
-      transition:transform .4s ease;
-    }
-
-    .spot-card:hover .spot-cover img{
-      transform:scale(1.04);
     }
 
     .cover-gradient{
       position:absolute;
       inset:auto 0 0 0;
-      height:44%;
+      height:42%;
       background:linear-gradient(180deg, transparent, rgba(4,8,14,.82));
       pointer-events:none;
     }
@@ -350,7 +281,7 @@
       align-items:flex-start;
       gap:8px;
       padding:10px;
-      background:linear-gradient(180deg, rgba(0,0,0,.38), transparent);
+      background:linear-gradient(180deg, rgba(0,0,0,.35), transparent);
       pointer-events:none;
     }
 
@@ -364,15 +295,14 @@
       color:#fff2c7;
       border-radius:999px;
       padding:7px 10px;
-      font-size:.8rem;
+      font-size:.78rem;
       font-weight:800;
-      backdrop-filter:blur(8px);
     }
 
     .fav-btn{
       pointer-events:auto;
-      width:38px;
-      height:38px;
+      width:36px;
+      height:36px;
       border-radius:50%;
       border:none;
       cursor:pointer;
@@ -380,11 +310,10 @@
       border:1px solid rgba(255,255,255,.1);
       color:white;
       font-size:1rem;
-      backdrop-filter:blur(8px);
     }
 
     .spot-body{
-      padding:13px;
+      padding:12px;
       display:flex;
       flex-direction:column;
       gap:10px;
@@ -399,19 +328,19 @@
 
     .spot-title{
       margin:0;
-      font-size:1rem;
-      line-height:1.12;
+      font-size:.98rem;
+      line-height:1.14;
       letter-spacing:-.02em;
     }
 
     .category-badge{
-      padding:6px 9px;
+      padding:6px 8px;
       border-radius:999px;
       background:rgba(98,182,255,.12);
       color:#bfe0ff;
       border:1px solid rgba(98,182,255,.2);
       white-space:nowrap;
-      font-size:.76rem;
+      font-size:.74rem;
       font-weight:700;
     }
 
@@ -422,11 +351,11 @@
     }
 
     .meta-pill{
-      font-size:.76rem;
+      font-size:.74rem;
       color:#d6e5ff;
       background:rgba(255,255,255,.05);
       border:1px solid rgba(255,255,255,.05);
-      padding:7px 9px;
+      padding:6px 8px;
       border-radius:999px;
     }
 
@@ -437,8 +366,8 @@
     }
 
     .tag{
-      font-size:.74rem;
-      padding:7px 9px;
+      font-size:.72rem;
+      padding:6px 8px;
       border-radius:999px;
       background:rgba(255,209,102,.09);
       color:#ffe39d;
@@ -446,21 +375,20 @@
     }
 
     .best-time-box{
-      padding:11px;
-      border-radius:16px;
-      background:
-        linear-gradient(135deg, rgba(126,240,196,.09), rgba(98,182,255,.09));
+      padding:10px;
+      border-radius:14px;
+      background:linear-gradient(135deg, rgba(126,240,196,.09), rgba(98,182,255,.09));
       border:1px solid rgba(255,255,255,.06);
     }
 
     .best-time-title{
-      font-size:.8rem;
+      font-size:.78rem;
       color:var(--muted);
-      margin-bottom:5px;
+      margin-bottom:4px;
     }
 
     .best-time-main{
-      font-size:.9rem;
+      font-size:.88rem;
       font-weight:800;
       line-height:1.32;
       color:#e8fff8;
@@ -469,26 +397,25 @@
     .card-actions{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:9px;
+      gap:8px;
     }
 
     .empty{
       background:rgba(255,255,255,.04);
       border:1px dashed rgba(255,255,255,.1);
       color:var(--muted);
-      border-radius:20px;
-      padding:22px;
+      border-radius:18px;
+      padding:18px;
       text-align:center;
       line-height:1.5;
     }
 
     .planner-card,
     .favorites-card{
-      background:
-        linear-gradient(180deg, rgba(17,26,42,.97), rgba(11,18,30,.99));
+      background:linear-gradient(180deg, rgba(17,26,42,.97), rgba(11,18,30,.99));
       border:1px solid rgba(255,255,255,.06);
-      border-radius:22px;
-      padding:14px;
+      border-radius:20px;
+      padding:12px;
       box-shadow:var(--shadow);
     }
 
@@ -496,41 +423,41 @@
       display:grid;
       grid-template-columns:repeat(3,1fr);
       gap:8px;
-      margin-bottom:12px;
+      margin-bottom:10px;
     }
 
     .planner-stat{
       background:rgba(255,255,255,.045);
       border:1px solid rgba(255,255,255,.05);
-      border-radius:16px;
-      padding:10px;
+      border-radius:14px;
+      padding:9px;
     }
 
     .planner-stat .label{
-      font-size:.74rem;
+      font-size:.72rem;
       color:var(--muted);
-      margin-bottom:5px;
+      margin-bottom:4px;
     }
 
     .planner-stat .value{
-      font-size:.95rem;
+      font-size:.9rem;
       font-weight:800;
     }
 
     .planner-map{
       width:100%;
-      height:220px;
-      border-radius:18px;
+      height:210px;
+      border-radius:16px;
       overflow:hidden;
       border:1px solid rgba(255,255,255,.06);
       background:#0f1726;
-      margin-bottom:12px;
+      margin-bottom:10px;
     }
 
     .route-list{
       display:flex;
       flex-direction:column;
-      gap:9px;
+      gap:8px;
       margin-top:8px;
     }
 
@@ -541,13 +468,13 @@
       align-items:center;
       background:rgba(255,255,255,.04);
       border:1px solid rgba(255,255,255,.05);
-      border-radius:16px;
-      padding:10px;
+      border-radius:14px;
+      padding:9px;
     }
 
     .route-index{
-      width:30px;
-      height:30px;
+      width:28px;
+      height:28px;
       border-radius:50%;
       display:grid;
       place-items:center;
@@ -555,18 +482,18 @@
       background:rgba(255,209,102,.16);
       color:#ffe6a6;
       border:1px solid rgba(255,209,102,.2);
-      font-size:.85rem;
+      font-size:.8rem;
     }
 
     .route-name{
       font-weight:700;
       margin-bottom:3px;
-      font-size:.94rem;
+      font-size:.9rem;
     }
 
     .route-sub{
       color:var(--muted);
-      font-size:.8rem;
+      font-size:.78rem;
     }
 
     .route-remove{
@@ -575,30 +502,30 @@
       color:#ffb2ba;
       cursor:pointer;
       font-size:1rem;
-      width:32px;
-      height:32px;
+      width:30px;
+      height:30px;
       border-radius:50%;
     }
 
     .favorites-list{
       display:grid;
-      gap:9px;
+      gap:8px;
     }
 
     .favorite-row{
       display:grid;
-      grid-template-columns:52px 1fr auto;
+      grid-template-columns:50px 1fr auto;
       gap:10px;
       align-items:center;
-      padding:9px;
-      border-radius:16px;
+      padding:8px;
+      border-radius:14px;
       background:rgba(255,255,255,.04);
       border:1px solid rgba(255,255,255,.05);
     }
 
     .favorite-row img{
-      width:52px;
-      height:52px;
+      width:50px;
+      height:50px;
       border-radius:12px;
       object-fit:cover;
     }
@@ -606,12 +533,12 @@
     .favorite-name{
       font-weight:700;
       margin-bottom:4px;
-      font-size:.94rem;
+      font-size:.9rem;
     }
 
     .favorite-sub{
       color:var(--muted);
-      font-size:.8rem;
+      font-size:.78rem;
     }
 
     .detail-modal{
@@ -624,36 +551,21 @@
       backdrop-filter:blur(8px);
     }
 
-    .detail-modal.show{
-      display:flex;
-    }
+    .detail-modal.show{ display:flex; }
 
     .sheet{
       width:100%;
       max-height:92vh;
       overflow:auto;
-      background:
-        linear-gradient(180deg, #0d1524, #0b1220);
-      border-radius:24px 24px 0 0;
+      background:linear-gradient(180deg, #0d1524, #0b1220);
+      border-radius:22px 22px 0 0;
       border-top:1px solid rgba(255,255,255,.08);
       box-shadow:0 -20px 40px rgba(0,0,0,.35);
-      padding:12px 12px 26px;
-      animation:sheetUp .22s ease;
-    }
-
-    @keyframes sheetUp{
-      from{
-        transform:translateY(20px);
-        opacity:0;
-      }
-      to{
-        transform:translateY(0);
-        opacity:1;
-      }
+      padding:12px 12px 24px;
     }
 
     .sheet-handle{
-      width:52px;
+      width:50px;
       height:5px;
       border-radius:999px;
       background:rgba(255,255,255,.14);
@@ -661,12 +573,11 @@
     }
 
     .detail-cover{
-      aspect-ratio:16 / 10;
-      border-radius:18px;
+      aspect-ratio:16/10;
+      border-radius:16px;
       overflow:hidden;
       background:#101827;
       margin-bottom:12px;
-      position:relative;
     }
 
     .detail-cover img{
@@ -677,47 +588,47 @@
 
     .detail-title{
       margin:0 0 7px;
-      font-size:1.28rem;
+      font-size:1.2rem;
       letter-spacing:-.03em;
     }
 
     .detail-desc{
       color:var(--muted);
-      line-height:1.54;
+      line-height:1.5;
       margin:0 0 12px;
-      font-size:.93rem;
+      font-size:.9rem;
     }
 
     .detail-grid{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:9px;
+      gap:8px;
       margin-bottom:12px;
     }
 
     .detail-box{
       background:rgba(255,255,255,.04);
       border:1px solid rgba(255,255,255,.05);
-      border-radius:16px;
-      padding:10px;
+      border-radius:14px;
+      padding:9px;
     }
 
     .detail-box .label{
-      font-size:.74rem;
+      font-size:.72rem;
       color:var(--muted);
-      margin-bottom:6px;
+      margin-bottom:5px;
     }
 
     .detail-box .value{
       font-weight:800;
       line-height:1.3;
-      font-size:.9rem;
+      font-size:.86rem;
     }
 
     .mini-map{
       width:100%;
-      height:210px;
-      border-radius:18px;
+      height:200px;
+      border-radius:16px;
       overflow:hidden;
       margin:12px 0 14px;
       border:1px solid rgba(255,255,255,.06);
@@ -733,17 +644,17 @@
       grid-template-columns:repeat(3,1fr);
       gap:8px;
       padding:8px;
-      border-radius:22px;
-      background:rgba(10,15,25,.9);
+      border-radius:20px;
+      background:rgba(10,15,25,.92);
       border:1px solid rgba(255,255,255,.07);
       backdrop-filter:blur(14px);
       box-shadow:var(--shadow);
     }
 
     .nav-btn{
-      min-height:46px;
+      min-height:42px;
       border:none;
-      border-radius:16px;
+      border-radius:14px;
       background:transparent;
       color:var(--muted);
       font-weight:800;
@@ -757,52 +668,35 @@
 
     .toast-wrap{
       position:fixed;
-      left:14px;
-      right:14px;
-      bottom:calc(var(--nav-h) + 10px);
+      left:12px;
+      right:12px;
+      bottom:calc(var(--nav-h) + 8px);
       z-index:300;
       display:grid;
-      gap:10px;
+      gap:8px;
       pointer-events:none;
     }
 
     .toast{
       pointer-events:auto;
-      background:rgba(9,14,24,.92);
+      background:rgba(9,14,24,.94);
       border:1px solid rgba(255,255,255,.08);
       color:var(--text);
-      padding:11px 12px;
-      border-radius:16px;
+      padding:10px 12px;
+      border-radius:14px;
       box-shadow:var(--shadow);
-      animation:toastIn .22s ease;
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
     }
 
-    .toast.ok{
-      border-color:rgba(53,208,138,.22);
-    }
-
-    .toast.err{
-      border-color:rgba(255,107,122,.22);
-    }
+    .toast.ok{ border-color:rgba(53,208,138,.22); }
+    .toast.err{ border-color:rgba(255,107,122,.22); }
 
     .toast-msg{
-      font-size:.9rem;
-      line-height:1.35;
-    }
-
-    @keyframes toastIn{
-      from{
-        transform:translateY(10px);
-        opacity:0;
-      }
-      to{
-        transform:translateY(0);
-        opacity:1;
-      }
+      font-size:.88rem;
+      line-height:1.3;
     }
 
     .startup{
@@ -828,28 +722,28 @@
     }
 
     .startup-logo{
-      width:84px;
-      height:84px;
-      margin:0 auto 14px;
-      border-radius:24px;
+      width:76px;
+      height:76px;
+      margin:0 auto 12px;
+      border-radius:22px;
       display:grid;
       place-items:center;
       background:linear-gradient(135deg, rgba(255,209,102,.18), rgba(98,182,255,.18));
       border:1px solid rgba(255,255,255,.09);
       box-shadow:var(--shadow);
-      font-size:1.9rem;
+      font-size:1.8rem;
     }
 
     .startup h3{
       margin:0 0 8px;
-      font-size:1.28rem;
+      font-size:1.18rem;
       letter-spacing:-.03em;
     }
 
     .startup p{
       margin:0;
       color:var(--muted);
-      font-size:.92rem;
+      font-size:.88rem;
     }
 
     .hidden{display:none !important}
@@ -871,24 +765,16 @@
         grid-template-columns:repeat(2,1fr);
       }
 
-      .hero{
-        padding:18px;
-      }
-
-      .hero-title{
-        font-size:1.9rem;
-      }
-
       .sheet{
-        width:min(740px,100%);
+        width:min(720px,100%);
         margin:0 auto;
-        border-radius:26px;
+        border-radius:24px;
       }
 
       .toast-wrap{
         left:auto;
         right:20px;
-        width:min(360px, calc(100vw - 40px));
+        width:min(340px, calc(100vw - 40px));
       }
     }
 
@@ -910,35 +796,31 @@
 
   <div class="app">
     <section class="hero">
-      <div class="hero-top">
-        <div class="eyebrow">✨ Assistente fotografico da viaggio</div>
-        <h1 class="hero-title">PhotoSpot Planner</h1>
-        <p class="hero-subtitle">
-          Trova spot fotogenici, scopri il momento migliore per fotografarli e crea un itinerario rapido e utile da usare davvero in viaggio.
-        </p>
+      <div class="eyebrow">✨ Assistente fotografico da viaggio</div>
+      <h1 class="hero-title">PhotoSpot Planner</h1>
+      <p class="hero-subtitle">
+        Trova spot fotogenici, scopri il momento migliore per fotografarli e crea un itinerario rapido e utile in viaggio.
+      </p>
+
+      <div class="searchbar">
+        <input id="cityInput" type="text" placeholder="Cerca una città o un luogo..." />
+        <button class="btn" id="searchBtn">Cerca</button>
       </div>
 
-      <div class="hero-controls">
-        <div class="searchbar">
-          <input id="cityInput" type="text" placeholder="Cerca una città o un luogo..." />
-          <button class="btn" id="searchBtn">Cerca</button>
-        </div>
+      <div class="search-actions">
+        <button class="btn secondary" id="geoBtn">Usa la mia posizione</button>
+        <button class="btn ghost" id="sortBtn">Ordina: score</button>
+      </div>
 
-        <div class="search-actions">
-          <button class="btn secondary" id="geoBtn">Usa la mia posizione</button>
-          <button class="btn ghost" id="sortBtn">Ordina: score</button>
-        </div>
-
-        <div class="quick-filters" id="quickFilters">
-          <button class="chip active" data-filter="all">Tutti</button>
-          <button class="chip" data-filter="panorama">Panorami</button>
-          <button class="chip" data-filter="monument">Monumenti</button>
-          <button class="chip" data-filter="bridge">Ponti</button>
-          <button class="chip" data-filter="square">Piazze</button>
-          <button class="chip" data-filter="tower">Torri</button>
-          <button class="chip" data-filter="street">Street</button>
-          <button class="chip" data-filter="sunset">Sunset</button>
-        </div>
+      <div class="quick-filters" id="quickFilters">
+        <button class="chip active" data-filter="all">Tutti</button>
+        <button class="chip" data-filter="panorama">Panorami</button>
+        <button class="chip" data-filter="monument">Monumenti</button>
+        <button class="chip" data-filter="bridge">Ponti</button>
+        <button class="chip" data-filter="square">Piazze</button>
+        <button class="chip" data-filter="tower">Torri</button>
+        <button class="chip" data-filter="street">Street</button>
+        <button class="chip" data-filter="sunset">Sunset</button>
       </div>
 
       <div class="hero-stats" id="sunPanel">
@@ -991,7 +873,7 @@
                 <div class="value" id="plannerCount">0</div>
               </div>
               <div class="planner-stat">
-                <div class="label">Durata stimata</div>
+                <div class="label">Durata</div>
                 <div class="value" id="plannerDuration">0 min</div>
               </div>
               <div class="planner-stat">
@@ -1045,6 +927,8 @@
   <script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
 
   <script>
+    const OVERPASS_URL = "https://overpass.kumi.systems/api/interpreter";
+
     const state = {
       currentPlaceName: "",
       center: null,
@@ -1196,9 +1080,7 @@
 
     async function geocodePlace(query){
       const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`;
-      const res = await fetch(url, {
-        headers: { "Accept-Language": "it" }
-      });
+      const res = await fetch(url, { headers: { "Accept-Language": "it" } });
       const data = await res.json();
       return data[0] || null;
     }
@@ -1211,9 +1093,10 @@
       spotsEmpty.classList.add("hidden");
 
       try{
-        const query = buildOverpassQuery(state.center.lat, state.center.lon, 6000);
-        const res = await fetch("https://overpass-api.de/api/interpreter", {
+        const query = buildOverpassQuery(state.center.lat, state.center.lon, 4000);
+        const res = await fetch(OVERPASS_URL, {
           method: "POST",
+          headers: { "Content-Type": "text/plain;charset=UTF-8" },
           body: query
         });
 
@@ -1227,7 +1110,7 @@
           .filter(Boolean)
           .filter(s => s.name && s.name.trim().length > 2)
           .filter((spot, index, arr) => arr.findIndex(a => a.name.toLowerCase() === spot.name.toLowerCase()) === index)
-          .slice(0, 30);
+          .slice(0, 18);
 
         state.spots = cleaned;
 
@@ -1252,18 +1135,16 @@
 
     function buildOverpassQuery(lat, lon, radius){
       return `
-[out:json][timeout:25];
+[out:json][timeout:20];
 (
-  node(around:${radius},${lat},${lon})["tourism"="viewpoint"];
-  node(around:${radius},${lat},${lon})["historic"="monument"];
-  node(around:${radius},${lat},${lon})["historic"="memorial"];
-  node(around:${radius},${lat},${lon})["man_made"="tower"];
-  node(around:${radius},${lat},${lon})["tourism"="attraction"];
-  node(around:${radius},${lat},${lon})["tourism"="artwork"];
-  node(around:${radius},${lat},${lon})["place"="square"];
-  way(around:${radius},${lat},${lon})["bridge"];
-  way(around:${radius},${lat},${lon})["historic"];
-  way(around:${radius},${lat},${lon})["building"]["name"];
+  node(around:${radius},${lat},${lon})["tourism"="viewpoint"]["name"];
+  node(around:${radius},${lat},${lon})["historic"="monument"]["name"];
+  node(around:${radius},${lat},${lon})["historic"="memorial"]["name"];
+  node(around:${radius},${lat},${lon})["man_made"="tower"]["name"];
+  node(around:${radius},${lat},${lon})["tourism"="attraction"]["name"];
+  node(around:${radius},${lat},${lon})["tourism"="artwork"]["name"];
+  way(around:${radius},${lat},${lon})["historic"]["name"];
+  way(around:${radius},${lat},${lon})["bridge"]["name"];
 );
 out center tags;`;
     }
@@ -1279,7 +1160,7 @@ out center tags;`;
 
       const category = detectCategory(tags, name);
       const distanceKm = calcDistanceKm(state.center?.lat || 0, state.center?.lon || 0, lat, lon);
-      const image = getSpotImage(name, index);
+      const image = `https://picsum.photos/seed/${encodeURIComponent(name || ("spot" + index))}/900/600`;
       const photoTags = buildPhotoTags(category, name, tags);
       const bestTime = suggestBestTime(category);
       const score = computeSpotScore({ category, distanceKm, image, tags: photoTags, name });
@@ -1302,7 +1183,6 @@ out center tags;`;
 
     function detectCategory(tags, name){
       const text = `${JSON.stringify(tags)} ${name}`.toLowerCase();
-
       if (text.includes("viewpoint") || text.includes("belvedere") || text.includes("panorama")) return "Panorama";
       if (text.includes("bridge") || text.includes("ponte")) return "Bridge";
       if (text.includes("square") || text.includes("piazza")) return "Square";
@@ -1331,81 +1211,36 @@ out center tags;`;
     function suggestBestTime(category){
       const sun = getSunData(state.center);
       if (!sun) {
-        return {
-          label: "Momento ideale",
-          text: "Controlla golden hour e tramonto",
-          mood: "fotografico"
-        };
+        return { label:"Momento ideale", text:"Controlla golden hour e tramonto", mood:"fotografico" };
       }
 
       const format = d => formatTime(d);
 
       switch(category){
         case "Panorama":
-          return {
-            label:"Perfetto per il tramonto",
-            text:`Vai tra ${format(sun.goldenEveningStart)} e ${format(sun.sunset)} per luce calda e profondità.`,
-            mood:"sunset"
-          };
+          return { label:"Perfetto per il tramonto", text:`Vai tra ${format(sun.goldenEveningStart)} e ${format(sun.sunset)}.`, mood:"sunset" };
         case "Bridge":
-          return {
-            label:"Ottimo in blue hour",
-            text:`Meglio tra ${format(sun.sunset)} e ${format(sun.blueEveningEnd)} per riflessi e atmosfera.`,
-            mood:"blue-hour"
-          };
+          return { label:"Ottimo in blue hour", text:`Meglio tra ${format(sun.sunset)} e ${format(sun.blueEveningEnd)}.`, mood:"blue-hour" };
         case "Square":
-          return {
-            label:"Ideale nel tardo pomeriggio",
-            text:`Provalo tra ${format(sun.goldenEveningStart)} e ${format(sun.sunset)} con persone e ombre lunghe.`,
-            mood:"street"
-          };
+          return { label:"Ideale nel tardo pomeriggio", text:`Provalo tra ${format(sun.goldenEveningStart)} e ${format(sun.sunset)}.`, mood:"street" };
         case "Tower":
-          return {
-            label:"Luce radente consigliata",
-            text:`Meglio poco dopo l'alba o nella golden hour serale per volume e contrasto.`,
-            mood:"golden"
-          };
+          return { label:"Luce radente consigliata", text:`Meglio all'alba o in golden hour serale.`, mood:"golden" };
         case "Monument":
-          return {
-            label:"Grande resa in golden hour",
-            text:`Perfetto tra ${format(sun.goldenEveningStart)} e ${format(sun.sunset)} per dettagli e colore.`,
-            mood:"golden"
-          };
+          return { label:"Grande resa in golden hour", text:`Perfetto tra ${format(sun.goldenEveningStart)} e ${format(sun.sunset)}.`, mood:"golden" };
         default:
-          return {
-            label:"Perfetto per street photography",
-            text:`Meglio al mattino o nel tardo pomeriggio per scene dinamiche e luce morbida.`,
-            mood:"street"
-          };
+          return { label:"Perfetto per street photography", text:`Meglio al mattino o nel tardo pomeriggio.`, mood:"street" };
       }
     }
 
-    function computeSpotScore({ category, distanceKm, image, tags, name }){
+    function computeSpotScore({ category, distanceKm, tags, name }){
       let score = 55;
-
-      const categoryBoost = {
-        Panorama: 18,
-        Monument: 15,
-        Bridge: 14,
-        Tower: 13,
-        Square: 10,
-        Street: 9
-      };
-
+      const categoryBoost = { Panorama:18, Monument:15, Bridge:14, Tower:13, Square:10, Street:9 };
       score += categoryBoost[category] || 8;
-      score += image ? 5 : 0;
       score += Math.max(0, 12 - Math.round(distanceKm * 1.6));
       score += Math.min(6, tags.length * 2);
 
-      if (/duomo|cathedral|castle|ponte|bridge|tower|piazza|square|viewpoint|belvedere/i.test(name)) {
-        score += 6;
-      }
-
+      if (/duomo|cathedral|castle|ponte|bridge|tower|piazza|square|viewpoint|belvedere/i.test(name)) score += 6;
       return Math.max(60, Math.min(99, score));
-    }
-
-    function getSpotImage(name, index){
-      return `https://picsum.photos/seed/${encodeURIComponent(name || ("spot" + index))}/900/600`;
     }
 
     function buildDescription(name, category){
@@ -1423,14 +1258,9 @@ out center tags;`;
     function renderSpots(){
       let spots = [...state.spots];
 
-      if (state.filter !== "all"){
-        spots = spots.filter(s => matchesFilter(s, state.filter));
-      }
+      if (state.filter !== "all") spots = spots.filter(s => matchesFilter(s, state.filter));
 
-      spots.sort((a,b) => {
-        if (state.sortByScore) return b.score - a.score;
-        return a.distanceKm - b.distanceKm;
-      });
+      spots.sort((a,b) => state.sortByScore ? b.score - a.score : a.distanceKm - b.distanceKm);
 
       spotsGrid.innerHTML = "";
 
@@ -1441,30 +1271,25 @@ out center tags;`;
 
       spotsEmpty.classList.add("hidden");
 
-      spots.forEach((spot, idx) => {
+      spots.forEach(spot => {
         const isFav = isFavorite(spot.id);
         const isInPlanner = isInPlanner(spot.id);
 
         const card = document.createElement("article");
         card.className = "spot-card";
-        card.style.animationDelay = `${Math.min(idx * 30, 210)}ms`;
         card.innerHTML = `
           <div class="spot-cover">
             <img src="${spot.image}" alt="${escapeHtml(spot.name)}" loading="lazy" />
             <div class="cover-gradient"></div>
             <div class="overlay-top">
               <div class="score-pill">📍 Score ${spot.score}</div>
-              <button class="fav-btn" data-action="favorite" title="Preferito">
-                ${isFav ? "❤️" : "🤍"}
-              </button>
+              <button class="fav-btn" data-action="favorite">${isFav ? "❤️" : "🤍"}</button>
             </div>
           </div>
 
           <div class="spot-body">
             <div class="spot-title-row">
-              <div>
-                <h3 class="spot-title">${escapeHtml(spot.name)}</h3>
-              </div>
+              <div><h3 class="spot-title">${escapeHtml(spot.name)}</h3></div>
               <div class="category-badge">${spot.category}</div>
             </div>
 
@@ -1495,7 +1320,6 @@ out center tags;`;
           e.stopPropagation();
           toggleFavorite(spot);
         });
-
         card.querySelector('[data-action="detail"]').addEventListener("click", () => openDetail(spot));
         card.querySelector('[data-action="planner"]').addEventListener("click", () => togglePlanner(spot));
 
@@ -1515,30 +1339,12 @@ out center tags;`;
         <p class="detail-desc">${escapeHtml(spot.description)}</p>
 
         <div class="detail-grid">
-          <div class="detail-box">
-            <div class="label">Categoria</div>
-            <div class="value">${spot.category}</div>
-          </div>
-          <div class="detail-box">
-            <div class="label">Score fotografico</div>
-            <div class="value">${spot.score}/100</div>
-          </div>
-          <div class="detail-box">
-            <div class="label">Coordinate</div>
-            <div class="value">${spot.lat.toFixed(5)}, ${spot.lon.toFixed(5)}</div>
-          </div>
-          <div class="detail-box">
-            <div class="label">Distanza</div>
-            <div class="value">${spot.distanceKm.toFixed(1)} km</div>
-          </div>
-          <div class="detail-box">
-            <div class="label">Alba / Tramonto</div>
-            <div class="value">${sun ? `${formatTime(sun.sunrise)} / ${formatTime(sun.sunset)}` : "—"}</div>
-          </div>
-          <div class="detail-box">
-            <div class="label">Golden / Blue hour</div>
-            <div class="value">${sun ? `${formatTime(sun.goldenEveningStart)} / ${formatTime(sun.blueEveningEnd)}` : "—"}</div>
-          </div>
+          <div class="detail-box"><div class="label">Categoria</div><div class="value">${spot.category}</div></div>
+          <div class="detail-box"><div class="label">Score fotografico</div><div class="value">${spot.score}/100</div></div>
+          <div class="detail-box"><div class="label">Coordinate</div><div class="value">${spot.lat.toFixed(5)}, ${spot.lon.toFixed(5)}</div></div>
+          <div class="detail-box"><div class="label">Distanza</div><div class="value">${spot.distanceKm.toFixed(1)} km</div></div>
+          <div class="detail-box"><div class="label">Alba / Tramonto</div><div class="value">${sun ? `${formatTime(sun.sunrise)} / ${formatTime(sun.sunset)}` : "—"}</div></div>
+          <div class="detail-box"><div class="label">Golden / Blue hour</div><div class="value">${sun ? `${formatTime(sun.goldenEveningStart)} / ${formatTime(sun.blueEveningEnd)}` : "—"}</div></div>
         </div>
 
         <div class="best-time-box">
@@ -1558,28 +1364,14 @@ out center tags;`;
       document.body.classList.add("modal-open");
 
       setTimeout(() => {
-        if (detailMapInstance) {
-          detailMapInstance.remove();
-          detailMapInstance = null;
-        }
-
+        if (detailMapInstance) detailMapInstance.remove();
         detailMapInstance = L.map("detailMap", { zoomControl:false }).setView([spot.lat, spot.lon], 15);
-
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: "&copy; OpenStreetMap"
-        }).addTo(detailMapInstance);
-
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap" }).addTo(detailMapInstance);
         L.marker([spot.lat, spot.lon]).addTo(detailMapInstance);
       }, 80);
 
-      document.getElementById("detailMapsBtn").addEventListener("click", () => {
-        window.open(spot.mapsUrl, "_blank");
-      });
-
-      document.getElementById("detailPlannerBtn").addEventListener("click", () => {
-        togglePlanner(spot);
-        closeDetail();
-      });
+      document.getElementById("detailMapsBtn").addEventListener("click", () => window.open(spot.mapsUrl, "_blank"));
+      document.getElementById("detailPlannerBtn").addEventListener("click", () => { togglePlanner(spot); closeDetail(); });
     }
 
     function closeDetail(){
@@ -1677,7 +1469,7 @@ out center tags;`;
             <div class="route-name">${escapeHtml(spot.name)}</div>
             <div class="route-sub">${spot.category} • ${spot.distanceKm.toFixed(1)} km • score ${spot.score}</div>
           </div>
-          <button class="route-remove" title="Rimuovi">✕</button>
+          <button class="route-remove">✕</button>
         `;
 
         item.addEventListener("click", (e) => {
@@ -1701,17 +1493,12 @@ out center tags;`;
 
     function initPlannerMap(){
       plannerMapInstance = L.map("plannerMap", { zoomControl:false }).setView([45.4642, 9.19], 5);
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap"
-      }).addTo(plannerMapInstance);
-
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap" }).addTo(plannerMapInstance);
       plannerMapLayer = L.layerGroup().addTo(plannerMapInstance);
     }
 
     function updatePlannerMap(items){
       if (!plannerMapInstance || !plannerMapLayer) return;
-
       plannerMapLayer.clearLayers();
 
       if (!items.length){
@@ -1731,18 +1518,12 @@ out center tags;`;
         L.polyline(latlngs, { weight:4, opacity:0.75 }).addTo(plannerMapLayer);
       }
 
-      const bounds = L.latLngBounds(latlngs);
-      plannerMapInstance.fitBounds(bounds.pad(0.25));
+      plannerMapInstance.fitBounds(L.latLngBounds(latlngs).pad(0.25));
     }
 
     function sortPlannerRoute(items){
       if (!items.length) return [];
-
-      return [...items].sort((a,b) => {
-        const aValue = (a.distanceKm * 0.55) - (a.score * 0.12);
-        const bValue = (b.distanceKm * 0.55) - (b.score * 0.12);
-        return aValue - bValue;
-      });
+      return [...items].sort((a,b) => ((a.distanceKm * 0.55) - (a.score * 0.12)) - ((b.distanceKm * 0.55) - (b.score * 0.12)));
     }
 
     function estimatePlannerMinutes(items){
@@ -1790,7 +1571,6 @@ out center tags;`;
     function matchesFilter(spot, filter){
       const f = filter.toLowerCase();
       const text = `${spot.category} ${spot.tags.join(" ")} ${spot.bestTime.mood}`.toLowerCase();
-
       if (f === "all") return true;
       if (f === "panorama") return text.includes("panorama");
       if (f === "monument") return text.includes("iconic") || spot.category === "Monument";
@@ -1802,13 +1582,8 @@ out center tags;`;
       return true;
     }
 
-    function isFavorite(id){
-      return state.favorites.some(s => s.id === id);
-    }
-
-    function isInPlanner(id){
-      return state.planner.some(s => s.id === id);
-    }
+    function isFavorite(id){ return state.favorites.some(s => s.id === id); }
+    function isInPlanner(id){ return state.planner.some(s => s.id === id); }
 
     function showToast(message, type=""){
       toastWrap.innerHTML = "";
@@ -1816,32 +1591,19 @@ out center tags;`;
 
       const toast = document.createElement("div");
       toast.className = `toast ${type}`.trim();
-      toast.innerHTML = `
-        <div class="toast-msg">${escapeHtml(message)}</div>
-        <button class="btn ghost small">OK</button>
-      `;
-
-      toast.querySelector("button").addEventListener("click", () => {
-        toast.remove();
-      });
-
+      toast.innerHTML = `<div class="toast-msg">${escapeHtml(message)}</div><button class="btn ghost small">OK</button>`;
+      toast.querySelector("button").addEventListener("click", () => toast.remove());
       toastWrap.appendChild(toast);
 
-      toastTimer = setTimeout(() => {
-        toast.remove();
-      }, 2200);
+      toastTimer = setTimeout(() => toast.remove(), 2200);
     }
 
     function calcDistanceKm(lat1, lon1, lat2, lon2){
       const R = 6371;
       const dLat = toRad(lat2 - lat1);
       const dLon = toRad(lon2 - lon1);
-      const a =
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
+      const a = Math.sin(dLat/2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2) ** 2;
+      return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
     }
 
     function toRad(v){ return v * Math.PI / 180; }
@@ -1856,10 +1618,7 @@ out center tags;`;
       return name.split(",").slice(0,2).join(",").trim();
     }
 
-    function saveLocal(key, value){
-      localStorage.setItem(key, JSON.stringify(value));
-    }
-
+    function saveLocal(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
     function loadLocal(key, fallback){
       try{
         const raw = localStorage.getItem(key);

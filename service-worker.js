@@ -1,15 +1,13 @@
-const CACHE_NAME = "photospot-v2-compact";
+const CACHE_NAME = "photospot-v3-kumi";
 
 self.addEventListener("install", e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll([
-        "./",
-        "./index.html",
-        "./manifest.json",
-        "./icon-192.png"
-      ]);
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll([
+      "./",
+      "./index.html",
+      "./manifest.json",
+      "./icon-192.png"
+    ]))
   );
   self.skipWaiting();
 });
