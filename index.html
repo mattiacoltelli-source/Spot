@@ -95,9 +95,21 @@
       line-height:1.45;
     }
 
+    .weather-box{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      background:rgba(113,184,255,.08);
+      border:1px solid rgba(113,184,255,.15);
+      font-weight:700;
+      font-size:.9rem;
+      color:#d9ecff;
+    }
+
     .main-actions{
       display:grid;
       gap:10px;
+      margin-top:14px;
     }
 
     .main-actions .row{
@@ -460,6 +472,8 @@
         Guida fotografica e outdoor per Madeira con priorità chiare: spot top, spot validi e spot extra. Filtra per luce, zona, attività e difficoltà, poi apri dettagli, mappa o una giornata già ragionata.
       </p>
 
+      <div id="weatherBox" class="weather-box">🌤️ Caricamento meteo...</div>
+
       <div class="main-actions">
         <button class="btn-main" id="spotNowBtn">🔥 Spot ora</button>
         <div class="row">
@@ -676,7 +690,7 @@
       ["Achada do Teixeira","montagna","alba","view","facile","Accesso più semplice verso il Pico Ruivo."],
       ["Vereda do Larano","est","giorno","trekking","medio","Sentiero costiero con grande panorama."],
       ["Boca do Risco","est","giorno","trekking","impegnativo","Percorso più tosto ma molto scenico."],
-      ["Penha d'Águia View","est","giorno","view","medio","Roccia iconica sul lato nord-est."],
+      ["Penha d'Águia","est","giorno","view","medio","Roccia iconica sul lato nord-est."],
       ["Funchal Marina","sud","tramonto","relax","facile","Passeggiata semplice e comoda vicino al centro."],
       ["CR7 Promenade","sud","tramonto","relax","facile","Fronte mare urbano, rilassato e ordinato."],
       ["Jardim do Mar View","sud","tramonto","view","facile","Paesino e costa molto piacevoli verso sera."],
@@ -825,7 +839,7 @@
         "Miradouro do Teleférico das Achadas":[32.8642,-17.2170],
         "Miradouro da Tabua":[32.6887,-17.0845],
         "Miradouro do Massapez":[32.7446,-17.2146],
-        "Vereda dos Balcões Access":[32.7370,-16.8965],
+        "Vereda dei Balcões Access":[32.7370,-16.8965],
         "Levada da Referta":[32.7552,-16.8142],
         "Miradouro da Beira da Quinta":[32.8352,-16.9370],
         "Praia da Alagoa":[32.7722,-16.8290],
@@ -858,7 +872,8 @@
       activity:"all",
       difficulty:"all",
       userPos:null,
-      currentSpot:null
+      currentSpot:null,
+      weatherNote:""
     };
 
     let mapInstance = null;
@@ -869,6 +884,7 @@
     const resultNoteEl = document.getElementById("resultNote");
     const filterStateEl = document.getElementById("filterState");
     const spotCountEl = document.getElementById("spotCount");
+    const weatherBox = document.getElementById("weatherBox");
 
     const detailOverlay = document.getElementById("detailOverlay");
     const plannerOverlay = document.getElementById("plannerOverlay");
@@ -1218,7 +1234,7 @@
 
     function showPlanner(title, intro, rows){
       plannerTitle.textContent = title;
-      plannerIntro.textContent = intro;
+      plannerIntro.textContent = intro + (state.weatherNote ? " • " + state.weatherNote : "");
       plannerList.innerHTML = rows.map(row => {
         if(!row.spot){
           return `
@@ -1333,7 +1349,40 @@
         .replaceAll("'","&#039;");
     }
 
+    async function loadWeather(){
+      try{
+        const lat = 32.75;
+        const lon = -16.95;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=precipitation_probability,windspeed_10m`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const wind = data?.current_weather?.windspeed ?? 0;
+        const temp = data?.current_weather?.temperature ?? 0;
+        const rain = data?.hourly?.precipitation_probability?.[0] ?? 0;
+
+        let text = "";
+
+        if(rain > 60){
+          text = "🌧️ Pioggia probabile → meglio foreste o zone relax";
+        }else if(wind > 30){
+          text = "🌬️ Vento forte → evita creste e punti molto esposti";
+        }else if(temp > 22 && wind < 20){
+          text = "☀️ Ottimo meteo → giornata perfetta outdoor";
+        }else{
+          text = "🌤️ Meteo buono → giornata abbastanza flessibile";
+        }
+
+        weatherBox.textContent = text;
+        state.weatherNote = text;
+      }catch(e){
+        weatherBox.textContent = "⚠️ Meteo non disponibile";
+        state.weatherNote = "";
+      }
+    }
+
     render();
+    loadWeather();
 
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("service-worker.js");
