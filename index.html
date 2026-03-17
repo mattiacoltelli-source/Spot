@@ -1,242 +1,1159 @@
 <!doctype html>
 <html lang="it">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Madeira Planner PRO</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Madeira Planner PRO</title>
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0b0f14">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b0f14">
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<style>
-body{margin:0;background:#0b0f14;color:white;font-family:system-ui;}
-.container{padding:16px;max-width:600px;margin:auto;}
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --panel:#121824;
+      --panel2:#171f2e;
+      --panel3:#0f1522;
+      --text:#f5f7fb;
+      --muted:#9aa7b5;
+      --accent:#f5c451;
+      --line:#233049;
+      --ok:#6fe0a7;
+      --chip:#1a2437;
+      --blue:#6bb7ff;
+      --green:#62d39c;
+      --orange:#ffba66;
+      --red:#ff8d8d;
+      --shadow:0 12px 32px rgba(0,0,0,.28);
+      --radius:18px;
+    }
 
-h1{font-size:24px}
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;
+      background:
+        radial-gradient(circle at top right, rgba(107,183,255,.08), transparent 25%),
+        radial-gradient(circle at top left, rgba(245,196,81,.08), transparent 20%),
+        linear-gradient(180deg,#0b0f14,#090d13);
+      color:var(--text);
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    }
 
-button{
-  padding:10px;
-  margin:4px 0;
-  border:none;
-  border-radius:10px;
-  font-weight:bold;
-}
+    body.modal-open{overflow:hidden}
 
-.main{background:#f5c451;width:100%;}
-.filter{background:#171f2e;color:white}
+    .container{
+      max-width:760px;
+      margin:0 auto;
+      padding:16px 16px 28px;
+    }
 
-.spot{
-  background:#121824;
-  padding:14px;
-  border-radius:14px;
-  margin-top:10px;
-}
+    .hero{
+      background:linear-gradient(180deg,rgba(18,24,36,.96),rgba(13,18,28,.98));
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:24px;
+      padding:18px;
+      box-shadow:var(--shadow);
+      margin-bottom:16px;
+    }
 
-.meta{color:#9aa7b5;font-size:13px}
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.06);
+      color:#dce7ff;
+      font-size:.82rem;
+      margin-bottom:12px;
+    }
 
-/* modal */
-#modal{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:#000000cc;
-  justify-content:center;
-  align-items:center;
-  z-index:999;
-}
-.box{
-  background:#121824;
-  padding:16px;
-  border-radius:16px;
-  width:90%;
-  max-width:400px;
-}
+    h1{
+      font-size:2rem;
+      margin:0 0 8px;
+      letter-spacing:-.04em;
+    }
 
-/* map */
-#mapModal{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:#0b0f14;
-  flex-direction:column;
-}
-#map{flex:1}
-</style>
+    .sub{
+      color:var(--muted);
+      line-height:1.45;
+      margin:0 0 16px;
+    }
+
+    .main-actions{
+      display:grid;
+      gap:10px;
+    }
+
+    .grid-2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    button{
+      border:none;
+      border-radius:16px;
+      min-height:48px;
+      padding:0 14px;
+      font-weight:800;
+      cursor:pointer;
+      transition:transform .15s ease, opacity .15s ease, background .15s ease;
+    }
+
+    button:active{transform:scale(.985)}
+
+    .btn-main{
+      background:linear-gradient(135deg,var(--accent),#e8ae2f);
+      color:#11161d;
+      box-shadow:0 10px 24px rgba(245,196,81,.16);
+    }
+
+    .btn-secondary{
+      background:var(--panel2);
+      color:var(--text);
+      border:1px solid rgba(255,255,255,.05);
+    }
+
+    .btn-ghost{
+      background:transparent;
+      color:var(--muted);
+      border:1px solid var(--line);
+    }
+
+    .section{
+      margin-top:18px;
+    }
+
+    .section-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:10px;
+    }
+
+    .section-title{
+      font-size:1.05rem;
+      font-weight:800;
+      margin:0;
+    }
+
+    .section-note{
+      color:var(--muted);
+      font-size:.88rem;
+    }
+
+    .chips{
+      display:flex;
+      gap:8px;
+      overflow:auto;
+      padding-bottom:2px;
+      scrollbar-width:none;
+      margin-bottom:12px;
+    }
+
+    .chips::-webkit-scrollbar{display:none}
+
+    .chip{
+      white-space:nowrap;
+      padding:10px 13px;
+      border-radius:999px;
+      background:var(--chip);
+      color:#dfe8f8;
+      border:1px solid rgba(255,255,255,.05);
+      font-size:.88rem;
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    .chip.active{
+      background:rgba(245,196,81,.14);
+      border-color:rgba(245,196,81,.25);
+      color:#ffe4a2;
+    }
+
+    .stats-row{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+      margin-top:10px;
+    }
+
+    .stat{
+      background:var(--panel);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:16px;
+      padding:12px;
+    }
+
+    .stat .label{
+      color:var(--muted);
+      font-size:.78rem;
+      margin-bottom:5px;
+    }
+
+    .stat .value{
+      font-weight:800;
+      font-size:1rem;
+    }
+
+    .list{
+      display:grid;
+      gap:12px;
+    }
+
+    .spot{
+      background:linear-gradient(180deg,var(--panel),#101722);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:20px;
+      padding:14px;
+      box-shadow:var(--shadow);
+      transition:transform .16s ease;
+    }
+
+    .spot:hover{transform:translateY(-1px)}
+
+    .spot-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+      margin-bottom:10px;
+    }
+
+    .spot-name{
+      font-size:1.08rem;
+      font-weight:800;
+      letter-spacing:-.02em;
+      line-height:1.15;
+      margin:0;
+    }
+
+    .spot-distance{
+      color:var(--muted);
+      font-size:.86rem;
+      margin-top:5px;
+    }
+
+    .badge-row{
+      display:flex;
+      gap:7px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+
+    .badge{
+      padding:7px 9px;
+      border-radius:999px;
+      font-size:.74rem;
+      font-weight:800;
+      border:1px solid rgba(255,255,255,.06);
+      background:#182133;
+      color:#dfe7f6;
+    }
+
+    .b-light{background:rgba(245,196,81,.12); color:#ffe4a2; border-color:rgba(245,196,81,.18)}
+    .b-zone{background:rgba(107,183,255,.12); color:#cae4ff; border-color:rgba(107,183,255,.18)}
+    .b-act{background:rgba(98,211,156,.12); color:#d8ffee; border-color:rgba(98,211,156,.18)}
+    .b-diff-easy{background:rgba(98,211,156,.12); color:#d8ffee}
+    .b-diff-medium{background:rgba(255,186,102,.12); color:#ffe5c2}
+    .b-diff-hard{background:rgba(255,141,141,.12); color:#ffd1d1}
+
+    .spot-desc{
+      color:#d8e0ee;
+      font-size:.94rem;
+      line-height:1.45;
+      margin-bottom:12px;
+    }
+
+    .spot-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .empty{
+      background:var(--panel);
+      border:1px dashed rgba(255,255,255,.08);
+      border-radius:18px;
+      padding:24px;
+      color:var(--muted);
+      text-align:center;
+    }
+
+    /* modal base */
+    .overlay{
+      display:none;
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.66);
+      z-index:999;
+      justify-content:center;
+      align-items:flex-end;
+      padding:16px;
+      backdrop-filter:blur(6px);
+    }
+
+    .overlay.show{display:flex}
+
+    .modal-box{
+      width:100%;
+      max-width:680px;
+      background:linear-gradient(180deg,#121824,#0f141e);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:24px;
+      padding:14px;
+      box-shadow:0 20px 40px rgba(0,0,0,.35);
+      animation:pop .22s ease;
+      max-height:90vh;
+      overflow:auto;
+    }
+
+    @keyframes pop{
+      from{transform:translateY(10px);opacity:0}
+      to{transform:translateY(0);opacity:1}
+    }
+
+    .handle{
+      width:54px;
+      height:5px;
+      border-radius:999px;
+      background:rgba(255,255,255,.15);
+      margin:2px auto 12px;
+    }
+
+    .modal-cover{
+      width:100%;
+      aspect-ratio:16/10;
+      object-fit:cover;
+      border-radius:18px;
+      margin-bottom:12px;
+      background:#172131;
+    }
+
+    .modal-title{
+      font-size:1.35rem;
+      margin:0 0 8px;
+      letter-spacing:-.03em;
+    }
+
+    .modal-text{
+      color:var(--muted);
+      line-height:1.52;
+      margin:0 0 12px;
+    }
+
+    .tip-box{
+      background:rgba(245,196,81,.08);
+      border:1px solid rgba(245,196,81,.14);
+      border-radius:16px;
+      padding:12px;
+      color:#ffe7b5;
+      margin-bottom:12px;
+      line-height:1.45;
+    }
+
+    .modal-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:8px;
+    }
+
+    /* mappa */
+    #mapModal{
+      align-items:stretch;
+      padding:0;
+    }
+
+    #mapWrap{
+      width:100%;
+      height:100%;
+      background:var(--bg);
+      display:flex;
+      flex-direction:column;
+    }
+
+    #mapTop{
+      padding:12px;
+      background:rgba(11,15,20,.94);
+      border-bottom:1px solid rgba(255,255,255,.06);
+      display:flex;
+      gap:10px;
+    }
+
+    #map{
+      flex:1;
+    }
+
+    .map-btn{
+      min-height:44px;
+      border-radius:14px;
+    }
+
+    /* giornata/top10 */
+    .day-list{
+      display:grid;
+      gap:10px;
+    }
+
+    .day-item{
+      background:var(--panel2);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:16px;
+      padding:12px;
+    }
+
+    .day-kicker{
+      font-size:.78rem;
+      color:var(--muted);
+      margin-bottom:4px;
+      font-weight:700;
+    }
+
+    .day-main{
+      font-size:1rem;
+      font-weight:800;
+      margin-bottom:6px;
+    }
+
+    .day-sub{
+      color:#d8e0ee;
+      line-height:1.4;
+      font-size:.92rem;
+    }
+
+    .mini-row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    .mini-btn{
+      min-height:38px;
+      padding:0 12px;
+      border-radius:12px;
+    }
+
+    @media (min-width:760px){
+      .grid-2{grid-template-columns:repeat(4,1fr)}
+      .stats-row{grid-template-columns:repeat(4,1fr)}
+    }
+  </style>
 </head>
-
 <body>
-<div class="container">
+  <div class="container">
+    <section class="hero">
+      <div class="eyebrow">📸 Madeira travel & outdoor planner</div>
+      <h1>Madeira Planner PRO</h1>
+      <p class="sub">
+        Fotografia, trekking, mountain bike e spot naturali. Filtra per zona, luce, attività e difficoltà, apri la mappa o fatti creare una giornata già sensata.
+      </p>
 
-<h1>📸 Madeira PRO</h1>
+      <div class="main-actions">
+        <button class="btn-main" id="spotNowBtn">🔥 Spot ora</button>
+        <div class="grid-2">
+          <button class="btn-main" id="dayBtn">📅 Crea giornata</button>
+          <button class="btn-main" id="sportDayBtn">🚵 Giornata sportiva</button>
+          <button class="btn-main" id="topBtn">⭐ Top 10</button>
+          <button class="btn-main" id="mapBtn">🗺️ Mappa</button>
+        </div>
+      </div>
 
-<button class="main" onclick="spotOra()">🔥 Spot ora</button>
-<button class="main" onclick="giornata()">📅 Crea giornata</button>
-<button class="main" onclick="openMap()">🗺️ Mappa</button>
+      <div class="stats-row">
+        <div class="stat">
+          <div class="label">Spot totali</div>
+          <div class="value" id="spotCount">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Filtro attivo</div>
+          <div class="value" id="filterState">Tutti</div>
+        </div>
+        <div class="stat">
+          <div class="label">Zona migliore</div>
+          <div class="value">Madeira</div>
+        </div>
+        <div class="stat">
+          <div class="label">Mood</div>
+          <div class="value">Outdoor</div>
+        </div>
+      </div>
+    </section>
 
-<h3>Filtro attività</h3>
-<button class="filter" onclick="setFiltroAct('all')">Tutti</button>
-<button class="filter" onclick="setFiltroAct('trekking')">Trekking</button>
-<button class="filter" onclick="setFiltroAct('mtb')">MTB</button>
-<button class="filter" onclick="setFiltroAct('view')">View</button>
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">Filtro luce</h2>
+        <div class="section-note">alba, tramonto o tutto</div>
+      </div>
+      <div class="chips" id="lightChips">
+        <button class="chip active" data-light="all">Tutti</button>
+        <button class="chip" data-light="alba">Alba</button>
+        <button class="chip" data-light="tramonto">Tramonto</button>
+        <button class="chip" data-light="giorno">Giorno</button>
+      </div>
+    </section>
 
-<div id="list"></div>
-</div>
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">Zona</h2>
+        <div class="section-note">nord, sud, est, ovest, montagna</div>
+      </div>
+      <div class="chips" id="zoneChips">
+        <button class="chip active" data-zone="all">Tutte</button>
+        <button class="chip" data-zone="nord">Nord</button>
+        <button class="chip" data-zone="sud">Sud</button>
+        <button class="chip" data-zone="est">Est</button>
+        <button class="chip" data-zone="ovest">Ovest</button>
+        <button class="chip" data-zone="montagna">Montagna</button>
+      </div>
+    </section>
 
-<!-- modal -->
-<div id="modal">
-  <div class="box">
-    <h2 id="title"></h2>
-    <img id="img" style="width:100%;border-radius:10px">
-    <p id="desc"></p>
-    <p id="info"></p>
-    <button onclick="google()">📸 Foto</button>
-    <button onclick="maps()">🗺️ Vai</button>
-    <button onclick="closeModal()">Chiudi</button>
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">Attività</h2>
+        <div class="section-note">trekking, mtb, view, relax</div>
+      </div>
+      <div class="chips" id="activityChips">
+        <button class="chip active" data-activity="all">Tutte</button>
+        <button class="chip" data-activity="trekking">Trekking</button>
+        <button class="chip" data-activity="mtb">MTB</button>
+        <button class="chip" data-activity="view">View</button>
+        <button class="chip" data-activity="relax">Relax</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">Difficoltà</h2>
+        <div class="section-note">facile, medio, impegnativo</div>
+      </div>
+      <div class="chips" id="difficultyChips">
+        <button class="chip active" data-difficulty="all">Tutte</button>
+        <button class="chip" data-difficulty="facile">Facile</button>
+        <button class="chip" data-difficulty="medio">Medio</button>
+        <button class="chip" data-difficulty="impegnativo">Impegnativo</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">Spot</h2>
+        <div class="section-note" id="resultNote">Tutti gli spot</div>
+      </div>
+      <div class="list" id="list"></div>
+      <div class="empty" id="emptyState" style="display:none">
+        Nessuno spot con questi filtri. Prova a rilassare uno dei filtri.
+      </div>
+    </section>
   </div>
-</div>
 
-<!-- map -->
-<div id="mapModal">
-  <button onclick="closeMap()">Chiudi</button>
-  <div id="map"></div>
-</div>
+  <!-- MODAL SPOT -->
+  <div class="overlay" id="detailOverlay">
+    <div class="modal-box">
+      <div class="handle"></div>
+      <img id="detailImg" class="modal-cover" alt="">
+      <h3 id="detailTitle" class="modal-title"></h3>
 
-<script>
+      <div class="badge-row" id="detailBadges"></div>
 
-let userPos=null
-let current=null
-let filtroAct="all"
+      <p id="detailDesc" class="modal-text"></p>
 
-navigator.geolocation.getCurrentPosition(p=>{
-  userPos={lat:p.coords.latitude,lon:p.coords.longitude}
-  render()
-})
+      <div class="tip-box" id="detailTip"></div>
 
-function dist(a,b,c,d){
-  const R=6371
-  const dLat=(c-a)*Math.PI/180
-  const dLon=(d-b)*Math.PI/180
-  const x=Math.sin(dLat/2)**2+
-  Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLon/2)**2
-  return R*(2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)))
-}
+      <div class="modal-actions">
+        <button class="btn-main" id="googlePhotosBtn">📸 Vedi foto reali</button>
+        <button class="btn-secondary" id="mapsBtn">🗺️ Apri in Maps</button>
+      </div>
 
-/* base */
-const base=[
-{name:"Pico Arieiro",type:"alba",zone:"montagna",activity:"trekking",difficulty:"medio"},
-{name:"Pico Ruivo",type:"alba",zone:"montagna",activity:"trekking",difficulty:"impegnativo"},
-{name:"Fanal",type:"giorno",zone:"ovest",activity:"trekking",difficulty:"facile"},
-{name:"Porto Moniz",type:"tramonto",zone:"ovest",activity:"view",difficulty:"facile"},
-{name:"Cabo Girão",type:"tramonto",zone:"sud",activity:"view",difficulty:"facile"},
-{name:"Santana",type:"giorno",zone:"nord",activity:"relax",difficulty:"facile"},
-{name:"Seixal",type:"alba",zone:"nord",activity:"view",difficulty:"facile"},
-{name:"Ponta São Lourenço",type:"alba",zone:"est",activity:"trekking",difficulty:"medio"}
-]
+      <div class="mini-row">
+        <button class="btn-ghost mini-btn" id="closeDetailBtn">Chiudi</button>
+      </div>
+    </div>
+  </div>
 
-let spots=[]
-for(let i=0;i<10;i++){
-  base.forEach(s=>{
-    spots.push({
-      ...s,
-      name:s.name+" "+(i+1),
-      lat:32.7+(Math.random()/10),
-      lon:-16.9+(Math.random()/10),
-      desc:"Attività "+s.activity+" perfetta a Madeira"
-    })
-  })
-}
+  <!-- MODAL GIORNATA / TOP -->
+  <div class="overlay" id="plannerOverlay">
+    <div class="modal-box">
+      <div class="handle"></div>
+      <h3 id="plannerTitle" class="modal-title"></h3>
+      <p id="plannerIntro" class="modal-text"></p>
+      <div class="day-list" id="plannerList"></div>
+      <div class="mini-row">
+        <button class="btn-ghost mini-btn" id="closePlannerBtn">Chiudi</button>
+      </div>
+    </div>
+  </div>
 
-/* render */
-function render(){
-  let html=""
-  let list=spots.filter(s=>filtroAct==="all"||s.activity===filtroAct)
+  <!-- MAPPA -->
+  <div class="overlay" id="mapModal">
+    <div id="mapWrap">
+      <div id="mapTop">
+        <button class="btn-main map-btn" id="closeMapBtn">Chiudi</button>
+        <button class="btn-secondary map-btn" id="fitMapBtn">Adatta vista</button>
+      </div>
+      <div id="map"></div>
+    </div>
+  </div>
 
-  list.forEach(s=>{
-    let d=userPos?dist(userPos.lat,userPos.lon,s.lat,s.lon).toFixed(1)+" km":""
-    html+=`
-    <div class="spot" onclick='openModal(${JSON.stringify(s)})'>
-      <b>${s.name}</b>
-      <div class="meta">${s.activity} • ${s.difficulty} • ${d}</div>
-    </div>`
-  })
+  <script>
+    const SPOTS = [
+      // EST
+      {name:"Ponta de São Lourenço", lat:32.7440, lon:-16.7040, light:"alba", zone:"est", activity:"trekking", difficulty:"medio", desc:"Il promontorio più scenografico dell'isola, perfetto per creste, oceano e luce drammatica.", tip:"Vai molto presto: l'alba qui cambia davvero la resa del paesaggio."},
+      {name:"Miradouro da Ponta do Rosto", lat:32.7433, lon:-16.7086, light:"alba", zone:"est", activity:"view", difficulty:"facile", desc:"Belvedere immediato e potentissimo, con vista sulle due coste del promontorio.", tip:"Perfetto se vuoi un colpo d'occhio wow senza fare trekking lungo."},
+      {name:"Caniçal Harbor View", lat:32.7388, lon:-16.7384, light:"giorno", zone:"est", activity:"view", difficulty:"facile", desc:"Atmosfera portuale, linee industriali e mare, molto diverso dal resto di Madeira.", tip:"Bello nelle ore centrali se vuoi colori netti e scene meno turistiche."},
+      {name:"Prainha do Caniçal", lat:32.7397, lon:-16.7167, light:"alba", zone:"est", activity:"relax", difficulty:"facile", desc:"Piccola spiaggia vulcanica, ottima per un inizio giornata tranquillo ma fotogenico.", tip:"Meglio presto, quando la luce è pulita e c'è poca gente."},
+      {name:"Miradouro do Guindaste", lat:32.8217, lon:-16.8606, light:"alba", zone:"est", activity:"view", difficulty:"facile", desc:"Uno dei viewpoint più scenici sul lato est, con scogliera e oceano aperto.", tip:"Qui l'alba funziona molto bene anche con nuvole leggere."},
+      {name:"Faial Coast View", lat:32.8172, lon:-16.8590, light:"alba", zone:"est", activity:"view", difficulty:"facile", desc:"Vista costiera molto ampia, ideale per scatti puliti e fotografici.", tip:"Ottimo se vuoi restare in zona Guindaste senza fare molta strada."},
+      {name:"Machico Bay", lat:32.7167, lon:-16.7667, light:"giorno", zone:"est", activity:"relax", difficulty:"facile", desc:"Baia ampia e molto ordinata, perfetta per passeggiare e fotografare il waterfront.", tip:"Meglio in luce diurna piena per acqua e contesto urbano."},
+      {name:"Miradouro Francisco Álvares Nóbrega", lat:32.7432, lon:-16.8240, light:"alba", zone:"est", activity:"view", difficulty:"facile", desc:"Belvedere alto con costa e montagne, molto utile per vista panoramica senza trekking lungo.", tip:"Ideale se vuoi una tappa rapida sulla costa orientale."},
+      {name:"Porto da Cruz Waterfront", lat:32.7661, lon:-16.8299, light:"giorno", zone:"est", activity:"relax", difficulty:"facile", desc:"Lungomare piacevole con oceano e atmosfera locale.", tip:"Bello come tappa lenta tra est e nord-est."},
+      {name:"Penha d'Águia View", lat:32.7633, lon:-16.8244, light:"giorno", zone:"est", activity:"view", difficulty:"medio", desc:"Grande massa rocciosa iconica che domina Porto da Cruz.", tip:"Funziona bene se vuoi forme forti e paesaggio drammatico."},
+      {name:"Levada do Caniçal Trailhead", lat:32.7390, lon:-16.7448, light:"giorno", zone:"est", activity:"trekking", difficulty:"medio", desc:"Accesso a percorsi secchi e panoramici nella zona orientale.", tip:"Meglio non nelle ore più ventose."},
+      {name:"Miradouro do Facho", lat:32.7175, lon:-16.7635, light:"tramonto", zone:"est", activity:"view", difficulty:"facile", desc:"Belvedere sopra Machico con visuale ampia sulla baia.", tip:"Bello nel tardo pomeriggio e verso il tramonto."},
+      {name:"São Lourenço Ridge Start", lat:32.7468, lon:-16.7019, light:"alba", zone:"est", activity:"trekking", difficulty:"medio", desc:"Inizio della cresta più famosa di Madeira.", tip:"Se vuoi luce forte e poca gente, parti molto presto."},
+      {name:"Cais do Sardinha", lat:32.7457, lon:-16.6889, light:"alba", zone:"est", activity:"trekking", difficulty:"medio", desc:"Fine spettacolare del percorso São Lourenço, mare ovunque.", tip:"Perfetto se vuoi premiare il trekking con un finale davvero scenico."},
+      {name:"Boca do Risco Access", lat:32.7860, lon:-16.8460, light:"giorno", zone:"est", activity:"trekking", difficulty:"impegnativo", desc:"Percorso costiero più selvaggio, bellissimo per chi cerca natura e fatica.", tip:"Da fare con gambe buone e meteo stabile."},
 
-  document.getElementById("list").innerHTML=html
-}
+      // NORD
+      {name:"Seixal Beach", lat:32.8246, lon:-17.1082, light:"alba", zone:"nord", activity:"view", difficulty:"facile", desc:"Una delle spiagge più scenografiche di Madeira, con sabbia scura e montagne verdi.", tip:"L'alba qui è fortissima se vuoi contrasto tra mare e pendii."},
+      {name:"Seixal Natural Pools", lat:32.8241, lon:-17.1085, light:"giorno", zone:"nord", activity:"relax", difficulty:"facile", desc:"Piscine naturali e costa rocciosa, ottime per pausa e foto semplici.", tip:"Belle nelle ore centrali se il mare è tranquillo."},
+      {name:"Ribeira da Janela", lat:32.8652, lon:-17.1446, light:"alba", zone:"nord", activity:"view", difficulty:"facile", desc:"Iconico stack roccioso in mare, uno dei punti più fotografici del nord.", tip:"Meglio con luce bassa e mare vivo."},
+      {name:"Porto Moniz Pools", lat:32.8664, lon:-17.1666, light:"tramonto", zone:"nord", activity:"view", difficulty:"facile", desc:"Piscine vulcaniche e tramonto oceanico, classico intramontabile.", tip:"Vai sul tardi e resta fino a luce bassa."},
+      {name:"Miradouro da Santinha", lat:32.8695, lon:-17.1662, light:"tramonto", zone:"nord", activity:"view", difficulty:"facile", desc:"Belvedere alto su Porto Moniz, molto utile per capire il contesto della costa.", tip:"Ottimo pre-tramonto prima di scendere alle piscine."},
+      {name:"Santana Houses", lat:32.8046, lon:-16.8821, light:"giorno", zone:"nord", activity:"relax", difficulty:"facile", desc:"Le casette tradizionali di Santana sono perfette per una tappa leggera ma iconica.", tip:"Da fare in orari tranquilli per evitare troppo affollamento."},
+      {name:"Levada do Caldeirão Verde", lat:32.8072, lon:-16.9050, light:"giorno", zone:"nord", activity:"trekking", difficulty:"medio", desc:"Uno dei trekking più famosi, con gallerie, pareti verdi e cascata finale.", tip:"Porta una lampada frontale se fai le gallerie."},
+      {name:"Levada do Caldeirão do Inferno", lat:32.8070, lon:-16.9042, light:"giorno", zone:"nord", activity:"trekking", difficulty:"impegnativo", desc:"Prosecuzione più forte e spettacolare del Caldeirão Verde.", tip:"Meglio se sei già abituato a sentieri lunghi."},
+      {name:"São Jorge Coast View", lat:32.8290, lon:-16.9030, light:"giorno", zone:"nord", activity:"view", difficulty:"facile", desc:"Costa verde e ripida, super rappresentativa del lato nord.", tip:"Molto bella anche con cielo nuvoloso."},
+      {name:"Arco de São Jorge View", lat:32.8158, lon:-16.9168, light:"giorno", zone:"nord", activity:"view", difficulty:"facile", desc:"Balcone panoramico sulla costa con tanta profondità.", tip:"Ottimo se vuoi scatti puliti di costa e terrazze."},
+      {name:"Ponta Delgada Waterfront", lat:32.8241, lon:-16.9297, light:"giorno", zone:"nord", activity:"relax", difficulty:"facile", desc:"Piccolo centro costiero buono per tappa breve e mare.", tip:"Valido come pausa tra viewpoint più importanti."},
+      {name:"Boaventura Viewpoint", lat:32.8207, lon:-16.9726, light:"giorno", zone:"nord", activity:"view", difficulty:"facile", desc:"Costa nord molto scenografica e meno mainstream.", tip:"Perfetto se vuoi una Madeira più calma e autentica."},
+      {name:"Ilhéus da Ribeira da Janela", lat:32.8684, lon:-17.1498, light:"alba", zone:"nord", activity:"view", difficulty:"facile", desc:"Formazioni rocciose in mare tra le più iconiche dell'isola.", tip:"Se c'è movimento d'acqua, rende ancora meglio."},
+      {name:"Achadas da Cruz View", lat:32.8648, lon:-17.2176, light:"tramonto", zone:"nord", activity:"view", difficulty:"medio", desc:"Scogliera estremamente scenica, tra i punti più forti dell'ovest-nordovest.", tip:"Bellissima nel tardo pomeriggio, anche senza scendere in basso."},
+      {name:"Teleférico Achadas da Cruz Top", lat:32.8639, lon:-17.2172, light:"tramonto", zone:"nord", activity:"view", difficulty:"facile", desc:"Punto panoramico sulla funivia e sulla costa ripidissima.", tip:"Perfetto per una tappa wow senza trekking duro."},
 
-/* modal */
-function openModal(s){
-  current=s
-  title.innerText=s.name
-  desc.innerText=s.desc
-  info.innerText=s.activity+" • "+s.difficulty
-  img.src="https://picsum.photos/seed/"+s.name+"/600/400"
-  modal.style.display="flex"
-}
+      // SUD
+      {name:"Câmara de Lobos", lat:32.6488, lon:-16.9777, light:"tramonto", zone:"sud", activity:"relax", difficulty:"facile", desc:"Villaggio di pescatori fotogenico, con barche, case e mare.", tip:"Al tramonto è una delle zone più belle del sud."},
+      {name:"Cabo Girão", lat:32.6558, lon:-17.0048, light:"tramonto", zone:"sud", activity:"view", difficulty:"facile", desc:"Falesia iconica e panorama fortissimo sul sud di Madeira.", tip:"Vai quando il sole inizia a scendere per avere più atmosfera."},
+      {name:"Pico dos Barcelos", lat:32.6656, lon:-16.9372, light:"tramonto", zone:"sud", activity:"view", difficulty:"facile", desc:"Belvedere molto accessibile sopra Funchal.", tip:"Ottimo per vista ampia senza fare fatica."},
+      {name:"Funchal Old Town", lat:32.6482, lon:-16.9036, light:"giorno", zone:"sud", activity:"relax", difficulty:"facile", desc:"Centro storico utile per passeggiare, mangiare e fotografare atmosfera urbana.", tip:"Meglio tra tardo pomeriggio e sera iniziale."},
+      {name:"Funchal Marina", lat:32.6440, lon:-16.9137, light:"tramonto", zone:"sud", activity:"relax", difficulty:"facile", desc:"Porto turistico ideale per una passeggiata semplice con luce serale.", tip:"Buono come chiusura giornata comoda."},
+      {name:"CR7 Promenade", lat:32.6418, lon:-16.9197, light:"tramonto", zone:"sud", activity:"relax", difficulty:"facile", desc:"Passeggiata moderna sul fronte mare di Funchal.", tip:"Valida se vuoi stare leggero vicino alla città."},
+      {name:"Monte Palace Area", lat:32.6765, lon:-16.9008, light:"giorno", zone:"sud", activity:"relax", difficulty:"facile", desc:"Giardini e scorci molto ricchi, perfetti per una mezza giornata soft.", tip:"Ottimo se vuoi qualcosa di bello ma meno sportivo."},
+      {name:"Botanical Garden", lat:32.6652, lon:-16.8905, light:"giorno", zone:"sud", activity:"relax", difficulty:"facile", desc:"Giardino botanico con viste e colori, comodo e molto ordinato.", tip:"Perfetto per una giornata più lenta o se sei stanco."},
+      {name:"Miradouro do Pináculo", lat:32.6555, lon:-16.8794, light:"tramonto", zone:"sud", activity:"view", difficulty:"facile", desc:"Belvedere utile per vedere Funchal dall'alto con contesto urbano.", tip:"Molto bene verso il tramonto e blue hour."},
+      {name:"Garajau Viewpoint", lat:32.6372, lon:-16.8501, light:"tramonto", zone:"sud", activity:"view", difficulty:"facile", desc:"Grande statua e mare aperto, tappa classica del sud-est vicino a Funchal.", tip:"Luce serale più interessante della centrale."},
+      {name:"Praia Formosa", lat:32.6359, lon:-16.9492, light:"tramonto", zone:"sud", activity:"relax", difficulty:"facile", desc:"Spiaggia urbana molto buona per tramonto easy.", tip:"Se vuoi concludere senza guidare troppo, è perfetta."},
+      {name:"Ribeira Brava Waterfront", lat:32.6758, lon:-17.0622, light:"giorno", zone:"sud", activity:"relax", difficulty:"facile", desc:"Piccolo lungomare comodo come tappa di passaggio.", tip:"Funziona bene in giornate di spostamento."},
+      {name:"Ponta do Sol Center", lat:32.6790, lon:-17.1012, light:"tramonto", zone:"sud", activity:"relax", difficulty:"facile", desc:"Uno dei paesi più piacevoli del sud, molto bello con luce calda.", tip:"Ottima sosta per golden hour e aperitivo."},
+      {name:"Madalena do Mar Waterfront", lat:32.7028, lon:-17.1433, light:"tramonto", zone:"sud", activity:"relax", difficulty:"facile", desc:"Lungomare calmo e fotogenico sul lato sud-ovest.", tip:"Perfetto per una chiusura giornata tranquilla."},
+      {name:"Jardim do Mar View", lat:32.7385, lon:-17.2118, light:"tramonto", zone:"sud", activity:"view", difficulty:"facile", desc:"Paesino e costa rocciosa tra i più interessanti del sud-ovest.", tip:"Valido se vuoi un tramonto meno turistico."},
 
-function closeModal(){modal.style.display="none"}
+      // OVEST
+      {name:"Fanal Forest", lat:32.7603, lon:-17.1476, light:"giorno", zone:"ovest", activity:"trekking", difficulty:"facile", desc:"Foresta magica famosa per alberi, nebbia e atmosfera unica.", tip:"Se trovi foschia o nuvole basse, è uno spot enorme."},
+      {name:"Paul da Serra", lat:32.7630, lon:-17.1330, light:"tramonto", zone:"ovest", activity:"mtb", difficulty:"medio", desc:"Altipiano aperto e potentissimo, ottimo per MTB e luci lunghe.", tip:"Molto bello nel tardo pomeriggio e con cielo ampio."},
+      {name:"Rabaçal / 25 Fontes", lat:32.7524, lon:-17.1318, light:"giorno", zone:"ovest", activity:"trekking", difficulty:"medio", desc:"Uno dei trekking più famosi, molto verde e soddisfacente.", tip:"Parti presto per evitare affollamento."},
+      {name:"Levada do Risco", lat:32.7528, lon:-17.1321, light:"giorno", zone:"ovest", activity:"trekking", difficulty:"facile", desc:"Percorso breve e molto scenico verso una cascata impressionante.", tip:"Ottimo se vuoi una mattina forte ma non troppo lunga."},
+      {name:"Levada dos Cedros", lat:32.7628, lon:-17.1510, light:"giorno", zone:"ovest", activity:"trekking", difficulty:"medio", desc:"Levada bellissima, più tranquilla di altre super famose.", tip:"Scelta ottima se vuoi verde e meno folla."},
+      {name:"Levada do Alecrim", lat:32.7601, lon:-17.1327, light:"giorno", zone:"ovest", activity:"trekking", difficulty:"facile", desc:"Sentiero piacevole in zona Rabaçal, con laghetti e verde.", tip:"Perfetto se vuoi qualcosa di accessibile."},
+      {name:"Bica da Cana", lat:32.7781, lon:-17.1128, light:"alba", zone:"ovest", activity:"view", difficulty:"facile", desc:"Uno dei migliori sunrise point dell'isola con possibilità di nuvole sotto.", tip:"Vai davvero presto: rende moltissimo all'alba."},
+      {name:"Miradouro da Eira da Achada", lat:32.8415, lon:-17.2161, light:"tramonto", zone:"ovest", activity:"view", difficulty:"facile", desc:"Belvedere impressionante sull'ovest, molto scenografico.", tip:"Molto bene con luce bassa e aria limpida."},
+      {name:"Prazeres Viewpoint", lat:32.7575, lon:-17.2110, light:"tramonto", zone:"ovest", activity:"view", difficulty:"facile", desc:"Sud-ovest dolce e panoramico, ottimo verso sera.", tip:"Buona alternativa a spot più noti e affollati."},
+      {name:"Calheta Beach", lat:32.7182, lon:-17.1760, light:"tramonto", zone:"ovest", activity:"relax", difficulty:"facile", desc:"Spiaggia e marina, perfetta per chiudere una giornata sportiva.", tip:"Ottima se vuoi tramonto comodo e servizi vicini."},
+      {name:"Ponta do Pargo Lighthouse", lat:32.8120, lon:-17.2623, light:"tramonto", zone:"ovest", activity:"view", difficulty:"facile", desc:"Uno dei punti più forti per il tramonto oceanico puro.", tip:"Se vuoi un tramonto serio a Madeira, questo conta."},
+      {name:"Miradouro Garganta Funda", lat:32.8133, lon:-17.2638, light:"tramonto", zone:"ovest", activity:"view", difficulty:"facile", desc:"Cascata e falesia, molto scenografico sul lato più estremo dell'isola.", tip:"Meglio con acqua e luce tardo pomeridiana."},
+      {name:"Porto do Seixal Upper View", lat:32.8255, lon:-17.1052, light:"giorno", zone:"ovest", activity:"view", difficulty:"facile", desc:"Vista alta sulla costa nord-ovest in area Seixal.", tip:"Buona tappa tra Fanal e Porto Moniz."},
+      {name:"Vereda do Fanal Access", lat:32.7641, lon:-17.1457, light:"giorno", zone:"ovest", activity:"mtb", difficulty:"medio", desc:"Zona molto interessante per uscite outdoor non solo fotografiche.", tip:"Bella area se vuoi combinare natura e attività."},
+      {name:"Lombo do Mouro", lat:32.7770, lon:-17.1385, light:"tramonto", zone:"ovest", activity:"mtb", difficulty:"medio", desc:"Area aperta e scenica con orizzonte ampio.", tip:"Ottima per finali di giornata all'aperto."},
 
-function maps(){
-  window.open(`https://www.google.com/maps?q=${current.lat},${current.lon}`)
-}
+      // MONTAGNA
+      {name:"Pico do Arieiro", lat:32.7354, lon:-16.9281, light:"alba", zone:"montagna", activity:"view", difficulty:"facile", desc:"Il grande classico sopra le nuvole: accessibile e di impatto totale.", tip:"Se sei a Madeira e vuoi un'alba forte, questo è uno dei punti chiave."},
+      {name:"PR1 Pico do Arieiro → Pico Ruivo", lat:32.7355, lon:-16.9288, light:"alba", zone:"montagna", activity:"trekking", difficulty:"impegnativo", desc:"Il trekking simbolo dell'isola, tra creste, tunnel e panorami enormi.", tip:"Da fare se vuoi un'esperienza memorabile e hai gambe."},
+      {name:"Pico Ruivo Summit", lat:32.7591, lon:-16.9431, light:"alba", zone:"montagna", activity:"trekking", difficulty:"impegnativo", desc:"Cima più alta di Madeira, panorama gigantesco.", tip:"In giornate limpide è uno dei top assoluti."},
+      {name:"Achada do Teixeira", lat:32.7583, lon:-16.9332, light:"alba", zone:"montagna", activity:"view", difficulty:"facile", desc:"Accesso più semplice per vedere l'area del Pico Ruivo senza trekking completo.", tip:"Scelta intelligente se vuoi alta quota ma meno fatica."},
+      {name:"Miradouro da Portela", lat:32.7399, lon:-16.8297, light:"giorno", zone:"montagna", activity:"view", difficulty:"facile", desc:"Vista profonda su Penha d'Águia e nord-est.", tip:"Bel compromesso tra facilità e panorama."},
+      {name:"Eira do Serrado", lat:32.7040, lon:-16.9697, light:"tramonto", zone:"montagna", activity:"view", difficulty:"facile", desc:"Belvedere potentissimo sulla valle di Curral das Freiras.", tip:"Molto bene verso sera se vuoi ombre e profondità."},
+      {name:"Curral das Freiras View", lat:32.7119, lon:-16.9702, light:"giorno", zone:"montagna", activity:"view", difficulty:"facile", desc:"Valle chiusa e spettacolare, una delle immagini più forti dell'interno.", tip:"Funziona bene anche con cielo nuvoloso."},
+      {name:"Boca dos Namorados", lat:32.7057, lon:-16.9690, light:"tramonto", zone:"montagna", activity:"view", difficulty:"facile", desc:"Alternativa molto buona alla zona Eira do Serrado.", tip:"Ottimo per chi cerca vista forte senza impegno fisico."},
+      {name:"Boca da Corrida", lat:32.7061, lon:-16.9902, light:"tramonto", zone:"montagna", activity:"mtb", difficulty:"medio", desc:"Area montana aperta e scenica, interessante anche outdoor.", tip:"Bella per una giornata più sportiva con vista."},
+      {name:"Levada do Rei", lat:32.8068, lon:-16.9075, light:"giorno", zone:"montagna", activity:"trekking", difficulty:"medio", desc:"Levada molto appagante e verde, perfetta per trekking classico Madeira.", tip:"Buona se vuoi qualcosa di forte ma non estremo."},
+      {name:"PR9 Levada do Caldeirão Verde Area", lat:32.8075, lon:-16.9060, light:"giorno", zone:"montagna", activity:"trekking", difficulty:"medio", desc:"Area sentieristica iconica del lato interno.", tip:"Una delle zone più riconoscibili per il trekking dell'isola."},
+      {name:"Encumeada Pass", lat:32.7491, lon:-17.0320, light:"giorno", zone:"montagna", activity:"view", difficulty:"facile", desc:"Passo centrale con grande lettura dell'orografia di Madeira.", tip:"Molto utile per spostarsi e fare una sosta panoramica."},
+      {name:"Vereda da Boca do Risco Access", lat:32.7899, lon:-16.8464, light:"giorno", zone:"montagna", activity:"trekking", difficulty:"impegnativo", desc:"Percorso costiero/montano di grande carattere.", tip:"Per chi vuole un trekking serio con panorama."},
+      {name:"Chão dos Louros", lat:32.7494, lon:-16.9898, light:"giorno", zone:"montagna", activity:"mtb", difficulty:"medio", desc:"Zona outdoor interessante per natura e attività.", tip:"Buona area per chi vuole alternare sport e vista."},
+      {name:"Balcões", lat:32.7368, lon:-16.8970, light:"alba", zone:"montagna", activity:"view", difficulty:"facile", desc:"Viewpoint molto accessibile e forte sulle vallate verdi.", tip:"Perfetto se vuoi una mattina semplice ma bella."}
+    ];
 
-function google(){
-  window.open(`https://www.google.com/search?q=${current.name}&tbm=isch`)
-}
+    const state = {
+      light: "all",
+      zone: "all",
+      activity: "all",
+      difficulty: "all",
+      userPos: null,
+      currentSpot: null
+    };
 
-/* giornata */
-function giornata(){
-  let alba=spots.find(s=>s.type==="alba")
-  let att=spots.find(s=>s.activity==="trekking")
-  let tram=spots.find(s=>s.type==="tramonto")
+    let mapInstance = null;
+    let mapLayer = null;
 
-  alert(`
-🌅 ${alba.name}
-🥾 ${att.name}
-🌇 ${tram.name}
-`)
-}
+    const listEl = document.getElementById("list");
+    const emptyEl = document.getElementById("emptyState");
+    const resultNoteEl = document.getElementById("resultNote");
+    const spotCountEl = document.getElementById("spotCount");
+    const filterStateEl = document.getElementById("filterState");
 
-/* filtri */
-function setFiltroAct(f){
-  filtroAct=f
-  render()
-}
+    const detailOverlay = document.getElementById("detailOverlay");
+    const plannerOverlay = document.getElementById("plannerOverlay");
+    const mapModal = document.getElementById("mapModal");
 
-/* spot ora */
-function spotOra(){
-  alert("Usa giornata per miglior risultato 😉")
-}
+    const detailTitle = document.getElementById("detailTitle");
+    const detailImg = document.getElementById("detailImg");
+    const detailDesc = document.getElementById("detailDesc");
+    const detailTip = document.getElementById("detailTip");
+    const detailBadges = document.getElementById("detailBadges");
 
-/* map */
-let mapInit=false
-function openMap(){
-  mapModal.style.display="flex"
+    const plannerTitle = document.getElementById("plannerTitle");
+    const plannerIntro = document.getElementById("plannerIntro");
+    const plannerList = document.getElementById("plannerList");
 
-  if(!mapInit){
-    const map=L.map('map').setView([32.75,-16.95],10)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map)
+    spotCountEl.textContent = SPOTS.length;
 
-    spots.forEach(s=>{
-      L.marker([s.lat,s.lon]).addTo(map).bindPopup(s.name)
-    })
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        state.userPos = {
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude
+        };
+        render();
+      },
+      () => render(),
+      { enableHighAccuracy:true, timeout:8000 }
+    );
 
-    mapInit=true
-  }
-}
+    // chips events
+    bindChipGroup("lightChips", "light");
+    bindChipGroup("zoneChips", "zone");
+    bindChipGroup("activityChips", "activity");
+    bindChipGroup("difficultyChips", "difficulty");
 
-function closeMap(){
-  mapModal.style.display="none"
-}
+    function bindChipGroup(id, key){
+      document.getElementById(id).addEventListener("click", e => {
+        const btn = e.target.closest("[data-" + key + "]");
+        if(!btn) return;
 
-render()
+        [...document.querySelectorAll("#" + id + " .chip")].forEach(x => x.classList.remove("active"));
+        btn.classList.add("active");
+        state[key] = btn.dataset[key];
+        render();
+      });
+    }
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js');
-}
+    function distKm(a,b,c,d){
+      const R = 6371;
+      const dLat = (c-a) * Math.PI/180;
+      const dLon = (d-b) * Math.PI/180;
+      const x =
+        Math.sin(dLat/2) ** 2 +
+        Math.cos(a*Math.PI/180) * Math.cos(c*Math.PI/180) *
+        Math.sin(dLon/2) ** 2;
+      return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x)));
+    }
 
-</script>
+    function filteredSpots(){
+      return SPOTS.filter(s =>
+        (state.light === "all" || s.light === state.light) &&
+        (state.zone === "all" || s.zone === state.zone) &&
+        (state.activity === "all" || s.activity === state.activity) &&
+        (state.difficulty === "all" || s.difficulty === state.difficulty)
+      );
+    }
+
+    function currentFilterLabel(){
+      const parts = [];
+      if(state.light !== "all") parts.push(state.light);
+      if(state.zone !== "all") parts.push(state.zone);
+      if(state.activity !== "all") parts.push(state.activity);
+      if(state.difficulty !== "all") parts.push(state.difficulty);
+      return parts.length ? parts.join(" • ") : "Tutti";
+    }
+
+    function render(){
+      const items = filteredSpots().map(s => ({
+        ...s,
+        distance: state.userPos ? distKm(state.userPos.lat, state.userPos.lon, s.lat, s.lon) : null
+      }));
+
+      items.sort((a,b) => {
+        if(a.distance == null && b.distance == null) return a.name.localeCompare(b.name);
+        if(a.distance == null) return 1;
+        if(b.distance == null) return -1;
+        return a.distance - b.distance;
+      });
+
+      resultNoteEl.textContent = `${items.length} spot`;
+      filterStateEl.textContent = currentFilterLabel();
+
+      if(!items.length){
+        listEl.innerHTML = "";
+        emptyEl.style.display = "block";
+        return;
+      }
+
+      emptyEl.style.display = "none";
+
+      listEl.innerHTML = items.map(s => `
+        <article class="spot">
+          <div class="spot-top">
+            <div>
+              <h3 class="spot-name">${escapeHtml(s.name)}</h3>
+              <div class="spot-distance">${distanceLabel(s.distance)}</div>
+            </div>
+          </div>
+
+          <div class="badge-row">
+            <span class="badge b-light">${badgeIconLight(s.light)} ${escapeHtml(s.light)}</span>
+            <span class="badge b-zone">🧭 ${escapeHtml(s.zone)}</span>
+            <span class="badge b-act">${badgeIconActivity(s.activity)} ${escapeHtml(s.activity)}</span>
+            <span class="badge ${difficultyClass(s.difficulty)}">⚡ ${escapeHtml(s.difficulty)}</span>
+          </div>
+
+          <div class="spot-desc">${escapeHtml(s.desc)}</div>
+
+          <div class="spot-actions">
+            <button class="btn-secondary" onclick="openDetail('${encodeURIComponent(s.name)}')">Dettagli</button>
+            <button class="btn-main" onclick="openMapsByName('${encodeURIComponent(s.name)}')">Apri Maps</button>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function distanceLabel(d){
+      if(d == null) return "distanza non disponibile";
+      return `${d.toFixed(1)} km da te`;
+    }
+
+    function badgeIconLight(v){
+      if(v === "alba") return "🌅";
+      if(v === "tramonto") return "🌇";
+      return "☀️";
+    }
+
+    function badgeIconActivity(v){
+      if(v === "trekking") return "🥾";
+      if(v === "mtb") return "🚵";
+      if(v === "relax") return "🌴";
+      return "📍";
+    }
+
+    function difficultyClass(v){
+      if(v === "facile") return "b-diff-easy";
+      if(v === "medio") return "b-diff-medium";
+      return "b-diff-hard";
+    }
+
+    function findByName(encoded){
+      const name = decodeURIComponent(encoded);
+      return SPOTS.find(s => s.name === name);
+    }
+
+    window.openDetail = function(encoded){
+      const s = findByName(encoded);
+      if(!s) return;
+      state.currentSpot = s;
+
+      detailTitle.textContent = s.name;
+      detailImg.src = `https://picsum.photos/seed/${encodeURIComponent(s.name)}/900/600`;
+      detailImg.alt = s.name;
+      detailDesc.textContent = s.desc;
+      detailTip.textContent = `Suggerimento: ${s.tip}`;
+
+      detailBadges.innerHTML = `
+        <span class="badge b-light">${badgeIconLight(s.light)} ${escapeHtml(s.light)}</span>
+        <span class="badge b-zone">🧭 ${escapeHtml(s.zone)}</span>
+        <span class="badge b-act">${badgeIconActivity(s.activity)} ${escapeHtml(s.activity)}</span>
+        <span class="badge ${difficultyClass(s.difficulty)}">⚡ ${escapeHtml(s.difficulty)}</span>
+      `;
+
+      detailOverlay.classList.add("show");
+      document.body.classList.add("modal-open");
+    };
+
+    function closeDetail(){
+      detailOverlay.classList.remove("show");
+      document.body.classList.remove("modal-open");
+    }
+
+    document.getElementById("closeDetailBtn").addEventListener("click", closeDetail);
+    detailOverlay.addEventListener("click", e => {
+      if(e.target === detailOverlay) closeDetail();
+    });
+
+    document.getElementById("mapsBtn").addEventListener("click", () => {
+      if(!state.currentSpot) return;
+      openMaps(state.currentSpot.lat, state.currentSpot.lon);
+    });
+
+    document.getElementById("googlePhotosBtn").addEventListener("click", () => {
+      if(!state.currentSpot) return;
+      const q = encodeURIComponent(state.currentSpot.name + " Madeira");
+      window.open(`https://www.google.com/search?q=${q}&tbm=isch`, "_blank");
+    });
+
+    function openMaps(lat, lon){
+      window.open(`https://www.google.com/maps?q=${lat},${lon}`, "_blank");
+    }
+
+    window.openMapsByName = function(encoded){
+      const s = findByName(encoded);
+      if(!s) return;
+      openMaps(s.lat, s.lon);
+    };
+
+    // spot ora
+    document.getElementById("spotNowBtn").addEventListener("click", () => {
+      const h = new Date().getHours();
+      let desired = "giorno";
+      if(h < 9) desired = "alba";
+      else if(h >= 17) desired = "tramonto";
+
+      let pool = SPOTS.filter(s => s.light === desired);
+      if(state.activity !== "all") pool = pool.filter(s => s.activity === state.activity);
+      if(state.zone !== "all") pool = pool.filter(s => s.zone === state.zone);
+      if(state.difficulty !== "all") pool = pool.filter(s => s.difficulty === state.difficulty);
+
+      if(!pool.length) pool = SPOTS.filter(s => s.light === desired);
+      if(!pool.length) pool = [...SPOTS];
+
+      if(state.userPos){
+        pool = pool
+          .map(s => ({...s, d: distKm(state.userPos.lat, state.userPos.lon, s.lat, s.lon)}))
+          .sort((a,b) => a.d - b.d);
+        openDetail(encodeURIComponent(pool[0].name));
+      } else {
+        openDetail(encodeURIComponent(pool[0].name));
+      }
+    });
+
+    // crea giornata
+    document.getElementById("dayBtn").addEventListener("click", () => {
+      const alba = bestSpot({ light:"alba", activity:["view","trekking"] });
+      const main = bestSpot({ activity:["trekking","view","relax","mtb"], exclude:[alba?.name] });
+      const tram = bestSpot({ light:"tramonto", activity:["view","relax"], exclude:[alba?.name, main?.name] });
+
+      showPlanner(
+        "Giornata Madeira",
+        "Una giornata semplice ma molto sensata, costruita con alba + attività centrale + chiusura forte.",
+        [
+          { kicker:"🌅 Alba", spot:alba, note:"Partenza forte con luce bella e poco caos." },
+          { kicker:"🥾 Attività centrale", spot:main, note:"La parte più piena della giornata, outdoor o viewpoint." },
+          { kicker:"🌇 Chiusura", spot:tram, note:"Finale comodo e visivamente forte." }
+        ]
+      );
+    });
+
+    // giornata sportiva
+    document.getElementById("sportDayBtn").addEventListener("click", () => {
+      const alba = bestSpot({ light:"alba", activity:["view"] });
+      const sport = bestSpot({ activity:["trekking","mtb"], difficulty:["medio","impegnativo"], exclude:[alba?.name] });
+      const tram = bestSpot({ light:"tramonto", activity:["view","relax"], exclude:[alba?.name, sport?.name] });
+
+      showPlanner(
+        "Giornata sportiva",
+        "Pensata per chi vuole movimento vero, ma anche un inizio e una chiusura belli.",
+        [
+          { kicker:"🌅 Inizio", spot:alba, note:"Viewpoint rapido o alba forte per partire bene." },
+          { kicker:"🚵 Core activity", spot:sport, note:"Il blocco più sportivo della giornata." },
+          { kicker:"🌇 Recovery spot", spot:tram, note:"Un finale visivo e più rilassato." }
+        ]
+      );
+    });
+
+    // top 10
+    document.getElementById("topBtn").addEventListener("click", () => {
+      const topNames = [
+        "Ponta de São Lourenço",
+        "Pico do Arieiro",
+        "Pico Ruivo Summit",
+        "Fanal Forest",
+        "Ribeira da Janela",
+        "Porto Moniz Pools",
+        "Cabo Girão",
+        "Levada do Caldeirão Verde",
+        "Ponta do Pargo Lighthouse",
+        "Eira do Serrado"
+      ];
+
+      const items = topNames.map(n => SPOTS.find(s => s.name === n)).filter(Boolean);
+
+      plannerTitle.textContent = "Top 10 Madeira";
+      plannerIntro.textContent = "Questi sono i 10 spot/luoghi più forti se vuoi vedere il meglio di Madeira senza perderti.";
+      plannerList.innerHTML = items.map((s, i) => `
+        <div class="day-item">
+          <div class="day-kicker">#${i+1}</div>
+          <div class="day-main">${escapeHtml(s.name)}</div>
+          <div class="day-sub">${escapeHtml(s.desc)}</div>
+          <div class="mini-row">
+            <button class="btn-secondary mini-btn" onclick="openDetailFromPlanner('${encodeURIComponent(s.name)}')">Dettagli</button>
+            <button class="btn-main mini-btn" onclick="openMapsByName('${encodeURIComponent(s.name)}')">Maps</button>
+          </div>
+        </div>
+      `).join("");
+      plannerOverlay.classList.add("show");
+      document.body.classList.add("modal-open");
+    });
+
+    function bestSpot({ light=null, activity=null, difficulty=null, exclude=[] }){
+      let pool = SPOTS.filter(s => !exclude.includes(s.name));
+
+      if(light){
+        pool = pool.filter(s => s.light === light);
+      }
+      if(activity){
+        pool = pool.filter(s => activity.includes(s.activity));
+      }
+      if(difficulty){
+        pool = pool.filter(s => difficulty.includes(s.difficulty));
+      }
+
+      if(!pool.length) return null;
+
+      if(state.userPos){
+        pool = pool
+          .map(s => ({...s, d: distKm(state.userPos.lat, state.userPos.lon, s.lat, s.lon)}))
+          .sort((a,b) => a.d - b.d);
+      }
+
+      return pool[0];
+    }
+
+    function showPlanner(title, intro, rows){
+      plannerTitle.textContent = title;
+      plannerIntro.textContent = intro;
+      plannerList.innerHTML = rows.map(row => {
+        if(!row.spot){
+          return `
+            <div class="day-item">
+              <div class="day-kicker">${row.kicker}</div>
+              <div class="day-main">Nessuna proposta</div>
+              <div class="day-sub">Con i filtri attuali non ho trovato nulla di coerente.</div>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="day-item">
+            <div class="day-kicker">${row.kicker}</div>
+            <div class="day-main">${escapeHtml(row.spot.name)}</div>
+            <div class="day-sub">${escapeHtml(row.note)} ${escapeHtml(row.spot.desc)}</div>
+            <div class="mini-row">
+              <button class="btn-secondary mini-btn" onclick="openDetailFromPlanner('${encodeURIComponent(row.spot.name)}')">Dettagli</button>
+              <button class="btn-main mini-btn" onclick="openMapsByName('${encodeURIComponent(row.spot.name)}')">Maps</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      plannerOverlay.classList.add("show");
+      document.body.classList.add("modal-open");
+    }
+
+    window.openDetailFromPlanner = function(encoded){
+      plannerOverlay.classList.remove("show");
+      openDetail(encoded);
+    };
+
+    function closePlanner(){
+      plannerOverlay.classList.remove("show");
+      document.body.classList.remove("modal-open");
+    }
+
+    document.getElementById("closePlannerBtn").addEventListener("click", closePlanner);
+    plannerOverlay.addEventListener("click", e => {
+      if(e.target === plannerOverlay) closePlanner();
+    });
+
+    // mappa
+    document.getElementById("mapBtn").addEventListener("click", () => {
+      mapModal.classList.add("show");
+      document.body.classList.add("modal-open");
+      initOrRefreshMap();
+    });
+
+    document.getElementById("closeMapBtn").addEventListener("click", () => {
+      mapModal.classList.remove("show");
+      document.body.classList.remove("modal-open");
+    });
+
+    document.getElementById("fitMapBtn").addEventListener("click", () => {
+      initOrRefreshMap(true);
+    });
+
+    function initOrRefreshMap(fitOnly=false){
+      if(!mapInstance){
+        mapInstance = L.map("map").setView([32.75,-16.95], 10);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution:"© OpenStreetMap"
+        }).addTo(mapInstance);
+        mapLayer = L.layerGroup().addTo(mapInstance);
+      }
+
+      mapLayer.clearLayers();
+
+      const items = filteredSpots();
+      const latlngs = [];
+
+      items.forEach(s => {
+        const marker = L.circleMarker([s.lat, s.lon], {
+          radius:7,
+          color: markerColor(s.light),
+          weight:2,
+          fillColor: markerColor(s.light),
+          fillOpacity:.85
+        }).addTo(mapLayer);
+
+        marker.bindPopup(`
+          <strong>${escapeHtml(s.name)}</strong><br>
+          ${escapeHtml(s.light)} • ${escapeHtml(s.zone)} • ${escapeHtml(s.activity)}<br>
+          <button onclick="openDetailFromPlanner('${encodeURIComponent(s.name)}')">Dettagli</button>
+        `);
+
+        latlngs.push([s.lat, s.lon]);
+      });
+
+      setTimeout(() => mapInstance.invalidateSize(), 60);
+
+      if(latlngs.length){
+        mapInstance.fitBounds(L.latLngBounds(latlngs).pad(0.18));
+      } else if(!fitOnly){
+        mapInstance.setView([32.75,-16.95], 10);
+      }
+    }
+
+    function markerColor(light){
+      if(light === "alba") return "#f5c451";
+      if(light === "tramonto") return "#ff8d8d";
+      return "#6bb7ff";
+    }
+
+    function escapeHtml(str){
+      return String(str)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    render();
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js");
+    }
+  </script>
 </body>
 </html>
