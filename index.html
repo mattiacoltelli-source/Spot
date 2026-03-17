@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Madeira Photo Planner PRO</title>
+<title>Madeira Planner PRO</title>
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b0f14">
@@ -15,7 +15,7 @@
 body{margin:0;background:#0b0f14;color:white;font-family:system-ui;}
 .container{padding:16px;max-width:600px;margin:auto;}
 
-h1{font-size:24px;margin-bottom:10px}
+h1{font-size:24px}
 
 button{
   padding:10px;
@@ -23,7 +23,6 @@ button{
   border:none;
   border-radius:10px;
   font-weight:bold;
-  cursor:pointer;
 }
 
 .main{background:#f5c451;width:100%;}
@@ -34,48 +33,36 @@ button{
   padding:14px;
   border-radius:14px;
   margin-top:10px;
-  transition:0.2s;
 }
-.spot:hover{transform:scale(1.02)}
 
-.meta{color:#9aa7b5;font-size:13px;margin-top:4px}
+.meta{color:#9aa7b5;font-size:13px}
 
-/* MODAL */
+/* modal */
 #modal{
   display:none;
   position:fixed;
-  top:0;left:0;
-  width:100%;height:100%;
+  inset:0;
   background:#000000cc;
   justify-content:center;
   align-items:center;
   z-index:999;
 }
-
-.modal-box{
+.box{
   background:#121824;
   padding:16px;
   border-radius:16px;
   width:90%;
   max-width:400px;
-  animation:fade 0.25s;
 }
 
-@keyframes fade{
-  from{transform:scale(0.9);opacity:0}
-  to{transform:scale(1);opacity:1}
-}
-
-/* MAP */
+/* map */
 #mapModal{
   display:none;
   position:fixed;
   inset:0;
   background:#0b0f14;
-  z-index:999;
   flex-direction:column;
 }
-
 #map{flex:1}
 </style>
 </head>
@@ -86,36 +73,32 @@ button{
 <h1>📸 Madeira PRO</h1>
 
 <button class="main" onclick="spotOra()">🔥 Spot ora</button>
+<button class="main" onclick="giornata()">📅 Crea giornata</button>
 <button class="main" onclick="openMap()">🗺️ Mappa</button>
 
-<h3>Filtro luce</h3>
-<button class="filter" onclick="setFiltro('all')">Tutti</button>
-<button class="filter" onclick="setFiltro('alba')">Alba</button>
-<button class="filter" onclick="setFiltro('tramonto')">Tramonto</button>
-
-<h3>Zona</h3>
-<button class="filter" onclick="setZona('all')">Tutte</button>
-<button class="filter" onclick="setZona('nord')">Nord</button>
-<button class="filter" onclick="setZona('sud')">Sud</button>
-<button class="filter" onclick="setZona('est')">Est</button>
-<button class="filter" onclick="setZona('ovest')">Ovest</button>
+<h3>Filtro attività</h3>
+<button class="filter" onclick="setFiltroAct('all')">Tutti</button>
+<button class="filter" onclick="setFiltroAct('trekking')">Trekking</button>
+<button class="filter" onclick="setFiltroAct('mtb')">MTB</button>
+<button class="filter" onclick="setFiltroAct('view')">View</button>
 
 <div id="list"></div>
 </div>
 
-<!-- MODAL -->
+<!-- modal -->
 <div id="modal">
-  <div class="modal-box">
+  <div class="box">
     <h2 id="title"></h2>
     <img id="img" style="width:100%;border-radius:10px">
     <p id="desc"></p>
-    <button onclick="google()">📸 Foto reali</button>
+    <p id="info"></p>
+    <button onclick="google()">📸 Foto</button>
     <button onclick="maps()">🗺️ Vai</button>
     <button onclick="closeModal()">Chiudi</button>
   </div>
 </div>
 
-<!-- MAP -->
+<!-- map -->
 <div id="mapModal">
   <button onclick="closeMap()">Chiudi</button>
   <div id="map"></div>
@@ -123,10 +106,9 @@ button{
 
 <script>
 
-let filtro="all"
-let zona="all"
 let userPos=null
 let current=null
+let filtroAct="all"
 
 navigator.geolocation.getCurrentPosition(p=>{
   userPos={lat:p.coords.latitude,lon:p.coords.longitude}
@@ -142,62 +124,59 @@ function dist(a,b,c,d){
   return R*(2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)))
 }
 
-const baseSpots=[
-{name:"Pico Arieiro",lat:32.73,lon:-16.93,type:"alba",zone:"montagna"},
-{name:"Pico Ruivo",lat:32.76,lon:-16.94,type:"alba",zone:"montagna"},
-{name:"Fanal Forest",lat:32.76,lon:-17.13,type:"giorno",zone:"ovest"},
-{name:"Porto Moniz",lat:32.87,lon:-17.16,type:"tramonto",zone:"ovest"},
-{name:"Cabo Girão",lat:32.65,lon:-17.00,type:"tramonto",zone:"sud"},
-{name:"Santana",lat:32.80,lon:-16.88,type:"giorno",zone:"nord"},
-{name:"Seixal Beach",lat:32.82,lon:-17.10,type:"alba",zone:"nord"},
-{name:"Ponta São Lourenço",lat:32.74,lon:-16.70,type:"alba",zone:"est"}
+/* base */
+const base=[
+{name:"Pico Arieiro",type:"alba",zone:"montagna",activity:"trekking",difficulty:"medio"},
+{name:"Pico Ruivo",type:"alba",zone:"montagna",activity:"trekking",difficulty:"impegnativo"},
+{name:"Fanal",type:"giorno",zone:"ovest",activity:"trekking",difficulty:"facile"},
+{name:"Porto Moniz",type:"tramonto",zone:"ovest",activity:"view",difficulty:"facile"},
+{name:"Cabo Girão",type:"tramonto",zone:"sud",activity:"view",difficulty:"facile"},
+{name:"Santana",type:"giorno",zone:"nord",activity:"relax",difficulty:"facile"},
+{name:"Seixal",type:"alba",zone:"nord",activity:"view",difficulty:"facile"},
+{name:"Ponta São Lourenço",type:"alba",zone:"est",activity:"trekking",difficulty:"medio"}
 ]
 
-// 🔥 genera 80 spot
 let spots=[]
 for(let i=0;i<10;i++){
-  baseSpots.forEach(s=>{
+  base.forEach(s=>{
     spots.push({
       ...s,
       name:s.name+" "+(i+1),
-      desc:"Spot fotogenico a Madeira perfetto per "+s.type
+      lat:32.7+(Math.random()/10),
+      lon:-16.9+(Math.random()/10),
+      desc:"Attività "+s.activity+" perfetta a Madeira"
     })
   })
 }
 
-function setFiltro(f){filtro=f;render()}
-function setZona(z){zona=z;render()}
-
+/* render */
 function render(){
   let html=""
-  let filtered=spots.filter(s=>
-    (filtro==="all"||s.type===filtro) &&
-    (zona==="all"||s.zone===zona)
-  )
+  let list=spots.filter(s=>filtroAct==="all"||s.activity===filtroAct)
 
-  filtered.forEach(s=>{
+  list.forEach(s=>{
     let d=userPos?dist(userPos.lat,userPos.lon,s.lat,s.lon).toFixed(1)+" km":""
     html+=`
     <div class="spot" onclick='openModal(${JSON.stringify(s)})'>
       <b>${s.name}</b>
-      <div class="meta">${s.type} • ${s.zone} • ${d}</div>
+      <div class="meta">${s.activity} • ${s.difficulty} • ${d}</div>
     </div>`
   })
 
   document.getElementById("list").innerHTML=html
 }
 
+/* modal */
 function openModal(s){
   current=s
-  document.getElementById("title").innerText=s.name
-  document.getElementById("desc").innerText=s.desc
-  document.getElementById("img").src="https://picsum.photos/seed/"+s.name+"/600/400"
-  document.getElementById("modal").style.display="flex"
+  title.innerText=s.name
+  desc.innerText=s.desc
+  info.innerText=s.activity+" • "+s.difficulty
+  img.src="https://picsum.photos/seed/"+s.name+"/600/400"
+  modal.style.display="flex"
 }
 
-function closeModal(){
-  document.getElementById("modal").style.display="none"
-}
+function closeModal(){modal.style.display="none"}
 
 function maps(){
   window.open(`https://www.google.com/maps?q=${current.lat},${current.lon}`)
@@ -207,34 +186,41 @@ function google(){
   window.open(`https://www.google.com/search?q=${current.name}&tbm=isch`)
 }
 
-function spotOra(){
-  const h=new Date().getHours()
-  let type="giorno"
-  if(h<8) type="alba"
-  else if(h>18) type="tramonto"
+/* giornata */
+function giornata(){
+  let alba=spots.find(s=>s.type==="alba")
+  let att=spots.find(s=>s.activity==="trekking")
+  let tram=spots.find(s=>s.type==="tramonto")
 
-  let s=spots.filter(x=>x.type===type)
-
-  if(userPos){
-    s.sort((a,b)=>dist(userPos.lat,userPos.lon,a.lat,a.lon)-dist(userPos.lat,userPos.lon,b.lat,b.lon))
-  }
-
-  alert("Vai qui: "+s[0].name)
+  alert(`
+🌅 ${alba.name}
+🥾 ${att.name}
+🌇 ${tram.name}
+`)
 }
 
-/* MAP */
+/* filtri */
+function setFiltroAct(f){
+  filtroAct=f
+  render()
+}
+
+/* spot ora */
+function spotOra(){
+  alert("Usa giornata per miglior risultato 😉")
+}
+
+/* map */
 let mapInit=false
 function openMap(){
-  document.getElementById("mapModal").style.display="flex"
+  mapModal.style.display="flex"
 
   if(!mapInit){
     const map=L.map('map').setView([32.75,-16.95],10)
-
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map)
 
     spots.forEach(s=>{
-      L.marker([s.lat,s.lon]).addTo(map)
-      .bindPopup(s.name)
+      L.marker([s.lat,s.lon]).addTo(map).bindPopup(s.name)
     })
 
     mapInit=true
@@ -242,7 +228,7 @@ function openMap(){
 }
 
 function closeMap(){
-  document.getElementById("mapModal").style.display="none"
+  mapModal.style.display="none"
 }
 
 render()
@@ -252,6 +238,5 @@ if ('serviceWorker' in navigator) {
 }
 
 </script>
-
 </body>
 </html>
