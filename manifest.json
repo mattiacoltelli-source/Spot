@@ -1,11 +1,11 @@
 {
-  "name": "PhotoSpot Planner",
-  "short_name": "PhotoSpot",
-  "start_url": "./",
+  "name": "Madeira Photo Planner",
+  "short_name": "Madeira",
+  "start_url": ".",
   "display": "standalone",
-  "background_color": "#060912",
-  "theme_color": "#0b1020",
-  "description": "Scopri spot fotogenici e pianifica il tuo itinerario fotografico.",
+  "background_color": "#0b0f14",
+  "theme_color": "#0b0f14",
+  "description": "Guida fotografica Madeira",
   "icons": [
     {
       "src": "icon-192.png",

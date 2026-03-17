@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Madeira Photo Planner</title>
 
+<!-- ✅ PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b0f14">
+
 <script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
 
 <style>
@@ -73,7 +77,7 @@ navigator.geolocation.getCurrentPosition(p=>{
   render()
 })
 
-// 🔥 SPOT
+// SPOT
 const spots=[
 {name:"Pico Arieiro",lat:32.73,lon:-16.93,type:"alba",zone:"montagna"},
 {name:"Pico Ruivo",lat:32.76,lon:-16.94,type:"alba",zone:"montagna"},
@@ -97,17 +101,11 @@ function dist(a,b,c,d){
   return R*(2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)))
 }
 
-// filtro
-function setFiltro(f){
-  filtro=f
-  render()
-}
-function setZona(z){
-  zona=z
-  render()
-}
+// filtri
+function setFiltro(f){filtro=f;render()}
+function setZona(z){zona=z;render()}
 
-// 🔥 spot ora
+// spot ora
 function spotOra(){
   const hour=new Date().getHours()
   let type="giorno"
@@ -152,5 +150,13 @@ function maps(lat,lon){
 render()
 
 </script>
+
+<!-- ✅ SERVICE WORKER -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js');
+}
+</script>
+
 </body>
 </html>
