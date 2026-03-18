@@ -566,6 +566,22 @@
       .modal-actions{grid-template-columns:1fr}
     }
 
+    @keyframes splashLoad{
+      from{width:0%}
+      to{width:100%}
+    }
+
+    .app{
+      opacity:0;
+      transform:translateY(10px);
+      transition:opacity .6s ease, transform .6s ease;
+    }
+
+    .app.appReady{
+      opacity:1;
+      transform:translateY(0);
+    }
+
     /* ── Toast system ── */
     .toastWrap{
       position:fixed;
@@ -634,6 +650,25 @@
   </style>
 </head>
 <body>
+  <div id="splashScreen" style="
+    position:fixed;
+    inset:0;
+    background:#0b0f14;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    z-index:99999;
+    transition:opacity .6s ease;
+  ">
+    <div style="font-size:40px;margin-bottom:12px;">🌴</div>
+    <div style="font-size:24px;font-weight:800;letter-spacing:.4px;margin-bottom:6px;">Madeira Planner</div>
+    <div style="color:#9aa7b5;font-size:14px;margin-bottom:26px;">La tua guida outdoor per Madeira</div>
+    <div style="width:120px;height:4px;background:#1a2230;border-radius:999px;overflow:hidden;">
+      <div style="height:100%;width:0%;background:linear-gradient(90deg,#f5c451,#ffd777);animation:splashLoad 1s ease forwards;"></div>
+    </div>
+  </div>
+
   <div class="app">
     <section class="hero">
       <div class="eyebrow">📸 Madeira outdoor travel guide</div>
@@ -762,6 +797,25 @@
       <div class="section-head">
         <h2 class="section-title">Spot</h2>
         <div class="section-note" id="resultNote">Tutti gli spot</div>
+      </div>
+      <div style="position:relative;margin-bottom:12px;">
+        <input
+          id="searchInput"
+          type="search"
+          placeholder="🔍  Cerca per nome..."
+          style="
+            width:100%;
+            background:#182133;
+            border:1px solid rgba(255,255,255,.07);
+            border-radius:14px;
+            padding:12px 14px;
+            color:#f5f7fb;
+            font:inherit;
+            font-size:.9rem;
+            outline:none;
+            transition:border-color .2s ease, box-shadow .2s ease;
+          "
+        >
       </div>
       <div class="list" id="list"></div>
       <div class="empty" id="emptyState">Nessuno spot con questi filtri. Prova a rilassarne uno.</div>
@@ -1096,6 +1150,7 @@
       activity:"all",
       difficulty:"all",
       favoritesFilter:"all",
+      search:"",
       userPos:null,
       currentSpot:null,
       weatherNote:"",
@@ -1180,6 +1235,20 @@
     bindChipGroup("activityChips","activity");
     bindChipGroup("difficultyChips","difficulty");
     bindChipGroup("favoriteChips","favoritesFilter");
+
+    const searchInput = document.getElementById("searchInput");
+    searchInput.addEventListener("input", () => {
+      state.search = searchInput.value.trim().toLowerCase();
+      render();
+    });
+    searchInput.addEventListener("focus", () => {
+      searchInput.style.borderColor = "rgba(245,196,81,.42)";
+      searchInput.style.boxShadow = "0 0 0 3px rgba(245,196,81,.08)";
+    });
+    searchInput.addEventListener("blur", () => {
+      searchInput.style.borderColor = "rgba(255,255,255,.07)";
+      searchInput.style.boxShadow = "none";
+    });
 
     function bindChipGroup(id,key){
       document.getElementById(id).addEventListener("click", e => {
@@ -1282,7 +1351,8 @@
         (state.zone === "all" || s.zone === state.zone) &&
         (state.activity === "all" || s.activity === state.activity) &&
         (state.difficulty === "all" || s.difficulty === state.difficulty) &&
-        (state.favoritesFilter === "all" || isFavorite(s.id))
+        (state.favoritesFilter === "all" || isFavorite(s.id)) &&
+        (!state.search || s.name.toLowerCase().includes(state.search))
       );
     }
 
@@ -2013,6 +2083,17 @@
     renderManualPlanner();
     updateCounts();
     loadWeather();
+
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        const splash = document.getElementById("splashScreen");
+        const app = document.querySelector(".app");
+        if(app) app.classList.add("appReady");
+        if(!splash) return;
+        splash.style.opacity = "0";
+        setTimeout(() => splash.remove(), 600);
+      }, 900);
+    });
 
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("service-worker.js");
