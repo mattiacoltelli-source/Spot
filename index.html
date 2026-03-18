@@ -367,6 +367,136 @@
       border-color:rgba(255,107,107,.24);
     }
 
+    .hourly-summary{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:12px;
+      padding:12px;
+      background:#0f1724;
+      border:1px solid var(--line);
+      border-radius:14px;
+    }
+
+    .hourly-summary-main{
+      font-size:14px;
+      font-weight:800;
+      line-height:1.45;
+      color:#e7f1fb;
+    }
+
+    .hourly-summary-sub{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:4px;
+      line-height:1.45;
+    }
+
+    .hourly-strip{
+      display:flex;
+      gap:10px;
+      overflow-x:auto;
+      padding-bottom:4px;
+      scroll-snap-type:x proximity;
+      -webkit-overflow-scrolling:touch;
+    }
+
+    .hourly-strip::-webkit-scrollbar{
+      height:6px;
+    }
+
+    .hourly-strip::-webkit-scrollbar-thumb{
+      background:#2a3a52;
+      border-radius:999px;
+    }
+
+    .hour-card{
+      min-width:126px;
+      max-width:126px;
+      padding:12px;
+      background:#0f1724;
+      border:1px solid var(--line);
+      border-radius:16px;
+      scroll-snap-align:start;
+    }
+
+    .hour-card.good{
+      border-color:rgba(62,207,142,.24);
+      box-shadow:inset 0 0 0 1px rgba(62,207,142,.06);
+    }
+
+    .hour-card.warn{
+      border-color:rgba(255,184,77,.24);
+      box-shadow:inset 0 0 0 1px rgba(255,184,77,.05);
+    }
+
+    .hour-card.bad{
+      border-color:rgba(255,107,107,.24);
+      box-shadow:inset 0 0 0 1px rgba(255,107,107,.05);
+    }
+
+    .hour-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-bottom:10px;
+    }
+
+    .hour-time{
+      font-size:15px;
+      font-weight:800;
+      color:#f4f7fb;
+    }
+
+    .hour-emoji{
+      font-size:16px;
+    }
+
+    .hour-line{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      margin-top:6px;
+      font-size:12px;
+      color:#dbe7f3;
+    }
+
+    .hour-label{
+      color:var(--muted);
+    }
+
+    .hour-pill{
+      display:inline-flex;
+      margin-top:10px;
+      font-size:11px;
+      font-weight:800;
+      padding:6px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.05);
+      color:#dfeaf7;
+    }
+
+    .hour-pill.good{
+      background:rgba(62,207,142,.10);
+      color:#c9f6df;
+      border-color:rgba(62,207,142,.20);
+    }
+
+    .hour-pill.warn{
+      background:rgba(255,184,77,.12);
+      color:#ffe5be;
+      border-color:rgba(255,184,77,.22);
+    }
+
+    .hour-pill.bad{
+      background:rgba(255,107,107,.13);
+      color:#ffd1d1;
+      border-color:rgba(255,107,107,.24);
+    }
+
     .featured-panel{
       padding:14px;
       overflow:hidden;
@@ -937,6 +1067,28 @@
         </div>
 
         <div class="panel glass">
+          <h2>Previsione oraria · prossime 12 ore</h2>
+          <div class="hourly-summary">
+            <div>
+              <div class="hourly-summary-main" id="hourlySummaryMain">Sto leggendo la finestra migliore della giornata.</div>
+              <div class="hourly-summary-sub" id="hourlySummarySub">Fra poco trovi una lettura rapida delle prossime ore.</div>
+            </div>
+          </div>
+          <div class="hourly-strip" id="hourlyStrip">
+            <div class="hour-card">
+              <div class="hour-top">
+                <div class="hour-time">--:--</div>
+                <div class="hour-emoji">⏳</div>
+              </div>
+              <div class="hour-line"><span class="hour-label">Temp</span><strong>—</strong></div>
+              <div class="hour-line"><span class="hour-label">Vento</span><strong>—</strong></div>
+              <div class="hour-line"><span class="hour-label">Pioggia</span><strong>—</strong></div>
+              <div class="hour-line"><span class="hour-label">Nuvole</span><strong>—</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel glass">
           <h2>Planner giornata</h2>
           <div class="planner-box" id="plannerBox"></div>
           <div class="planner-actions">
@@ -1111,6 +1263,7 @@
       userPos:null,
       currentSpot:null,
       weatherData:null,
+      hourlyData:[],
       favorites:loadJson(STORAGE_KEYS.favorites, []),
       planner:loadJson(STORAGE_KEYS.planner, defaultPlanner),
       activePage:"home",
@@ -1172,10 +1325,6 @@
       if(state.currentSpot?.id === id){
         showSpotDetail(state.currentSpot);
       }
-    }
-
-    function plannerFilledCount(){
-      return ["alba","main","tramonto"].filter(k => !!state.planner[k]).length;
     }
 
     function setPlannerSlot(slot, spotId){
@@ -1457,6 +1606,88 @@
 
       $("weatherAlert").className = `alert ${cls}`;
       $("weatherAlert").textContent = `${w.headline} — ${w.advice}`;
+    }
+
+    function scoreHourlyWindow(item){
+      let score = 0;
+
+      if(item.rain <= 20) score += 3;
+      else if(item.rain <= 40) score += 1;
+      else score -= 3;
+
+      if(item.cloud <= 35) score += 2;
+      else if(item.cloud >= 80) score -= 2;
+
+      if(item.wind <= 18) score += 2;
+      else if(item.wind <= 28) score += 0;
+      else score -= 2;
+
+      const hour = item.date.getHours();
+      if((hour >= 6 && hour <= 9) || (hour >= 17 && hour <= 20)) score += 1;
+
+      return score;
+    }
+
+    function hourlyWindowMood(item){
+      const score = scoreHourlyWindow(item);
+      if (score >= 4) return { cls:"good", label:"finestra buona", emoji:"✨" };
+      if (score <= -1) return { cls:"bad", label:"finestra debole", emoji:"⚠️" };
+      return { cls:"warn", label:"così così", emoji:"⛅" };
+    }
+
+    function renderHourlyForecast(){
+      const strip = $("hourlyStrip");
+      const main = $("hourlySummaryMain");
+      const sub = $("hourlySummarySub");
+
+      if(!state.hourlyData.length){
+        strip.innerHTML = `
+          <div class="hour-card">
+            <div class="hour-top">
+              <div class="hour-time">--:--</div>
+              <div class="hour-emoji">⏳</div>
+            </div>
+            <div class="hour-line"><span class="hour-label">Temp</span><strong>—</strong></div>
+            <div class="hour-line"><span class="hour-label">Vento</span><strong>—</strong></div>
+            <div class="hour-line"><span class="hour-label">Pioggia</span><strong>—</strong></div>
+            <div class="hour-line"><span class="hour-label">Nuvole</span><strong>—</strong></div>
+          </div>
+        `;
+        main.textContent = "Previsione oraria non disponibile.";
+        sub.textContent = "Non sono riuscito a leggere le prossime ore.";
+        return;
+      }
+
+      const bestHour = [...state.hourlyData].sort((a,b) => scoreHourlyWindow(b) - scoreHourlyWindow(a))[0];
+      const bestMood = hourlyWindowMood(bestHour);
+      const hourLabel = String(bestHour.date.getHours()).padStart(2,"0") + ":00";
+
+      main.textContent = `Fascia migliore: ${hourLabel} · ${bestMood.label}`;
+      if(bestHour.rain >= 45){
+        sub.textContent = "Nelle prossime ore c'è rischio pioggia: meglio leggere bene i momenti più asciutti.";
+      }else if(bestHour.cloud <= 35){
+        sub.textContent = "Le prossime ore hanno una finestra discreta per viewpoint e spot aperti.";
+      }else{
+        sub.textContent = "Condizioni miste: scegli bene la fascia oraria più pulita e con meno vento.";
+      }
+
+      strip.innerHTML = state.hourlyData.map(item => {
+        const mood = hourlyWindowMood(item);
+        const hh = String(item.date.getHours()).padStart(2,"0") + ":00";
+        return `
+          <div class="hour-card ${mood.cls}">
+            <div class="hour-top">
+              <div class="hour-time">${hh}</div>
+              <div class="hour-emoji">${mood.emoji}</div>
+            </div>
+            <div class="hour-line"><span class="hour-label">Temp</span><strong>${Math.round(item.temp)}°</strong></div>
+            <div class="hour-line"><span class="hour-label">Vento</span><strong>${Math.round(item.wind)} km/h</strong></div>
+            <div class="hour-line"><span class="hour-label">Pioggia</span><strong>${Math.round(item.rain)}%</strong></div>
+            <div class="hour-line"><span class="hour-label">Nuvole</span><strong>${Math.round(item.cloud)}%</strong></div>
+            <div class="hour-pill ${mood.cls}">${mood.label}</div>
+          </div>
+        `;
+      }).join("");
     }
 
     function renderHomeCards(){
@@ -1750,11 +1981,27 @@
       showSpotDetail(spot);
     }
 
+    function getNext12Hours(hourly){
+      if(!hourly || !hourly.time) return [];
+      const now = new Date();
+
+      const merged = hourly.time.map((time, i) => ({
+        date: new Date(time),
+        temp: hourly.temperature_2m?.[i] ?? 0,
+        wind: hourly.wind_speed_10m?.[i] ?? 0,
+        rain: hourly.precipitation_probability?.[i] ?? 0,
+        cloud: hourly.cloud_cover?.[i] ?? 0
+      }));
+
+      const future = merged.filter(item => item.date.getTime() >= now.getTime() - 30 * 60 * 1000);
+      return future.slice(0, 12);
+    }
+
     async function loadWeather(){
       try{
         const lat = (APP_SPOTS.center && APP_SPOTS.center[0]) || 32.75;
         const lon = (APP_SPOTS.center && APP_SPOTS.center[1]) || -16.95;
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,cloud_cover&hourly=precipitation_probability&forecast_days=1`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,cloud_cover&hourly=temperature_2m,wind_speed_10m,cloud_cover,precipitation_probability&forecast_days=2`;
         const res = await fetch(url);
         const data = await res.json();
 
@@ -1790,11 +2037,14 @@
         }
 
         state.weatherData = { temp, wind, cloud, rain, period, headline, advice };
+        state.hourlyData = getNext12Hours(data.hourly);
       }catch{
         state.weatherData = null;
+        state.hourlyData = [];
       }
 
       renderWeatherBox();
+      renderHourlyForecast();
       renderHomeCards();
       renderSpotList();
       renderMarkers();
@@ -1805,6 +2055,7 @@
       $("eyebrowRegion").textContent = `Zona attiva: ${APP_SPOTS.region || "Area"} • ${SPOTS.length} spot`;
       renderHomeCards();
       renderWeatherBox();
+      renderHourlyForecast();
       renderTopLists();
       renderSpotList();
       renderPlannerBox();
