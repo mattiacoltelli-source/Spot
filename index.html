@@ -2,11 +2,12 @@
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>Madeira Planner PRO</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+  <title>Madeira Spot Planner</title>
 
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0b0f14">
+  <link rel="apple-touch-icon" href="icon-192.png">
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -14,260 +15,663 @@
   <style>
     :root{
       --bg:#0b0f14;
-      --bg2:#0f1521;
-      --panel:#121824;
-      --panel2:#171f2e;
-      --line:#233049;
-      --text:#f5f7fb;
-      --muted:#9aa7b5;
-      --accent:#f5c451;
-      --blue:#71b8ff;
-      --green:#69daa4;
-      --orange:#ffbf6f;
-      --red:#ff9696;
-      --shadow:0 14px 34px rgba(0,0,0,.30);
+      --panel:#121a27cc;
+      --panel-solid:#121a27;
+      --line:#243247;
+      --text:#f4f7fb;
+      --muted:#9eb0c2;
+      --accent:#59b6ff;
+      --accent2:#f5c76a;
+      --ok:#3ecf8e;
+      --warn:#ffb84d;
+      --danger:#ff6b6b;
+      --pink:#ff9fbc;
+      --shadow:0 16px 34px rgba(0,0,0,.32);
       --radius:18px;
+      --blur:18px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --nav-h:80px;
+      --maxw:920px;
     }
 
-    *{box-sizing:border-box}
+    *{
+      box-sizing:border-box;
+      min-width:0;
+    }
+
     html,body{
       margin:0;
-      min-height:100%;
-      background:
-        radial-gradient(circle at top right, rgba(113,184,255,.08), transparent 24%),
-        radial-gradient(circle at top left, rgba(245,196,81,.08), transparent 22%),
-        linear-gradient(180deg,#0b0f14,#090d13 100%);
+      padding:0;
+      width:100%;
+      max-width:100%;
+      overflow-x:hidden;
+      background:var(--bg);
       color:var(--text);
-      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-      -webkit-tap-highlight-color:transparent;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      -webkit-text-size-adjust:100%;
     }
 
-    body.modal-open{overflow:hidden}
+    body{
+      min-height:100vh;
+      position:relative;
+    }
 
-    button{
+    button,input,a{
       font:inherit;
-      border:none;
-      cursor:pointer;
-      transition:transform .15s ease, opacity .15s ease, background .15s ease, border-color .15s ease;
     }
-    button:active{transform:scale(.985)}
 
-    .app{
-      max-width:860px;
+    img,svg{
+      max-width:100%;
+      display:block;
+    }
+
+    .app-bg{
+      position:fixed;
+      inset:0;
+      z-index:-2;
+      background:
+        linear-gradient(180deg, rgba(5,8,13,.38), rgba(5,8,13,.90)),
+        radial-gradient(circle at top, rgba(89,182,255,.18), transparent 35%),
+        radial-gradient(circle at top right, rgba(245,199,106,.12), transparent 25%),
+        url('https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1600&auto=format&fit=crop') center/cover no-repeat;
+    }
+
+    .app-bg::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(180deg, rgba(11,15,20,.18), rgba(11,15,20,.72) 34%, rgba(11,15,20,.97));
+    }
+
+    .splash{
+      position:fixed;
+      inset:0;
+      z-index:99999;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#0b0f14;
+      transition:opacity .45s ease, visibility .45s ease;
+    }
+
+    .splash.hide{
+      opacity:0;
+      visibility:hidden;
+      pointer-events:none;
+    }
+
+    .splash-card{
+      text-align:center;
+      padding:24px;
+    }
+
+    .splash-emoji{
+      font-size:42px;
+      margin-bottom:10px;
+    }
+
+    .splash-title{
+      font-size:28px;
+      font-weight:800;
+      margin-bottom:6px;
+    }
+
+    .splash-sub{
+      color:var(--muted);
+      margin-bottom:18px;
+      font-size:14px;
+    }
+
+    .splash-bar{
+      width:130px;
+      height:4px;
       margin:0 auto;
-      padding:16px 16px 28px;
+      border-radius:999px;
+      overflow:hidden;
+      background:#1b2432;
+    }
+
+    .splash-bar > div{
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg,var(--accent2),var(--accent));
+      animation:splashLoad 1s ease forwards;
+    }
+
+    @keyframes splashLoad{
+      from{width:0%}
+      to{width:100%}
+    }
+
+    .wrap{
+      width:100%;
+      max-width:var(--maxw);
+      margin:0 auto;
+      padding:calc(14px + var(--safe-top)) 14px calc(var(--nav-h) + 22px + var(--safe-bottom));
+    }
+
+    .wrap.hidden-for-map{
+      display:none;
+    }
+
+    .glass{
+      width:100%;
+      background:var(--panel);
+      backdrop-filter:blur(var(--blur));
+      -webkit-backdrop-filter:blur(var(--blur));
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:var(--shadow);
+      border-radius:var(--radius);
     }
 
     .hero{
-      background:
-        radial-gradient(circle at 85% 0%, rgba(113,184,255,.12), transparent 22%),
-        linear-gradient(180deg,rgba(18,24,36,.96),rgba(12,17,26,.98));
-      border:1px solid rgba(255,255,255,.05);
-      border-radius:26px;
-      padding:18px;
-      box-shadow:var(--shadow);
-      margin-bottom:16px;
+      padding:10px 0 16px;
     }
 
     .eyebrow{
       display:inline-flex;
       align-items:center;
       gap:8px;
-      padding:8px 12px;
+      color:#d6e5f5;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
       border-radius:999px;
-      background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.06);
-      color:#dbe7fb;
-      font-size:.82rem;
-      margin-bottom:12px;
+      padding:8px 12px;
+      font-size:12px;
+      max-width:100%;
+    }
+
+    .eyebrow-dot{
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:var(--accent2);
+      box-shadow:0 0 14px rgba(245,199,106,.6);
+      flex:0 0 auto;
     }
 
     h1{
-      margin:0 0 8px;
-      font-size:2rem;
-      letter-spacing:-.04em;
+      font-size:clamp(30px, 7vw, 44px);
       line-height:1.02;
+      margin:14px 0 10px;
+      word-break:break-word;
+      letter-spacing:-.03em;
     }
 
-    .sub{
-      margin:0 0 14px;
+    .hero p{
+      margin:0;
       color:var(--muted);
-      line-height:1.45;
+      font-size:15px;
+      line-height:1.5;
     }
 
-    .weather-box{
-      margin-top:10px;
+    .hero-actions{
+      margin-top:16px;
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+    }
+
+    .search-box{
       padding:12px;
-      border-radius:16px;
-      background:rgba(113,184,255,.08);
-      border:1px solid rgba(113,184,255,.15);
-      color:#d9ecff;
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
     }
 
-    .weather-main{
+    .search-box input{
+      width:100%;
+      background:#0e1520;
+      color:var(--text);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+      outline:none;
+    }
+
+    .search-box input::placeholder{
+      color:#7f93a8;
+    }
+
+    .btn{
+      border:none;
+      border-radius:14px;
+      padding:14px 16px;
+      cursor:pointer;
+      transition:transform .18s ease, filter .18s ease, opacity .18s ease;
+      color:#08131d;
       font-weight:800;
-      font-size:.95rem;
-      margin-bottom:6px;
-    }
-
-    .weather-sub{
-      font-size:.86rem;
-      color:#bfd9f7;
-      line-height:1.45;
-    }
-
-    .weather-tags{
-      display:flex;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
       gap:8px;
-      flex-wrap:wrap;
-      margin-top:10px;
+      width:100%;
+      text-align:center;
     }
 
-    .weather-tag{
-      padding:7px 9px;
-      border-radius:999px;
-      font-size:.74rem;
-      font-weight:800;
-      border:1px solid rgba(255,255,255,.06);
-      background:#182133;
-      color:#dfe7f6;
+    .btn:hover{
+      transform:translateY(-1px);
+      filter:brightness(1.03);
     }
 
-    .main-actions{
-      display:grid;
-      gap:10px;
-      margin-top:14px;
+    .btn:active{
+      transform:translateY(1px);
     }
 
-    .main-actions .row{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
+    .btn:disabled{
+      opacity:.65;
+      cursor:default;
+      transform:none;
     }
 
-    .btn-main,
-    .btn-secondary,
-    .btn-ghost,
-    .btn-danger{
-      min-height:48px;
-      border-radius:16px;
-      padding:0 14px;
-      font-weight:800;
+    .btn-primary{
+      background:linear-gradient(135deg,var(--accent),#88d0ff);
     }
 
-    .btn-main{
-      background:linear-gradient(135deg,var(--accent),#eab034);
-      color:#11161d;
-      box-shadow:0 10px 24px rgba(245,196,81,.16);
+    .btn-gold{
+      background:linear-gradient(135deg,var(--accent2),#ffd977);
+      color:#14181f;
     }
 
     .btn-secondary{
-      background:var(--panel2);
       color:var(--text);
-      border:1px solid rgba(255,255,255,.05);
-    }
-
-    .btn-ghost{
-      background:transparent;
-      color:var(--muted);
+      background:#172233;
       border:1px solid var(--line);
     }
 
     .btn-danger{
-      background:rgba(255,150,150,.12);
-      color:#ffd5d5;
-      border:1px solid rgba(255,150,150,.18);
+      color:#fff;
+      background:linear-gradient(135deg,#ff6b6b,#ff8c8c);
     }
 
-    .stats{
+    .page{
+      display:none;
+    }
+
+    .page.active{
+      display:block;
+    }
+
+    .stack{
       display:grid;
-      grid-template-columns:repeat(4,1fr);
+      gap:14px;
+      margin-top:14px;
+      width:100%;
+    }
+
+    .panel{
+      padding:14px;
+      width:100%;
+    }
+
+    .panel h2{
+      font-size:16px;
+      margin:0 0 12px;
+      word-break:break-word;
+    }
+
+    .quick-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+    }
+
+    .quick-card{
+      padding:14px;
+      min-height:120px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .quick-card::before{
+      content:"";
+      position:absolute;
+      right:-18px;
+      top:-18px;
+      width:84px;
+      height:84px;
+      border-radius:50%;
+      background:rgba(255,255,255,.04);
+    }
+
+    .quick-label{
+      color:var(--muted);
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      margin-bottom:8px;
+    }
+
+    .quick-title{
+      font-size:20px;
+      font-weight:800;
+      line-height:1.12;
+      margin-bottom:8px;
+      word-break:break-word;
+    }
+
+    .quick-desc{
+      color:#d4e0ec;
+      font-size:13px;
+      line-height:1.45;
+      word-break:break-word;
+    }
+
+    .stats-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
       gap:10px;
-      margin-top:12px;
     }
 
     .stat{
-      background:var(--panel);
-      border:1px solid rgba(255,255,255,.05);
-      border-radius:16px;
       padding:12px;
+      background:#0f1724;
+      border:1px solid var(--line);
+      border-radius:14px;
+      min-height:84px;
     }
 
-    .stat .label{
+    .stat .k{
       color:var(--muted);
-      font-size:.76rem;
-      margin-bottom:4px;
+      font-size:12px;
+      margin-bottom:6px;
     }
 
-    .stat .value{
-      font-size:1rem;
+    .stat .v{
+      font-size:18px;
       font-weight:800;
-    }
-
-    .section{
-      margin-top:16px;
-    }
-
-    .section-head{
       display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      margin-bottom:10px;
-    }
-
-    .section-title{
-      margin:0;
-      font-size:1.05rem;
-      font-weight:800;
-    }
-
-    .section-note{
-      color:var(--muted);
-      font-size:.86rem;
-    }
-
-    .chips{
-      display:flex;
+      align-items:flex-end;
       gap:8px;
-      overflow:auto;
-      padding-bottom:2px;
-      scrollbar-width:none;
+      flex-wrap:wrap;
+      line-height:1.2;
+      word-break:break-word;
     }
-    .chips::-webkit-scrollbar{display:none}
+
+    .toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
 
     .chip{
-      white-space:nowrap;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+      color:var(--text);
       padding:10px 13px;
       border-radius:999px;
-      background:#182133;
-      color:#dfe8f8;
-      border:1px solid rgba(255,255,255,.05);
-      font-size:.86rem;
-      font-weight:700;
+      cursor:pointer;
+      font-size:13px;
     }
 
     .chip.active{
-      background:rgba(245,196,81,.14);
-      color:#ffe6ab;
-      border-color:rgba(245,196,81,.22);
+      background:linear-gradient(135deg, rgba(89,182,255,.24), rgba(245,199,106,.18));
+      border-color:rgba(89,182,255,.38);
     }
 
-    .list{
+    .subtoolbar{
       display:grid;
-      gap:12px;
-      margin-top:12px;
+      gap:10px;
     }
 
-    .spot{
-      background:linear-gradient(180deg,var(--panel),#101722);
-      border:1px solid rgba(255,255,255,.05);
-      border-radius:20px;
+    .alert{
+      padding:12px 14px;
+      border-radius:14px;
+      font-size:14px;
+      border:1px solid transparent;
+      word-break:break-word;
+    }
+
+    .alert.ok{
+      background:rgba(62,207,142,.1);
+      color:#c9f6df;
+      border-color:rgba(62,207,142,.2);
+    }
+
+    .alert.warn{
+      background:rgba(255,184,77,.12);
+      color:#ffe5be;
+      border-color:rgba(255,184,77,.22);
+    }
+
+    .alert.danger{
+      background:rgba(255,107,107,.13);
+      color:#ffd1d1;
+      border-color:rgba(255,107,107,.24);
+    }
+
+    .featured-panel{
       padding:14px;
-      box-shadow:var(--shadow);
+      overflow:hidden;
+      position:relative;
     }
 
-    .spot-top{
+    .featured-panel::before{
+      content:"";
+      position:absolute;
+      inset:auto -40px -40px auto;
+      width:140px;
+      height:140px;
+      border-radius:50%;
+      background:rgba(255,255,255,.04);
+      pointer-events:none;
+    }
+
+    .featured-head{
+      margin-bottom:12px;
+    }
+
+    .featured-sub{
+      color:var(--muted);
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+
+    .featured-title{
+      font-size:18px;
+      font-weight:800;
+      margin:0;
+      word-break:break-word;
+    }
+
+    .featured-scroll{
+      display:grid;
+      gap:10px;
+    }
+
+    .featured-card{
+      display:grid;
+      grid-template-columns:52px minmax(0,1fr);
+      gap:12px;
+      align-items:center;
+      padding:12px;
+      border-radius:16px;
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.025));
+      border:1px solid rgba(255,255,255,.07);
+      cursor:pointer;
+      transition:transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+
+    .featured-card:hover{
+      transform:translateY(-1px);
+      border-color:#37506e;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+    }
+
+    .featured-rank{
+      width:52px;
+      height:52px;
+      border-radius:16px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:18px;
+      font-weight:800;
+      color:#132031;
+      background:linear-gradient(135deg, #9ae0ff, #f5c76a);
+      box-shadow:0 10px 24px rgba(0,0,0,.18);
+    }
+
+    .featured-card.sunset .featured-rank{
+      background:linear-gradient(135deg, #ffd06d, #ff9f68);
+    }
+
+    .featured-card.wow .featured-rank{
+      background:linear-gradient(135deg, #74d8ff, #c7f3ff);
+    }
+
+    .featured-name{
+      font-size:15px;
+      font-weight:800;
+      margin-bottom:4px;
+      word-break:break-word;
+    }
+
+    .featured-desc{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.45;
+      word-break:break-word;
+    }
+
+    .featured-badge{
+      margin-top:8px;
+      display:inline-flex;
+      font-size:11px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.05);
+      color:#dfeaf7;
+    }
+
+    .map-panel{
+      padding:10px;
+      position:relative;
+    }
+
+    #map{
+      width:100%;
+      height:56vh;
+      min-height:360px;
+      border-radius:16px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.06);
+      background:#0f1724;
+    }
+
+    .map-fullscreen-btn{
+      position:absolute;
+      top:20px;
+      right:20px;
+      z-index:500;
+      background:rgba(10,16,25,.88);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:12px;
+      padding:10px 12px;
+      cursor:pointer;
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+      font-size:12px;
+      font-weight:800;
+      width:auto;
+    }
+
+    .fullscreen-map-active #page-map{
+      display:block !important;
+      position:fixed;
+      inset:0;
+      z-index:1500;
+      background:#0b0f14;
+      margin:0;
+      padding:0;
+    }
+
+    .fullscreen-map-active #page-map .stack{
+      margin:0;
+      height:100%;
+    }
+
+    .fullscreen-map-active #page-map .map-panel{
+      height:100dvh;
+      border-radius:0;
+      padding:0;
+      background:#0b0f14;
+    }
+
+    .fullscreen-map-active #page-map #map{
+      height:100dvh;
+      min-height:100dvh;
+      border-radius:0;
+      border:none;
+    }
+
+    .fullscreen-map-active #page-map .legend{
+      position:absolute;
+      left:10px;
+      right:10px;
+      bottom:10px;
+      z-index:500;
+      padding:10px 12px;
+      border-radius:16px;
+      background:rgba(10,16,25,.82);
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .legend{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .legend-item{
+      display:flex;
+      align-items:center;
+      gap:7px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .legend-dot{
+      width:11px;
+      height:11px;
+      border-radius:50%;
+      box-shadow:0 0 10px rgba(255,255,255,.12);
+      flex:0 0 auto;
+    }
+
+    .legend-gold{background:#f5c451}
+    .legend-blue{background:#59b6ff}
+    .legend-pink{background:#ff9fbc}
+
+    .spot-list{
+      display:grid;
+      gap:10px;
+    }
+
+    .spot-card{
+      background:#0f1724;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:12px;
+      cursor:pointer;
+      transition:transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+
+    .spot-card:hover{
+      transform:translateY(-1px);
+      border-color:#365270;
+      background:#132033;
+    }
+
+    .spot-head{
       display:flex;
       justify-content:space-between;
       align-items:flex-start;
@@ -275,282 +679,195 @@
       margin-bottom:8px;
     }
 
-    .spot-top-right{
-      display:flex;
-      align-items:flex-start;
-      gap:8px;
-    }
-
     .spot-name{
-      margin:0;
-      font-size:1.06rem;
-      line-height:1.15;
-      letter-spacing:-.02em;
+      font-weight:800;
+      font-size:18px;
+      word-break:break-word;
     }
 
     .spot-sub{
       color:var(--muted);
-      font-size:.86rem;
-      margin-top:5px;
-    }
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:7px 10px;
-      border-radius:999px;
-      font-size:.74rem;
-      font-weight:800;
-      white-space:nowrap;
-      border:1px solid rgba(255,255,255,.06);
+      font-size:13px;
+      line-height:1.45;
+      margin-top:4px;
     }
 
     .fav-btn{
-      min-width:38px;
-      min-height:38px;
-      border-radius:12px;
-      background:#182133;
-      color:#ffd8d8;
-      border:1px solid rgba(255,255,255,.06);
-      font-size:1rem;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
+      background:none;
+      border:none;
+      color:#ffd978;
+      font-size:20px;
+      cursor:pointer;
+      line-height:1;
       padding:0;
+      width:auto;
+      flex:0 0 auto;
     }
 
-    .fav-btn.active{
-      background:rgba(255,150,150,.16);
-      border-color:rgba(255,150,150,.22);
-      color:#ff9c9c;
-    }
-
-    .lvl-core{background:rgba(245,196,81,.12); color:#ffe7b6; border-color:rgba(245,196,81,.18)}
-    .lvl-secondary{background:rgba(113,184,255,.12); color:#d8ecff; border-color:rgba(113,184,255,.18)}
-    .lvl-extra{background:rgba(255,255,255,.07); color:#d5dcea}
-
-    .badge-row{
+    .spot-meta{
       display:flex;
-      gap:7px;
       flex-wrap:wrap;
-      margin-bottom:10px;
+      gap:6px;
+      margin-bottom:8px;
     }
 
-    .badge{
-      padding:7px 9px;
+    .tag{
+      font-size:11px;
+      padding:6px 8px;
       border-radius:999px;
-      font-size:.74rem;
-      font-weight:800;
-      border:1px solid rgba(255,255,255,.06);
-      background:#182133;
-      color:#dfe7f6;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.07);
+      color:#dbe7f3;
+      max-width:100%;
     }
 
-    .b-light{background:rgba(245,196,81,.12); color:#ffe4a2; border-color:rgba(245,196,81,.18)}
-    .b-zone{background:rgba(113,184,255,.12); color:#cae4ff; border-color:rgba(113,184,255,.18)}
-    .b-act{background:rgba(105,218,164,.12); color:#d8ffee; border-color:rgba(105,218,164,.18)}
-    .b-easy{background:rgba(105,218,164,.12); color:#d8ffee}
-    .b-medium{background:rgba(255,191,111,.12); color:#ffe5c2}
-    .b-hard{background:rgba(255,150,150,.12); color:#ffd4d4}
-    .b-good{background:rgba(105,218,164,.12); color:#d8ffee; border-color:rgba(105,218,164,.18)}
-    .b-warn{background:rgba(255,191,111,.12); color:#ffe5c2; border-color:rgba(255,191,111,.18)}
-    .b-bad{background:rgba(255,150,150,.12); color:#ffd4d4; border-color:rgba(255,150,150,.18)}
+    .tag.blue{background:rgba(89,182,255,.12); border-color:rgba(89,182,255,.25)}
+    .tag.green{background:rgba(62,207,142,.12); border-color:rgba(62,207,142,.25)}
+    .tag.gold{background:rgba(245,199,106,.12); border-color:rgba(245,199,106,.25)}
+    .tag.pink{background:rgba(255,159,188,.14); border-color:rgba(255,159,188,.26)}
 
     .spot-desc{
       color:#d8e0ee;
-      font-size:.94rem;
-      line-height:1.45;
-      margin-bottom:12px;
+      font-size:14px;
+      line-height:1.5;
+      word-break:break-word;
     }
 
-    .spot-actions{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-    }
-
-    .spot-quick{
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:8px;
-      margin-top:10px;
-    }
-
-    .quick-btn{
-      min-height:40px;
-      border-radius:12px;
-      background:#182133;
-      color:#dfe7f6;
-      border:1px solid rgba(255,255,255,.05);
-      font-weight:800;
-      font-size:.82rem;
-      padding:0 8px;
-    }
-
-    .empty{
-      background:var(--panel);
-      border:1px dashed rgba(255,255,255,.08);
-      border-radius:18px;
-      padding:24px;
+    .detail-empty{
       color:var(--muted);
-      text-align:center;
-      margin-top:12px;
-      display:none;
+      font-size:14px;
+      line-height:1.55;
     }
 
-    .overlay{
-      display:none;
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,.66);
-      z-index:999;
-      justify-content:center;
-      align-items:flex-end;
-      padding:16px;
-      backdrop-filter:blur(6px);
-    }
-
-    .overlay.show{display:flex}
-
-    .modal-box{
-      width:100%;
-      max-width:720px;
-      background:linear-gradient(180deg,#121824,#0f141e);
+    .detail-hero{
+      min-height:210px;
+      border-radius:16px;
+      overflow:hidden;
+      position:relative;
+      margin-bottom:12px;
       border:1px solid rgba(255,255,255,.06);
-      border-radius:24px;
-      padding:14px;
-      box-shadow:0 20px 40px rgba(0,0,0,.35);
-      animation:pop .22s ease;
-      max-height:90vh;
-      overflow:auto;
+      background-size:cover;
+      background-position:center;
+      background-repeat:no-repeat;
     }
 
-    @keyframes pop{
-      from{transform:translateY(10px);opacity:0}
-      to{transform:translateY(0);opacity:1}
+    .detail-hero::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(180deg, rgba(4,8,14,.08), rgba(4,8,14,.82));
     }
 
-    .handle{
-      width:54px;
-      height:5px;
-      border-radius:999px;
-      background:rgba(255,255,255,.15);
-      margin:2px auto 12px;
+    .detail-hero-inner{
+      position:absolute;
+      left:14px;
+      right:14px;
+      bottom:14px;
+      z-index:1;
     }
 
-    .modal-cover{
-      width:100%;
-      aspect-ratio:16/10;
-      object-fit:cover;
-      border-radius:18px;
-      margin-bottom:12px;
-      background:#172131;
-      opacity:1;
-    }
-
-    .modal-title{
-      font-size:1.35rem;
-      margin:0 0 8px;
-      letter-spacing:-.03em;
-    }
-
-    .modal-text{
-      color:var(--muted);
-      line-height:1.52;
-      margin:0 0 12px;
-    }
-
-    .tip-box{
-      background:rgba(245,196,81,.08);
-      border:1px solid rgba(245,196,81,.14);
-      border-radius:16px;
-      padding:12px;
-      color:#ffe7b5;
-      margin-bottom:12px;
-      line-height:1.45;
-    }
-
-    .modal-actions{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-      margin-top:8px;
-    }
-
-    .mini-row{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      margin-top:10px;
-    }
-
-    .mini-btn{
-      min-height:38px;
-      padding:0 12px;
-      border-radius:12px;
-      font-weight:700;
-    }
-
-    #mapModal{padding:0}
-    #mapWrap{
-      width:100%;
-      height:100%;
-      background:var(--bg);
-      display:flex;
-      flex-direction:column;
-    }
-    #mapTop{
-      padding:12px;
-      background:rgba(11,15,20,.94);
-      border-bottom:1px solid rgba(255,255,255,.06);
-      display:flex;
-      gap:10px;
-    }
-    #map{flex:1}
-
-    .day-list{
-      display:grid;
-      gap:10px;
-    }
-
-    .day-item{
-      background:var(--panel2);
-      border:1px solid rgba(255,255,255,.05);
-      border-radius:16px;
-      padding:12px;
-    }
-
-    .day-kicker{
-      font-size:.78rem;
-      color:var(--muted);
-      margin-bottom:4px;
-      font-weight:700;
-    }
-
-    .day-main{
-      font-size:1rem;
+    .detail-title{
+      margin:0 0 6px;
+      font-size:24px;
       font-weight:800;
+      word-break:break-word;
+    }
+
+    .detail-sub{
+      color:#d5e4f2;
+      font-size:14px;
+      word-break:break-word;
+    }
+
+    .detail-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+      margin-bottom:12px;
+    }
+
+    .detail-box{
+      padding:12px;
+      background:#0f1724;
+      border:1px solid var(--line);
+      border-radius:14px;
+    }
+
+    .detail-box .k{
+      color:var(--muted);
+      font-size:12px;
       margin-bottom:6px;
     }
 
-    .day-sub{
-      color:#d8e0ee;
-      line-height:1.4;
-      font-size:.92rem;
+    .detail-box .v{
+      font-size:17px;
+      font-weight:800;
+      line-height:1.2;
+      word-break:break-word;
     }
 
-    .slot-head{
+    .detail-section{
+      margin-top:10px;
+      padding-top:10px;
+      border-top:1px solid rgba(255,255,255,.07);
+    }
+
+    .detail-section h3{
+      margin:0 0 8px;
+      font-size:14px;
+    }
+
+    .detail-section p{
+      margin:0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.55;
+      word-break:break-word;
+    }
+
+    .action-grid{
+      display:grid;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .planner-box{
+      display:grid;
+      gap:10px;
+    }
+
+    .planner-slot{
+      padding:12px;
+      background:#0f1724;
+      border:1px solid var(--line);
+      border-radius:14px;
+    }
+
+    .planner-slot-head{
       display:flex;
       justify-content:space-between;
+      gap:10px;
       align-items:center;
-      gap:8px;
-      margin-bottom:6px;
+      margin-bottom:8px;
     }
 
-    .slot-empty{
+    .planner-slot-title{
+      font-size:13px;
       color:var(--muted);
-      font-size:.9rem;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+
+    .planner-slot-name{
+      font-size:17px;
+      font-weight:800;
+      margin-bottom:4px;
+    }
+
+    .planner-slot-sub{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.45;
     }
 
     .planner-actions{
@@ -560,339 +877,367 @@
       margin-top:10px;
     }
 
-    @media (max-width:740px){
-      .stats{grid-template-columns:repeat(2,1fr)}
-      .spot-quick{grid-template-columns:1fr}
-      .modal-actions{grid-template-columns:1fr}
-    }
-
-    @keyframes splashLoad{
-      from{width:0%}
-      to{width:100%}
-    }
-
-    .app{
-      opacity:0;
-      transform:translateY(10px);
-      transition:opacity .6s ease, transform .6s ease;
-    }
-
-    .app.appReady{
-      opacity:1;
-      transform:translateY(0);
-    }
-
-    /* ── Toast system ── */
-    .toastWrap{
+    .bottom-nav{
       position:fixed;
-      bottom:calc(24px + env(safe-area-inset-bottom));
+      left:0;
+      right:0;
+      bottom:0;
+      z-index:1000;
+      padding:8px 10px calc(8px + var(--safe-bottom));
+      background:linear-gradient(180deg, rgba(11,15,20,.1), rgba(11,15,20,.96));
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
+      border-top:1px solid rgba(255,255,255,.08);
+      width:100%;
+      max-width:100%;
+    }
+
+    .bottom-nav.hidden-for-map{
+      display:none;
+    }
+
+    .bottom-nav-inner{
+      width:100%;
+      max-width:var(--maxw);
+      margin:0 auto;
+      display:grid;
+      grid-template-columns:repeat(5,minmax(0,1fr));
+      gap:8px;
+    }
+
+    .nav-btn{
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      color:var(--text);
+      border-radius:16px;
+      padding:8px 4px;
+      text-align:center;
+      cursor:pointer;
+      font-size:11px;
+      line-height:1.2;
+      display:grid;
+      place-items:center;
+      gap:4px;
+      min-width:0;
+      width:100%;
+    }
+
+    .nav-btn svg{
+      width:18px;
+      height:18px;
+      opacity:.95;
+    }
+
+    .nav-btn strong{
+      display:block;
+      font-size:11px;
+      margin:0;
+      white-space:nowrap;
+    }
+
+    .nav-btn.active{
+      background:linear-gradient(135deg, rgba(89,182,255,.24), rgba(245,199,106,.18));
+      border-color:rgba(89,182,255,.38);
+    }
+
+    .footer-note{
+      margin-top:16px;
+      color:#7f93a8;
+      font-size:12px;
+      line-height:1.5;
+      text-align:center;
+      word-break:break-word;
+    }
+
+    .toast-wrap{
+      position:fixed;
+      bottom:calc(96px + var(--safe-bottom));
       left:50%;
       transform:translateX(-50%);
+      z-index:9999;
       display:flex;
       flex-direction:column-reverse;
-      align-items:center;
       gap:8px;
-      z-index:99999;
       pointer-events:none;
     }
 
     .toast{
-      display:flex;
-      align-items:flex-start;
-      gap:10px;
-      padding:12px 14px;
-      border-radius:16px;
-      background:#1a2438;
-      border:1px solid rgba(255,255,255,.08);
-      box-shadow:0 12px 28px rgba(0,0,0,.35);
       min-width:220px;
       max-width:min(360px, 90vw);
-      pointer-events:auto;
-      animation:toastIn .22s cubic-bezier(.22,1,.36,1) both;
-    }
-
-    .toast.hiding{
-      animation:toastOut .2s ease forwards;
+      background:#162235;
+      border:1px solid rgba(255,255,255,.08);
+      color:#e5effa;
+      padding:12px 14px;
+      border-radius:14px;
+      box-shadow:0 12px 24px rgba(0,0,0,.35);
+      animation:toastIn .18s ease both;
     }
 
     @keyframes toastIn{
-      from{opacity:0;transform:translateY(10px) scale(.96)}
-      to{opacity:1;transform:translateY(0) scale(1)}
+      from{opacity:0;transform:translateY(8px)}
+      to{opacity:1;transform:translateY(0)}
     }
 
-    @keyframes toastOut{
-      from{opacity:1;transform:translateY(0) scale(1)}
-      to{opacity:0;transform:translateY(6px) scale(.97)}
+    .leaflet-popup-content-wrapper{
+      background:#101824;
+      color:#eef4fb;
+      border-radius:14px;
+      border:1px solid #22324a;
     }
 
-    .toast-icon{font-size:1rem;flex-shrink:0;margin-top:1px}
-
-    .toast-body{flex:1}
-
-    .toast-title{
-      font-weight:800;
-      font-size:.82rem;
-      margin-bottom:2px;
+    .leaflet-popup-tip{
+      background:#101824;
     }
 
-    .toast-msg{
-      font-size:.82rem;
-      color:var(--muted);
-      line-height:1.35;
+    @media (min-width: 840px){
+      .hero-actions{
+        grid-template-columns:1.3fr .7fr;
+      }
+      .quick-grid{
+        grid-template-columns:repeat(3,minmax(0,1fr));
+      }
+      .stats-grid{
+        grid-template-columns:repeat(4,minmax(0,1fr));
+      }
+      .search-box{
+        grid-template-columns:minmax(0,1fr) 150px 150px;
+      }
     }
-
-    .toast.t-success{border-color:rgba(105,218,164,.22);background:rgba(14,28,22,.95)}
-    .toast.t-success .toast-title{color:#69daa4}
-    .toast.t-error{border-color:rgba(255,150,150,.22);background:rgba(28,14,14,.95)}
-    .toast.t-error .toast-title{color:#ff9696}
-    .toast.t-info{border-color:rgba(113,184,255,.20);background:rgba(12,20,34,.95)}
-    .toast.t-info .toast-title{color:#71b8ff}
   </style>
 </head>
 <body>
-  <div id="splashScreen" style="
-    position:fixed;
-    inset:0;
-    background:#0b0f14;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    z-index:99999;
-    transition:opacity .6s ease;
-  ">
-    <div style="font-size:40px;margin-bottom:12px;">🌴</div>
-    <div style="font-size:24px;font-weight:800;letter-spacing:.4px;margin-bottom:6px;">Madeira Planner</div>
-    <div style="color:#9aa7b5;font-size:14px;margin-bottom:26px;">La tua guida outdoor per Madeira</div>
-    <div style="width:120px;height:4px;background:#1a2230;border-radius:999px;overflow:hidden;">
-      <div style="height:100%;width:0%;background:linear-gradient(90deg,#f5c451,#ffd777);animation:splashLoad 1s ease forwards;"></div>
+  <div class="app-bg"></div>
+
+  <div class="splash" id="splash">
+    <div class="splash-card">
+      <div class="splash-emoji">🌴</div>
+      <div class="splash-title">Madeira Spot Planner</div>
+      <div class="splash-sub">Travel • viewpoint • tramonti • spot wow</div>
+      <div class="splash-bar"><div></div></div>
     </div>
   </div>
 
-  <div class="app">
+  <div class="wrap" id="appWrap">
     <section class="hero">
-      <div class="eyebrow">📸 Madeira outdoor travel guide</div>
-      <h1>Madeira Planner PRO</h1>
-      <p class="sub">
-        Guida fotografica e outdoor per Madeira con priorità chiare: spot top, spot validi e spot extra. Ora con meteo più intelligente, preferiti e planner giornata salvabile.
+      <div class="eyebrow">
+        <span class="eyebrow-dot"></span>
+        <span id="eyebrowRegion">Zona attiva: Madeira</span>
+      </div>
+
+      <h1>Scopri Madeira meglio.<br>Vai nei posti giusti.</h1>
+
+      <p>
+        Guida travel e outdoor in stile app: spot wow, tramonti top, mappa rapida,
+        lista pulita, dettaglio forte, planner giornata e Google Maps sempre a portata.
       </p>
 
-      <div id="weatherBox" class="weather-box">
-        <div class="weather-main">🌤️ Caricamento meteo...</div>
-        <div class="weather-sub">Sto leggendo condizioni e consigli sugli spot.</div>
-      </div>
+      <div class="hero-actions">
+        <div class="search-box glass">
+          <input id="searchInput" type="text" placeholder="Es. Pico do Arieiro, Fanal, Porto Moniz">
+          <button class="btn btn-primary" id="searchBtn" type="button">Cerca</button>
+          <button class="btn btn-secondary" id="spotNowBtn" type="button">Spot ora</button>
+        </div>
 
-      <div class="main-actions">
-        <button class="btn-main" id="spotNowBtn">🔥 Spot ora</button>
-        <div class="row">
-          <button class="btn-main" id="dayBtn">📅 Giornata smart</button>
-          <button class="btn-main" id="plannerBtn">🗓️ Planner</button>
-        </div>
-        <div class="row">
-          <button class="btn-main" id="topBtn">⭐ Top 10</button>
-          <button class="btn-main" id="mapBtn">🗺️ Mappa</button>
-        </div>
-      </div>
-
-      <div class="stats">
-        <div class="stat">
-          <div class="label">Spot totali</div>
-          <div class="value" id="spotCount">0</div>
-        </div>
-        <div class="stat">
-          <div class="label">Preferiti</div>
-          <div class="value" id="favCount">0</div>
-        </div>
-        <div class="stat">
-          <div class="label">Filtro attivo</div>
-          <div class="value" id="filterState">Tutti</div>
-        </div>
-        <div class="stat">
-          <div class="label">Planner</div>
-          <div class="value" id="plannerCount">0 / 3</div>
+        <div class="panel glass" style="display:grid;gap:10px">
+          <button class="btn btn-gold" id="dayBtn" type="button">Giornata smart</button>
+          <button class="btn btn-secondary" id="autofillPlannerBtn" type="button">Auto planner</button>
+          <button class="btn btn-secondary" id="gpsBtn" type="button">Usa GPS</button>
         </div>
       </div>
     </section>
 
-    <section class="section">
-      <div class="section-head">
-        <h2 class="section-title">Priorità</h2>
-        <div class="section-note">importanza dello spot</div>
-      </div>
-      <div class="chips" id="levelChips">
-        <button class="chip active" data-level="all">Tutti</button>
-        <button class="chip" data-level="core">🔥 Top</button>
-        <button class="chip" data-level="secondary">⭐ Belli</button>
-        <button class="chip" data-level="extra">• Extra</button>
+    <section id="page-home" class="page active">
+      <div class="stack">
+        <div class="quick-grid">
+          <div class="quick-card glass">
+            <div class="quick-label">Spot del giorno</div>
+            <div class="quick-title" id="bestTodayTitle">—</div>
+            <div class="quick-desc" id="bestTodayDesc">In attesa del meteo.</div>
+          </div>
+          <div class="quick-card glass">
+            <div class="quick-label">Wow spot</div>
+            <div class="quick-title" id="bestWowTitle">—</div>
+            <div class="quick-desc" id="bestWowDesc">I posti più forti visivamente.</div>
+          </div>
+          <div class="quick-card glass">
+            <div class="quick-label">Tramonto top</div>
+            <div class="quick-title" id="bestSunsetTitle">—</div>
+            <div class="quick-desc" id="bestSunsetDesc">In attesa della lettura luce.</div>
+          </div>
+        </div>
+
+        <div class="panel glass">
+          <h2>Meteo e mood del giorno</h2>
+          <div class="stats-grid">
+            <div class="stat">
+              <div class="k">Temperatura</div>
+              <div class="v" id="tempNow">—</div>
+            </div>
+            <div class="stat">
+              <div class="k">Vento</div>
+              <div class="v" id="windNow">—</div>
+            </div>
+            <div class="stat">
+              <div class="k">Nuvole</div>
+              <div class="v" id="cloudNow">—</div>
+            </div>
+            <div class="stat">
+              <div class="k">Pioggia</div>
+              <div class="v" id="rainNow">—</div>
+            </div>
+          </div>
+          <div id="weatherAlert" class="alert ok" style="margin-top:10px">Caricamento meteo...</div>
+        </div>
+
+        <div class="panel glass">
+          <h2>Planner giornata</h2>
+          <div class="planner-box" id="plannerBox"></div>
+          <div class="planner-actions">
+            <button class="btn btn-secondary" id="plannerOpenBtn" type="button">Apri planner</button>
+            <button class="btn btn-danger" id="clearPlannerBtn" type="button">Svuota planner</button>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="section">
-      <div class="section-head">
-        <h2 class="section-title">Filtro luce</h2>
-        <div class="section-note">alba, tramonto o tutto</div>
-      </div>
-      <div class="chips" id="lightChips">
-        <button class="chip active" data-light="all">Tutti</button>
-        <button class="chip" data-light="alba">Alba</button>
-        <button class="chip" data-light="tramonto">Tramonto</button>
-        <button class="chip" data-light="giorno">Giorno</button>
+    <section id="page-top" class="page">
+      <div class="stack">
+        <div class="featured-panel glass">
+          <div class="featured-head">
+            <div class="featured-sub">I più forti dell’isola</div>
+            <h2 class="featured-title">Top 10 wow</h2>
+          </div>
+          <div id="topWowList" class="featured-scroll"></div>
+        </div>
+
+        <div class="featured-panel glass">
+          <div class="featured-head">
+            <div class="featured-sub">Luce serale</div>
+            <h2 class="featured-title">Top 10 tramonti</h2>
+          </div>
+          <div id="topSunsetList" class="featured-scroll"></div>
+        </div>
       </div>
     </section>
 
-    <section class="section">
-      <div class="section-head">
-        <h2 class="section-title">Zona</h2>
-        <div class="section-note">nord, sud, est, ovest, montagna</div>
-      </div>
-      <div class="chips" id="zoneChips">
-        <button class="chip active" data-zone="all">Tutte</button>
-        <button class="chip" data-zone="nord">Nord</button>
-        <button class="chip" data-zone="sud">Sud</button>
-        <button class="chip" data-zone="est">Est</button>
-        <button class="chip" data-zone="ovest">Ovest</button>
-        <button class="chip" data-zone="montagna">Montagna</button>
+    <section id="page-map" class="page">
+      <div class="stack">
+        <div class="panel glass">
+          <h2>Filtri rapidi mappa</h2>
+          <div class="toolbar" id="mapQuickFilters">
+            <button class="chip active" data-quick="all" type="button">Tutti</button>
+            <button class="chip" data-quick="wow" type="button">Wow</button>
+            <button class="chip" data-quick="sunset" type="button">Tramonti</button>
+            <button class="chip" data-quick="alba" type="button">Albe</button>
+            <button class="chip" data-quick="favorites" type="button">Preferiti</button>
+          </div>
+        </div>
+
+        <div class="map-panel glass">
+          <button id="mapFullscreenBtn" class="map-fullscreen-btn" type="button">Espandi mappa</button>
+          <div id="map"></div>
+
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot legend-gold"></span> Wow</div>
+            <div class="legend-item"><span class="legend-dot legend-pink"></span> Tramonto</div>
+            <div class="legend-item"><span class="legend-dot legend-blue"></span> Altri spot</div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="section">
-      <div class="section-head">
-        <h2 class="section-title">Attività</h2>
-        <div class="section-note">trekking, mtb, view, relax</div>
-      </div>
-      <div class="chips" id="activityChips">
-        <button class="chip active" data-activity="all">Tutte</button>
-        <button class="chip" data-activity="trekking">Trekking</button>
-        <button class="chip" data-activity="mtb">MTB</button>
-        <button class="chip" data-activity="view">View</button>
-        <button class="chip" data-activity="relax">Relax</button>
+    <section id="page-spots" class="page">
+      <div class="stack">
+        <div class="panel glass subtoolbar">
+          <h2>Filtri spot</h2>
+
+          <div class="toolbar" id="levelChips">
+            <button class="chip active" data-level="all" type="button">Tutti</button>
+            <button class="chip" data-level="core" type="button">Top</button>
+            <button class="chip" data-level="secondary" type="button">Belli</button>
+            <button class="chip" data-level="extra" type="button">Extra</button>
+          </div>
+
+          <div class="toolbar" id="lightChips">
+            <button class="chip active" data-light="all" type="button">Tutta la luce</button>
+            <button class="chip" data-light="alba" type="button">Alba</button>
+            <button class="chip" data-light="tramonto" type="button">Tramonto</button>
+            <button class="chip" data-light="giorno" type="button">Giorno</button>
+          </div>
+
+          <div class="toolbar" id="zoneChips">
+            <button class="chip active" data-zone="all" type="button">Tutte le zone</button>
+            <button class="chip" data-zone="nord" type="button">Nord</button>
+            <button class="chip" data-zone="sud" type="button">Sud</button>
+            <button class="chip" data-zone="est" type="button">Est</button>
+            <button class="chip" data-zone="ovest" type="button">Ovest</button>
+            <button class="chip" data-zone="montagna" type="button">Montagna</button>
+          </div>
+
+          <div class="toolbar" id="activityChips">
+            <button class="chip active" data-activity="all" type="button">Tutte</button>
+            <button class="chip" data-activity="trekking" type="button">Trekking</button>
+            <button class="chip" data-activity="mtb" type="button">MTB</button>
+            <button class="chip" data-activity="view" type="button">View</button>
+            <button class="chip" data-activity="relax" type="button">Relax</button>
+          </div>
+
+          <div class="toolbar" id="favoriteChips">
+            <button class="chip active" data-favoritesfilter="all" type="button">Tutti</button>
+            <button class="chip" data-favoritesfilter="favorites" type="button">Solo preferiti</button>
+          </div>
+        </div>
+
+        <div class="panel glass">
+          <h2>Spot della zona</h2>
+          <div id="resultNote" class="detail-empty" style="margin-bottom:10px">Tutti gli spot</div>
+          <div class="spot-list" id="spotList"></div>
+        </div>
       </div>
     </section>
 
-    <section class="section">
-      <div class="section-head">
-        <h2 class="section-title">Difficoltà</h2>
-        <div class="section-note">facile, medio, impegnativo</div>
-      </div>
-      <div class="chips" id="difficultyChips">
-        <button class="chip active" data-difficulty="all">Tutte</button>
-        <button class="chip" data-difficulty="facile">Facile</button>
-        <button class="chip" data-difficulty="medio">Medio</button>
-        <button class="chip" data-difficulty="impegnativo">Impegnativo</button>
+    <section id="page-detail" class="page">
+      <div class="stack">
+        <div class="panel glass">
+          <h2>Dettaglio spot</h2>
+          <div id="spotDetail" class="detail-empty">
+            Tocca uno spot nella lista, nella Home, nella Top page o sulla mappa per vedere il dettaglio.
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="section">
-      <div class="section-head">
-        <h2 class="section-title">Preferiti</h2>
-        <div class="section-note">mostra solo quelli salvati</div>
-      </div>
-      <div class="chips" id="favoriteChips">
-        <button class="chip active" data-favoritesFilter="all">Tutti</button>
-        <button class="chip" data-favoritesFilter="favorites">Solo preferiti</button>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-head">
-        <h2 class="section-title">Spot</h2>
-        <div class="section-note" id="resultNote">Tutti gli spot</div>
-      </div>
-      <div style="position:relative;margin-bottom:12px;">
-        <input
-          id="searchInput"
-          type="search"
-          placeholder="🔍  Cerca per nome..."
-          style="
-            width:100%;
-            background:#182133;
-            border:1px solid rgba(255,255,255,.07);
-            border-radius:14px;
-            padding:12px 14px;
-            color:#f5f7fb;
-            font:inherit;
-            font-size:.9rem;
-            outline:none;
-            transition:border-color .2s ease, box-shadow .2s ease;
-          "
-        >
-      </div>
-      <div class="list" id="list"></div>
-      <div class="empty" id="emptyState">Nessuno spot con questi filtri. Prova a rilassarne uno.</div>
-    </section>
-  </div>
-
-  <div class="overlay" id="detailOverlay">
-    <div class="modal-box">
-      <div class="handle"></div>
-      <img id="detailImg" class="modal-cover" alt="">
-      <h3 id="detailTitle" class="modal-title"></h3>
-      <div class="badge-row" id="detailBadges"></div>
-      <p id="detailDesc" class="modal-text"></p>
-      <div class="tip-box" id="detailTip"></div>
-
-      <div class="modal-actions">
-        <button class="btn-secondary" id="detailFavBtn">❤️ Preferito</button>
-        <button class="btn-secondary" id="mapsBtn">🗺️ Apri in Maps</button>
-      </div>
-
-      <div class="spot-quick" style="margin-top:10px">
-        <button class="quick-btn" id="addAlbaBtn">🌅 Aggiungi alba</button>
-        <button class="quick-btn" id="addMainBtn">🥾 Aggiungi attività</button>
-        <button class="quick-btn" id="addTramontoBtn">🌇 Aggiungi tramonto</button>
-      </div>
-
-      <div class="mini-row">
-        <button class="btn-main mini-btn" id="googlePhotosBtn">📸 Vedi foto reali</button>
-        <button class="btn-ghost mini-btn" id="closeDetailBtn">Chiudi</button>
-      </div>
+    <div class="footer-note">
+      Questa app è una guida personale intelligente per Madeira. Verifica sempre meteo reale, strade, sentieri, chiusure e condizioni locali.
     </div>
   </div>
 
-  <div class="overlay" id="plannerOverlay">
-    <div class="modal-box">
-      <div class="handle"></div>
-      <h3 id="plannerTitle" class="modal-title"></h3>
-      <p id="plannerIntro" class="modal-text"></p>
-      <div class="day-list" id="plannerList"></div>
-      <div class="mini-row">
-        <button class="btn-ghost mini-btn" id="closePlannerBtn">Chiudi</button>
-      </div>
+  <nav class="bottom-nav" id="bottomNav">
+    <div class="bottom-nav-inner">
+      <button class="nav-btn active" data-page="home" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11.5 12 4l9 7.5"/><path d="M6 10.5V20h12v-9.5"/></svg>
+        <strong>Home</strong>
+      </button>
+      <button class="nav-btn" data-page="top" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18"/><path d="M5 9h5"/><path d="M14 15h5"/><path d="M5 15h3"/><path d="M16 9h3"/></svg>
+        <strong>Top</strong>
+      </button>
+      <button class="nav-btn" data-page="map" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14"/><path d="M15 6v14"/></svg>
+        <strong>Mappa</strong>
+      </button>
+      <button class="nav-btn" data-page="spots" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><circle cx="4" cy="6" r="1.2"/><circle cx="4" cy="12" r="1.2"/><circle cx="4" cy="18" r="1.2"/></svg>
+        <strong>Spot</strong>
+      </button>
+      <button class="nav-btn" data-page="detail" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
+        <strong>Dettaglio</strong>
+      </button>
     </div>
-  </div>
+  </nav>
 
-  <div class="overlay" id="manualPlannerOverlay">
-    <div class="modal-box">
-      <div class="handle"></div>
-      <h3 class="modal-title">Planner giornata</h3>
-      <p class="modal-text">
-        Salva 3 slot chiari: alba, attività centrale e tramonto. Puoi riempirli dallo spot che apri nei dettagli.
-      </p>
-
-      <div class="day-list" id="manualPlannerList"></div>
-
-      <div class="planner-actions">
-        <button class="btn-main" id="autofillPlannerBtn">⚡ Auto compila</button>
-        <button class="btn-danger" id="clearPlannerBtn">🗑️ Svuota</button>
-      </div>
-
-      <div class="mini-row">
-        <button class="btn-ghost mini-btn" id="closeManualPlannerBtn">Chiudi</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="toastWrap" class="toastWrap"></div>
-
-  <div class="overlay" id="mapModal">
-    <div id="mapWrap">
-      <div id="mapTop">
-        <button class="btn-main" id="closeMapBtn">Chiudi</button>
-        <button class="btn-secondary" id="fitMapBtn">Adatta vista</button>
-      </div>
-      <div id="map"></div>
-    </div>
-  </div>
+  <div class="toast-wrap" id="toastWrap"></div>
 
   <script>
     const CORE = [
@@ -988,7 +1333,7 @@
       ["Levada da Referta","est","giorno","trekking","medio"],
       ["Miradouro da Beira da Quinta","nord","giorno","view","facile"],
       ["Praia da Alagoa","nord","giorno","relax","facile"],
-      ["Miradouro del Pico Vermelho","ovest","giorno","mtb","medio"],
+      ["Miradouro do Pico Vermelho","ovest","giorno","mtb","medio"],
       ["Lombo do Mouro","ovest","tramonto","mtb","medio"],
       ["Chão dos Louros","montagna","giorno","mtb","medio"],
       ["Garajau Cable Car Area","sud","giorno","view","medio"]
@@ -1011,15 +1356,6 @@
       });
     }
 
-    const SPOTS = [
-      ...toObjects("core", CORE),
-      ...toObjects("secondary", SECONDARY),
-      ...toObjects("extra", EXTRA)
-    ].map((s, i) => ({
-      ...s,
-      ...coordsFor(s.name, s.zone, i)
-    }));
-
     function coordsFor(name, zone, i){
       const known = {
         "Ponta de São Lourenço":[32.7440,-16.7040],
@@ -1028,7 +1364,6 @@
         "PR1 Arieiro → Ruivo":[32.7355,-16.9288],
         "Pico Ruivo Summit":[32.7591,-16.9431],
         "Fanal Forest":[32.7603,-17.1476],
-        "Bica da Cana":[32.7781,-17.1128],
         "Ribeira da Janela":[32.8652,-17.1446],
         "Porto Moniz Pools":[32.8664,-17.1666],
         "Cabo Girão":[32.6558,-17.0048],
@@ -1038,82 +1373,19 @@
         "25 Fontes":[32.7524,-17.1318],
         "Levada do Risco":[32.7528,-17.1321],
         "Eira do Serrado":[32.7040,-16.9697],
-        "Boca dos Namorados":[32.7057,-16.9690],
-        "Achadas da Cruz View":[32.8648,-17.2176],
         "Ponta do Pargo Lighthouse":[32.8120,-17.2623],
-        "Ponta do Sol":[32.6790,-17.1012],
-        "Calheta Beach":[32.7182,-17.1760],
-        "Porto da Cruz Waterfront":[32.7661,-16.8299],
-        "Miradouro do Guindaste":[32.8217,-16.8606],
         "Santana Houses":[32.8046,-16.8821],
         "Balcões":[32.7368,-16.8970],
-        "Ribeiro Frio":[32.7403,-16.8906],
-        "Curral das Freiras View":[32.7119,-16.9702],
-        "Prainha do Caniçal":[32.7397,-16.7167],
-        "Paul da Serra":[32.7630,-17.1330],
-        "Levada do Rei":[32.8068,-16.9075],
-        "Funchal Old Town":[32.6482,-16.9036],
-        "Botanical Garden":[32.6652,-16.8905],
-        "Monte Palace Area":[32.6765,-16.9008],
         "Garajau Cristo Rei":[32.6372,-16.8501],
-        "Praia Formosa":[32.6359,-16.9492],
-        "Pico dos Barcelos":[32.6656,-16.9372],
-        "Miradouro do Pináculo":[32.6555,-16.8794],
-        "Miradouro da Portela":[32.7399,-16.8297],
-        "Ponta do Pargo / Garganta Funda":[32.8133,-17.2638],
-        "Levada dos Cedros":[32.7628,-17.1510],
-
         "Machico Bay":[32.7167,-16.7667],
         "Miradouro do Facho":[32.7175,-16.7635],
-        "Caniçal Harbor View":[32.7388,-16.7384],
-        "Faial Coast View":[32.8172,-16.8590],
         "Rocha do Navio":[32.8164,-16.8850],
-        "São Jorge Coast View":[32.8290,-16.9030],
-        "Arco de São Jorge View":[32.8158,-16.9168],
-        "Ponta Delgada Waterfront":[32.8241,-16.9297],
-        "Boaventura Viewpoint":[32.8207,-16.9726],
-        "Seixal Natural Pools":[32.8241,-17.1085],
-        "Miradouro da Santinha":[32.8695,-17.1662],
-        "Teleférico Achadas da Cruz Top":[32.8639,-17.2172],
-        "Levada do Alecrim":[32.7601,-17.1327],
         "Encumeada Pass":[32.7491,-17.0320],
-        "Boca da Corrida":[32.7061,-16.9902],
-        "Achada do Teixeira":[32.7583,-16.9332],
-        "Vereda do Larano":[32.7733,-16.8445],
-        "Boca do Risco":[32.7860,-16.8460],
         "Penha d'Águia":[32.7633,-16.8244],
         "Funchal Marina":[32.6440,-16.9137],
-        "CR7 Promenade":[32.6418,-16.9197],
-        "Jardim do Mar View":[32.7385,-17.2118],
-        "Madalena do Mar Waterfront":[32.7028,-17.1433],
-        "Paul do Mar":[32.7605,-17.2291],
-        "Ribeira Brava Waterfront":[32.6758,-17.0622],
         "Palheiro Gardens":[32.6684,-16.8515],
-        "Santo da Serra":[32.7064,-16.8149],
-        "Miradouro da Eira da Achada":[32.8415,-17.2161],
-        "Rabaçal Plateau":[32.7526,-17.1330],
-        "Cais do Sardinha":[32.7457,-16.6889],
-
-        "Cais da Ribeira Brava":[32.6755,-17.0620],
-        "Miradouro da Neves":[32.6608,-16.8787],
-        "Miradouro das Cabanas":[32.7504,-16.7768],
-        "Miradouro do Véu da Noiva":[32.8335,-17.1258],
-        "Miradouro da Boa Morte":[32.7914,-17.2268],
-        "Miradouro da Raposeira":[32.7818,-17.2152],
-        "Miradouro do Ilhéu de Câmara de Lobos":[32.6448,-16.9795],
-        "Santa Cruz Waterfront":[32.6917,-16.7932],
-        "Levada da Serra do Faial":[32.7700,-16.8630],
-        "Miradouro do Teleférico das Achadas":[32.8642,-17.2170],
-        "Miradouro da Tabua":[32.6887,-17.0845],
-        "Miradouro do Massapez":[32.7446,-17.2146],
-        "Vereda dei Balcões Access":[32.7370,-16.8965],
-        "Levada da Referta":[32.7552,-16.8142],
-        "Miradouro da Beira da Quinta":[32.8352,-16.9370],
-        "Praia da Alagoa":[32.7722,-16.8290],
-        "Miradouro do Pico Vermelho":[32.7738,-17.1565],
-        "Lombo do Mouro":[32.7770,-17.1385],
-        "Chão dos Louros":[32.7494,-16.9898],
-        "Garajau Cable Car Area":[32.6375,-16.8490]
+        "Levada do Alecrim":[32.7601,-17.1327],
+        "Cais do Sardinha":[32.7457,-16.6889]
       };
 
       if(known[name]) return { lat: known[name][0], lon: known[name][1] };
@@ -1132,9 +1404,44 @@
       return { lat, lon };
     }
 
+    const SPOTS = [
+      ...toObjects("core", CORE),
+      ...toObjects("secondary", SECONDARY),
+      ...toObjects("extra", EXTRA)
+    ].map((s, i) => ({
+      ...s,
+      ...coordsFor(s.name, s.zone, i)
+    }));
+
+    const TOP_WOW_NAMES = [
+      "Ponta de São Lourenço",
+      "Pico do Arieiro",
+      "Pico Ruivo Summit",
+      "Fanal Forest",
+      "Ribeira da Janela",
+      "Porto Moniz Pools",
+      "Cabo Girão",
+      "Levada do Caldeirão Verde",
+      "Ponta do Pargo Lighthouse",
+      "Eira do Serrado"
+    ];
+
+    const TOP_SUNSET_NAMES = [
+      "Ponta do Pargo Lighthouse",
+      "Câmara de Lobos",
+      "Cabo Girão",
+      "Ponta do Sol",
+      "Calheta Beach",
+      "Pico dos Barcelos",
+      "Miradouro do Pináculo",
+      "Jardim do Mar View",
+      "Paul do Mar",
+      "Porto Moniz Pools"
+    ];
+
     const STORAGE_KEYS = {
-      favorites:"madeira_favorites_v2",
-      planner:"madeira_day_planner_v2"
+      favorites:"madeira_favorites_v3",
+      planner:"madeira_day_planner_v3"
     };
 
     const defaultPlanner = {
@@ -1148,126 +1455,61 @@
       light:"all",
       zone:"all",
       activity:"all",
-      difficulty:"all",
       favoritesFilter:"all",
       search:"",
       userPos:null,
       currentSpot:null,
-      weatherNote:"",
       weatherData:null,
       favorites:loadJson(STORAGE_KEYS.favorites, []),
-      planner:loadJson(STORAGE_KEYS.planner, defaultPlanner)
+      planner:loadJson(STORAGE_KEYS.planner, defaultPlanner),
+      activePage:"home",
+      mapQuickFilter:"all",
+      map:null,
+      markers:[],
+      markerBySpotId:new Map(),
+      isMapFullscreen:false
     };
 
     const SPOT_IMAGES = {
-      "Ponta de São Lourenço": "https://picsum.photos/seed/Ponta-de-Sao-Lourenco-Madeira/900/600",
-      "Miradouro da Ponta do Rosto": "https://picsum.photos/seed/Ponta-do-Rosto-Madeira/900/600",
-      "Pico do Arieiro": "https://picsum.photos/seed/Pico-do-Arieiro-Madeira/900/600",
-      "PR1 Arieiro → Ruivo": "https://picsum.photos/seed/PR1-Arieiro-Ruivo-Madeira/900/600",
-      "Pico Ruivo Summit": "https://picsum.photos/seed/Pico-Ruivo-Madeira/900/600",
-      "Fanal Forest": "https://picsum.photos/seed/Fanal-Forest-Madeira/900/600",
-      "Ribeira da Janela": "https://picsum.photos/seed/Ribeira-da-Janela-Madeira/900/600",
-      "Porto Moniz Pools": "https://picsum.photos/seed/Porto-Moniz-Madeira/900/600",
-      "Cabo Girão": "https://picsum.photos/seed/Cabo-Girao-Madeira/900/600",
-      "Câmara de Lobos": "https://picsum.photos/seed/Camara-de-Lobos-Madeira/900/600",
-      "Seixal Beach": "https://picsum.photos/seed/Seixal-Beach-Madeira/900/600",
-      "Levada do Caldeirão Verde": "https://picsum.photos/seed/Caldeirao-Verde-Madeira/900/600",
-      "25 Fontes": "https://picsum.photos/seed/25-Fontes-Madeira/900/600",
-      "Levada do Risco": "https://picsum.photos/seed/Risco-Madeira/900/600",
-      "Eira do Serrado": "https://picsum.photos/seed/Eira-do-Serrado-Madeira/900/600",
-      "Ponta do Pargo Lighthouse": "https://picsum.photos/seed/Ponta-do-Pargo-Madeira/900/600",
-      "Santana Houses": "https://picsum.photos/seed/Santana-Houses-Madeira/900/600",
-      "Balcões": "https://picsum.photos/seed/Balcoes-Madeira/900/600",
-      "Garajau Cristo Rei": "https://picsum.photos/seed/Garajau-Cristo-Rei-Madeira/900/600",
-      "Machico Bay": "https://picsum.photos/seed/Machico-Bay-Madeira/900/600",
-      "Miradouro do Facho": "https://picsum.photos/seed/Facho-Machico-Madeira/900/600",
-      "Rocha do Navio": "https://picsum.photos/seed/Rocha-do-Navio-Madeira/900/600",
-      "Encumeada Pass": "https://picsum.photos/seed/Encumeada-Madeira/900/600",
-      "Penha d'Águia": "https://picsum.photos/seed/Penha-dAguia-Madeira/900/600",
-      "Funchal Marina": "https://picsum.photos/seed/Funchal-Marina-Madeira/900/600",
-      "Palheiro Gardens": "https://picsum.photos/seed/Palheiro-Gardens-Madeira/900/600",
-      "Levada do Alecrim": "https://picsum.photos/seed/Alecrim-Madeira/900/600",
-      "Cais do Sardinha": "https://picsum.photos/seed/Cais-do-Sardinha-Madeira/900/600"
+      "Ponta de São Lourenço":"https://picsum.photos/seed/Ponta-de-Sao-Lourenco-Madeira/900/600",
+      "Miradouro da Ponta do Rosto":"https://picsum.photos/seed/Ponta-do-Rosto-Madeira/900/600",
+      "Pico do Arieiro":"https://picsum.photos/seed/Pico-do-Arieiro-Madeira/900/600",
+      "PR1 Arieiro → Ruivo":"https://picsum.photos/seed/PR1-Arieiro-Ruivo-Madeira/900/600",
+      "Pico Ruivo Summit":"https://picsum.photos/seed/Pico-Ruivo-Madeira/900/600",
+      "Fanal Forest":"https://picsum.photos/seed/Fanal-Forest-Madeira/900/600",
+      "Ribeira da Janela":"https://picsum.photos/seed/Ribeira-da-Janela-Madeira/900/600",
+      "Porto Moniz Pools":"https://picsum.photos/seed/Porto-Moniz-Madeira/900/600",
+      "Cabo Girão":"https://picsum.photos/seed/Cabo-Girao-Madeira/900/600",
+      "Câmara de Lobos":"https://picsum.photos/seed/Camara-de-Lobos-Madeira/900/600",
+      "Seixal Beach":"https://picsum.photos/seed/Seixal-Beach-Madeira/900/600",
+      "Levada do Caldeirão Verde":"https://picsum.photos/seed/Caldeirao-Verde-Madeira/900/600",
+      "25 Fontes":"https://picsum.photos/seed/25-Fontes-Madeira/900/600",
+      "Levada do Risco":"https://picsum.photos/seed/Risco-Madeira/900/600",
+      "Eira do Serrado":"https://picsum.photos/seed/Eira-do-Serrado-Madeira/900/600",
+      "Ponta do Pargo Lighthouse":"https://picsum.photos/seed/Ponta-do-Pargo-Madeira/900/600",
+      "Santana Houses":"https://picsum.photos/seed/Santana-Houses-Madeira/900/600",
+      "Balcões":"https://picsum.photos/seed/Balcoes-Madeira/900/600",
+      "Garajau Cristo Rei":"https://picsum.photos/seed/Garajau-Cristo-Rei-Madeira/900/600",
+      "Machico Bay":"https://picsum.photos/seed/Machico-Bay-Madeira/900/600",
+      "Miradouro do Facho":"https://picsum.photos/seed/Facho-Machico-Madeira/900/600",
+      "Rocha do Navio":"https://picsum.photos/seed/Rocha-do-Navio-Madeira/900/600",
+      "Encumeada Pass":"https://picsum.photos/seed/Encumeada-Madeira/900/600",
+      "Penha d'Águia":"https://picsum.photos/seed/Penha-dAguia-Madeira/900/600",
+      "Funchal Marina":"https://picsum.photos/seed/Funchal-Marina-Madeira/900/600",
+      "Palheiro Gardens":"https://picsum.photos/seed/Palheiro-Gardens-Madeira/900/600",
+      "Levada do Alecrim":"https://picsum.photos/seed/Alecrim-Madeira/900/600",
+      "Cais do Sardinha":"https://picsum.photos/seed/Cais-do-Sardinha-Madeira/900/600"
     };
 
-    let mapInstance = null;
-    let mapLayer = null;
-
-    const listEl = document.getElementById("list");
-    const emptyEl = document.getElementById("emptyState");
-    const resultNoteEl = document.getElementById("resultNote");
-    const filterStateEl = document.getElementById("filterState");
-    const spotCountEl = document.getElementById("spotCount");
-    const favCountEl = document.getElementById("favCount");
-    const plannerCountEl = document.getElementById("plannerCount");
-    const weatherBox = document.getElementById("weatherBox");
-
-    const detailOverlay = document.getElementById("detailOverlay");
-    const plannerOverlay = document.getElementById("plannerOverlay");
-    const manualPlannerOverlay = document.getElementById("manualPlannerOverlay");
-    const mapModal = document.getElementById("mapModal");
-
-    const detailTitle = document.getElementById("detailTitle");
-    const detailImg = document.getElementById("detailImg");
-    const detailDesc = document.getElementById("detailDesc");
-    const detailTip = document.getElementById("detailTip");
-    const detailBadges = document.getElementById("detailBadges");
-    const detailFavBtn = document.getElementById("detailFavBtn");
-    const plannerTitle = document.getElementById("plannerTitle");
-    const plannerIntro = document.getElementById("plannerIntro");
-    const plannerList = document.getElementById("plannerList");
-    const manualPlannerList = document.getElementById("manualPlannerList");
-
-    spotCountEl.textContent = SPOTS.length;
-
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        state.userPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-        render();
-      },
-      () => render(),
-      { enableHighAccuracy:true, timeout:8000 }
-    );
-
-    bindChipGroup("levelChips","level");
-    bindChipGroup("lightChips","light");
-    bindChipGroup("zoneChips","zone");
-    bindChipGroup("activityChips","activity");
-    bindChipGroup("difficultyChips","difficulty");
-    bindChipGroup("favoriteChips","favoritesFilter");
-
-    const searchInput = document.getElementById("searchInput");
-    searchInput.addEventListener("input", () => {
-      state.search = searchInput.value.trim().toLowerCase();
-      render();
-    });
-    searchInput.addEventListener("focus", () => {
-      searchInput.style.borderColor = "rgba(245,196,81,.42)";
-      searchInput.style.boxShadow = "0 0 0 3px rgba(245,196,81,.08)";
-    });
-    searchInput.addEventListener("blur", () => {
-      searchInput.style.borderColor = "rgba(255,255,255,.07)";
-      searchInput.style.boxShadow = "none";
-    });
-
-    function bindChipGroup(id,key){
-      document.getElementById(id).addEventListener("click", e => {
-        const btn = e.target.closest("[data-" + key + "]");
-        if(!btn) return;
-        [...document.querySelectorAll("#" + id + " .chip")].forEach(x => x.classList.remove("active"));
-        btn.classList.add("active");
-        state[key] = btn.dataset[key];
-        render();
-      });
-    }
+    const $ = (id) => document.getElementById(id);
 
     function loadJson(key, fallback){
       try{
         const raw = localStorage.getItem(key);
-        if(!raw) return structuredCloneSafe(fallback);
+        if(!raw) return JSON.parse(JSON.stringify(fallback));
         return JSON.parse(raw);
       }catch{
-        return structuredCloneSafe(fallback);
+        return JSON.parse(JSON.stringify(fallback));
       }
     }
 
@@ -1275,8 +1517,29 @@
       localStorage.setItem(key, JSON.stringify(value));
     }
 
-    function structuredCloneSafe(obj){
-      return JSON.parse(JSON.stringify(obj));
+    function escapeHtml(str){
+      return String(str)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function normalizeText(value){
+      return String(value || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+    }
+
+    function getSpotImage(s){
+      return SPOT_IMAGES[s.name] || `https://picsum.photos/seed/${encodeURIComponent(s.name)}/900/600`;
+    }
+
+    function openMaps(lat, lon){
+      window.open(`https://www.google.com/maps?q=${lat},${lon}`, "_blank");
     }
 
     function isFavorite(id){
@@ -1290,47 +1553,53 @@
         state.favorites = [...state.favorites, id];
       }
       saveJson(STORAGE_KEYS.favorites, state.favorites);
-      updateCounts();
-      render();
+      renderAll();
       if(state.currentSpot?.id === id){
-        syncDetailFavoriteButton(id);
+        showSpotDetail(state.currentSpot);
       }
-    }
-
-    function syncDetailFavoriteButton(id){
-      const active = isFavorite(id);
-      detailFavBtn.textContent = active ? "❤️ Salvato" : "🤍 Preferito";
-      detailFavBtn.className = active ? "btn-danger" : "btn-secondary";
-    }
-
-    function setPlannerSlot(slot, spotId){
-      state.planner[slot] = spotId;
-      saveJson(STORAGE_KEYS.planner, state.planner);
-      updateCounts();
-      renderManualPlanner();
-    }
-
-    function clearPlannerSlot(slot){
-      state.planner[slot] = null;
-      saveJson(STORAGE_KEYS.planner, state.planner);
-      updateCounts();
-      renderManualPlanner();
-    }
-
-    function clearPlannerAll(){
-      state.planner = structuredCloneSafe(defaultPlanner);
-      saveJson(STORAGE_KEYS.planner, state.planner);
-      updateCounts();
-      renderManualPlanner();
     }
 
     function plannerFilledCount(){
       return ["alba","main","tramonto"].filter(k => !!state.planner[k]).length;
     }
 
-    function updateCounts(){
-      favCountEl.textContent = state.favorites.length;
-      plannerCountEl.textContent = `${plannerFilledCount()} / 3`;
+    function setPlannerSlot(slot, spotId){
+      state.planner[slot] = spotId;
+      saveJson(STORAGE_KEYS.planner, state.planner);
+      toast("Planner aggiornato");
+      renderPlannerBox();
+    }
+
+    function clearPlannerSlot(slot){
+      state.planner[slot] = null;
+      saveJson(STORAGE_KEYS.planner, state.planner);
+      renderPlannerBox();
+    }
+
+    function clearPlannerAll(){
+      state.planner = JSON.parse(JSON.stringify(defaultPlanner));
+      saveJson(STORAGE_KEYS.planner, state.planner);
+      renderPlannerBox();
+      toast("Planner svuotato");
+    }
+
+    function slotLabel(slot){
+      if(slot === "alba") return "Alba";
+      if(slot === "main") return "Attività";
+      return "Tramonto";
+    }
+
+    function currentPeriod(){
+      const h = new Date().getHours();
+      if(h < 9) return "alba";
+      if(h >= 17) return "tramonto";
+      return "giorno";
+    }
+
+    function levelLabel(v){
+      if(v === "core") return "top";
+      if(v === "secondary") return "belli";
+      return "extra";
     }
 
     function distKm(a,b,c,d){
@@ -1344,60 +1613,6 @@
       return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x)));
     }
 
-    function filteredSpots(){
-      return SPOTS.filter(s =>
-        (state.level === "all" || s.level === state.level) &&
-        (state.light === "all" || s.light === state.light) &&
-        (state.zone === "all" || s.zone === state.zone) &&
-        (state.activity === "all" || s.activity === state.activity) &&
-        (state.difficulty === "all" || s.difficulty === state.difficulty) &&
-        (state.favoritesFilter === "all" || isFavorite(s.id)) &&
-        (!state.search || s.name.toLowerCase().includes(state.search))
-      );
-    }
-
-    function currentFilterLabel(){
-      const parts = [];
-      if(state.level !== "all") parts.push(levelLabel(state.level));
-      if(state.light !== "all") parts.push(state.light);
-      if(state.zone !== "all") parts.push(state.zone);
-      if(state.activity !== "all") parts.push(state.activity);
-      if(state.difficulty !== "all") parts.push(state.difficulty);
-      if(state.favoritesFilter === "favorites") parts.push("preferiti");
-      return parts.length ? parts.join(" • ") : "Tutti";
-    }
-
-    function levelLabel(v){
-      if(v === "core") return "top";
-      if(v === "secondary") return "belli";
-      return "extra";
-    }
-
-    function levelBadge(v){
-      if(v === "core") return {txt:"🔥 TOP", cls:"lvl-core"};
-      if(v === "secondary") return {txt:"⭐ BELLO", cls:"lvl-secondary"};
-      return {txt:"• EXTRA", cls:"lvl-extra"};
-    }
-
-    function difficultyClass(v){
-      if(v === "facile") return "b-easy";
-      if(v === "medio") return "b-medium";
-      return "b-hard";
-    }
-
-    function badgeIconLight(v){
-      if(v === "alba") return "🌅";
-      if(v === "tramonto") return "🌇";
-      return "☀️";
-    }
-
-    function badgeIconActivity(v){
-      if(v === "trekking") return "🥾";
-      if(v === "mtb") return "🚵";
-      if(v === "relax") return "🌴";
-      return "📍";
-    }
-
     function displayDistance(d){
       if(d == null) return "distanza non disponibile";
       return `${d.toFixed(1)} km da te`;
@@ -1405,7 +1620,7 @@
 
     function weatherSuitability(spot){
       const w = state.weatherData;
-      if(!w) return { score:0, label:"meteo neutro", cls:"b-warn" };
+      if(!w) return { score:0, label:"meteo neutro", cls:"gold" };
 
       let score = 0;
 
@@ -1437,27 +1652,28 @@
       if(w.period === "tramonto" && spot.light === "tramonto") score += 2;
       if(w.period === "giorno" && spot.light === "giorno") score += 1;
 
-      if(score >= 4) return { score, label:"🔥 ottimo oggi", cls:"b-good" };
-      if(score <= -2) return { score, label:"⚠️ poco ideale", cls:"b-bad" };
-      return { score, label:"🙂 abbastanza valido", cls:"b-warn" };
+      if(score >= 4) return { score, label:"ottimo oggi", cls:"green" };
+      if(score <= -2) return { score, label:"meno ideale", cls:"pink" };
+      return { score, label:"molto valido", cls:"gold" };
     }
 
-    function fallbackImageForSpot(s){
-      return `https://picsum.photos/seed/${encodeURIComponent(s.name)}/900/600`;
-    }
-
-    function getSpotImage(s){
-      return SPOT_IMAGES[s.name] || fallbackImageForSpot(s);
-    }
-
-    function render(){
-      const items = filteredSpots().map(s => ({
+    function getAllSpotsWithMeta(){
+      return SPOTS.map(s => ({
         ...s,
         distance: state.userPos ? distKm(state.userPos.lat, state.userPos.lon, s.lat, s.lon) : null,
         weatherFit: weatherSuitability(s)
       }));
+    }
 
-      items.sort((a,b) => {
+    function getFilteredSpots(){
+      return getAllSpotsWithMeta().filter(s =>
+        (state.level === "all" || s.level === state.level) &&
+        (state.light === "all" || s.light === state.light) &&
+        (state.zone === "all" || s.zone === state.zone) &&
+        (state.activity === "all" || s.activity === state.activity) &&
+        (state.favoritesFilter === "all" || isFavorite(s.id)) &&
+        (!state.search || normalizeText(s.name).includes(normalizeText(state.search)))
+      ).sort((a,b) => {
         const levelOrder = { core:0, secondary:1, extra:2 };
         if(b.weatherFit.score !== a.weatherFit.score) return b.weatherFit.score - a.weatherFit.score;
         if(levelOrder[a.level] !== levelOrder[b.level]) return levelOrder[a.level] - levelOrder[b.level];
@@ -1466,559 +1682,472 @@
         if(b.distance == null) return -1;
         return a.distance - b.distance;
       });
-
-      resultNoteEl.textContent = `${items.length} spot`;
-      filterStateEl.textContent = currentFilterLabel();
-      updateCounts();
-
-      if(!items.length){
-        listEl.innerHTML = "";
-        emptyEl.style.display = "block";
-        return;
-      }
-
-      emptyEl.style.display = "none";
-
-      listEl.innerHTML = items.map(s => {
-        const lvl = levelBadge(s.level);
-        const favoriteActive = isFavorite(s.id);
-        return `
-          <article class="spot">
-            <div class="spot-top">
-              <div>
-                <h3 class="spot-name">${escapeHtml(s.name)}</h3>
-                <div class="spot-sub">${displayDistance(s.distance)}</div>
-              </div>
-
-              <div class="spot-top-right">
-                <button class="fav-btn ${favoriteActive ? "active" : ""}" onclick="toggleFavoriteById('${s.id}')" aria-label="Preferito">
-                  ${favoriteActive ? "❤️" : "🤍"}
-                </button>
-                <span class="pill ${lvl.cls}">${lvl.txt}</span>
-              </div>
-            </div>
-
-            <div class="badge-row">
-              <span class="badge b-light">${badgeIconLight(s.light)} ${escapeHtml(s.light)}</span>
-              <span class="badge b-zone">🧭 ${escapeHtml(s.zone)}</span>
-              <span class="badge b-act">${badgeIconActivity(s.activity)} ${escapeHtml(s.activity)}</span>
-              <span class="badge ${difficultyClass(s.difficulty)}">⚡ ${escapeHtml(s.difficulty)}</span>
-              <span class="badge ${s.weatherFit.cls}">${escapeHtml(s.weatherFit.label)}</span>
-            </div>
-
-            <div class="spot-desc">${escapeHtml(s.desc)}</div>
-
-            <div class="spot-actions">
-              <button class="btn-secondary" onclick="openDetail('${s.id}')">Dettagli</button>
-              <button class="btn-main" onclick="openMapsById('${s.id}')">Apri Maps</button>
-            </div>
-
-            <div class="spot-quick">
-              <button class="quick-btn" onclick="addToPlannerById('${s.id}','alba')">🌅 Planner alba</button>
-              <button class="quick-btn" onclick="addToPlannerById('${s.id}','main')">🥾 Planner attività</button>
-              <button class="quick-btn" onclick="addToPlannerById('${s.id}','tramonto')">🌇 Planner tramonto</button>
-            </div>
-          </article>
-        `;
-      }).join("");
     }
 
-    function findSpot(id){
-      return SPOTS.find(s => s.id === id);
+    function getMapFilteredSpots(){
+      const all = getAllSpotsWithMeta();
+      if(state.mapQuickFilter === "wow") return all.filter(s => TOP_WOW_NAMES.includes(s.name));
+      if(state.mapQuickFilter === "sunset") return all.filter(s => s.light === "tramonto");
+      if(state.mapQuickFilter === "alba") return all.filter(s => s.light === "alba");
+      if(state.mapQuickFilter === "favorites") return all.filter(s => isFavorite(s.id));
+      return all;
     }
 
-    window.toggleFavoriteById = function(id){
-      toggleFavorite(id);
-    };
-
-    window.addToPlannerById = function(id, slot){
-      const s = findSpot(id);
-      if(!s) return;
-      setPlannerSlot(slot, s.id);
-      showToastLikeMessage(`${s.name} aggiunto in ${slotLabel(slot)}.`);
-    };
-
-    window.openDetail = function(id){
-      const s = findSpot(id);
-      if(!s) return;
-      state.currentSpot = s;
-      const lvl = levelBadge(s.level);
-      const weatherFit = weatherSuitability(s);
-
-      detailTitle.textContent = s.name;
-      detailDesc.textContent = s.desc;
-      detailTip.textContent = `Suggerimento: ${s.tip}`;
-
-      detailBadges.innerHTML = `
-        <span class="pill ${lvl.cls}">${lvl.txt}</span>
-        <span class="badge b-light">${badgeIconLight(s.light)} ${escapeHtml(s.light)}</span>
-        <span class="badge b-zone">🧭 ${escapeHtml(s.zone)}</span>
-        <span class="badge b-act">${badgeIconActivity(s.activity)} ${escapeHtml(s.activity)}</span>
-        <span class="badge ${difficultyClass(s.difficulty)}">⚡ ${escapeHtml(s.difficulty)}</span>
-        <span class="badge ${weatherFit.cls}">${escapeHtml(weatherFit.label)}</span>
-      `;
-
-      syncDetailFavoriteButton(s.id);
-      detailImg.alt = s.name;
-      detailImg.src = getSpotImage(s);
-      detailImg.style.opacity = "1";
-
-      detailOverlay.classList.add("show");
-      document.body.classList.add("modal-open");
-    };
-
-    function closeDetail(){
-      detailOverlay.classList.remove("show");
-      document.body.classList.remove("modal-open");
-    }
-
-    detailOverlay.addEventListener("click", e => {
-      if(e.target === detailOverlay) closeDetail();
-    });
-    document.getElementById("closeDetailBtn").addEventListener("click", closeDetail);
-
-    detailFavBtn.addEventListener("click", () => {
-      if(!state.currentSpot) return;
-      toggleFavorite(state.currentSpot.id);
-    });
-
-    document.getElementById("googlePhotosBtn").addEventListener("click", () => {
-      if(!state.currentSpot) return;
-      const q = encodeURIComponent(state.currentSpot.name + " Madeira");
-      window.open(`https://www.google.com/search?q=${q}&tbm=isch`, "_blank");
-    });
-
-    document.getElementById("mapsBtn").addEventListener("click", () => {
-      if(!state.currentSpot) return;
-      openMaps(state.currentSpot.lat, state.currentSpot.lon);
-    });
-
-    document.getElementById("addAlbaBtn").addEventListener("click", () => {
-      if(!state.currentSpot) return;
-      setPlannerSlot("alba", state.currentSpot.id);
-      showToastLikeMessage(`${state.currentSpot.name} aggiunto in alba.`);
-    });
-
-    document.getElementById("addMainBtn").addEventListener("click", () => {
-      if(!state.currentSpot) return;
-      setPlannerSlot("main", state.currentSpot.id);
-      showToastLikeMessage(`${state.currentSpot.name} aggiunto in attività.`);
-    });
-
-    document.getElementById("addTramontoBtn").addEventListener("click", () => {
-      if(!state.currentSpot) return;
-      setPlannerSlot("tramonto", state.currentSpot.id);
-      showToastLikeMessage(`${state.currentSpot.name} aggiunto in tramonto.`);
-    });
-
-    function openMaps(lat, lon){
-      window.open(`https://www.google.com/maps?q=${lat},${lon}`, "_blank");
-    }
-
-    window.openMapsById = function(id){
-      const s = findSpot(id);
-      if(!s) return;
-      openMaps(s.lat, s.lon);
-    };
-
-    document.getElementById("spotNowBtn").addEventListener("click", () => {
+    function getBestSpotToday(){
       const desired = currentPeriod();
-      let pool = SPOTS.filter(s => s.light === desired);
-
-      if(state.zone !== "all") pool = pool.filter(s => s.zone === state.zone);
-      if(state.activity !== "all") pool = pool.filter(s => s.activity === state.activity);
-      if(state.difficulty !== "all") pool = pool.filter(s => s.difficulty === state.difficulty);
-      if(state.level !== "all") pool = pool.filter(s => s.level === state.level);
-      if(state.favoritesFilter === "favorites") pool = pool.filter(s => isFavorite(s.id));
-
-      if(!pool.length) pool = SPOTS.filter(s => s.light === desired);
-      if(!pool.length) pool = [...SPOTS];
-
-      pool = pool
-        .map(s => ({
-          ...s,
-          fit: weatherSuitability(s),
-          d: state.userPos ? distKm(state.userPos.lat, state.userPos.lon, s.lat, s.lon) : null
-        }))
-        .sort((a,b) => {
-          const levelOrder = { core:0, secondary:1, extra:2 };
-          if(b.fit.score !== a.fit.score) return b.fit.score - a.fit.score;
-          if(levelOrder[a.level] !== levelOrder[b.level]) return levelOrder[a.level] - levelOrder[b.level];
-          if(a.d == null && b.d == null) return 0;
-          if(a.d == null) return 1;
-          if(b.d == null) return -1;
-          return a.d - b.d;
-        });
-
-      openDetail(pool[0].id);
-    });
-
-    document.getElementById("dayBtn").addEventListener("click", () => {
-      const alba = bestSpot({ light:"alba", activity:["view","trekking","relax"] });
-      const main = bestSpot({ activity:["trekking","view","relax","mtb"], exclude:[alba?.id] });
-      const tram = bestSpot({ light:"tramonto", activity:["view","relax"], exclude:[alba?.id, main?.id] });
-
-      showPlanner(
-        "Giornata Madeira",
-        "Una giornata sensata in base all'ora e al meteo: partenza forte, blocco centrale, chiusura bella ma comoda.",
-        [
-          { kicker:"🌅 Alba", spot:alba, note:"Parti con la luce migliore e poca gente." },
-          { kicker:"🥾 Attività centrale", spot:main, note:"Qui metti il blocco principale della giornata." },
-          { kicker:"🌇 Chiusura", spot:tram, note:"Chiudi con un posto forte ma più rilassato." }
-        ]
-      );
-    });
-
-    document.getElementById("plannerBtn").addEventListener("click", () => {
-      renderManualPlanner();
-      manualPlannerOverlay.classList.add("show");
-      document.body.classList.add("modal-open");
-    });
-
-    document.getElementById("autofillPlannerBtn").addEventListener("click", () => {
-      const alba = bestSpot({ light:"alba", activity:["view","trekking","relax"] });
-      const main = bestSpot({ activity:["trekking","view","relax","mtb"], exclude:[alba?.id] });
-      const tram = bestSpot({ light:"tramonto", activity:["view","relax"], exclude:[alba?.id, main?.id] });
-
-      state.planner = {
-        alba: alba?.id || null,
-        main: main?.id || null,
-        tramonto: tram?.id || null
-      };
-      saveJson(STORAGE_KEYS.planner, state.planner);
-      updateCounts();
-      renderManualPlanner();
-    });
-
-    document.getElementById("clearPlannerBtn").addEventListener("click", () => {
-      clearPlannerAll();
-    });
-
-    document.getElementById("topBtn").addEventListener("click", () => {
-      const topIds = [
-        "Ponta de São Lourenço",
-        "Pico do Arieiro",
-        "Pico Ruivo Summit",
-        "Fanal Forest",
-        "Ribeira da Janela",
-        "Porto Moniz Pools",
-        "Cabo Girão",
-        "Levada do Caldeirão Verde",
-        "Ponta do Pargo Lighthouse",
-        "Eira do Serrado"
-      ];
-
-      const items = topIds.map(name => SPOTS.find(s => s.name === name)).filter(Boolean);
-      plannerTitle.textContent = "Top 10 Madeira";
-      plannerIntro.textContent = "I 10 spot più forti se vuoi vedere il meglio di Madeira senza perdere tempo in dubbi inutili.";
-      plannerList.innerHTML = items.map((s, i) => `
-        <div class="day-item">
-          <div class="day-kicker">#${i+1}</div>
-          <div class="day-main">${escapeHtml(s.name)}</div>
-          <div class="day-sub">${escapeHtml(s.desc)}</div>
-          <div class="mini-row">
-            <button class="btn-secondary mini-btn" onclick="openDetailFromPlanner('${s.id}')">Dettagli</button>
-            <button class="btn-main mini-btn" onclick="openMapsById('${s.id}')">Maps</button>
-            <button class="btn-ghost mini-btn" onclick="toggleFavoriteById('${s.id}')">❤️ Preferito</button>
-          </div>
-        </div>
-      `).join("");
-      plannerOverlay.classList.add("show");
-      document.body.classList.add("modal-open");
-    });
-
-    function currentPeriod(){
-      const h = new Date().getHours();
-      if(h < 9) return "alba";
-      if(h >= 17) return "tramonto";
-      return "giorno";
+      let pool = getAllSpotsWithMeta().filter(s => s.light === desired);
+      if(!pool.length) pool = getAllSpotsWithMeta();
+      return pool.sort((a,b) => b.weatherFit.score - a.weatherFit.score || a.distance - b.distance)[0] || null;
     }
 
-    function bestSpot({ light=null, activity=null, difficulty=null, exclude=[] }){
-      let pool = SPOTS.filter(s => !exclude.includes(s.id));
+    function getBestWowSpot(){
+      const pool = getAllSpotsWithMeta().filter(s => TOP_WOW_NAMES.includes(s.name));
+      return pool.sort((a,b) => b.weatherFit.score - a.weatherFit.score || a.distance - b.distance)[0] || null;
+    }
 
+    function getBestSunsetSpot(){
+      const pool = getAllSpotsWithMeta().filter(s => s.light === "tramonto");
+      return pool.sort((a,b) => b.weatherFit.score - a.weatherFit.score || a.distance - b.distance)[0] || null;
+    }
+
+    function bestSpot({ light=null, activity=null, exclude=[] }){
+      let pool = getAllSpotsWithMeta().filter(s => !exclude.includes(s.id));
       if(light) pool = pool.filter(s => s.light === light);
       if(activity) pool = pool.filter(s => activity.includes(s.activity));
-      if(difficulty) pool = pool.filter(s => difficulty.includes(s.difficulty));
       if(state.zone !== "all") pool = pool.filter(s => s.zone === state.zone);
       if(state.level !== "all") pool = pool.filter(s => s.level === state.level);
 
-      if(!pool.length){
-        pool = SPOTS.filter(s => !exclude.includes(s.id));
-        if(activity) pool = pool.filter(s => activity.includes(s.activity));
-        if(light) pool = pool.filter(s => s.light === light);
-      }
-
+      if(!pool.length) pool = getAllSpotsWithMeta().filter(s => !exclude.includes(s.id));
       if(!pool.length) return null;
 
-      const levelOrder = { core:0, secondary:1, extra:2 };
-
-      pool = pool
-        .map(s => ({
-          ...s,
-          fit: weatherSuitability(s),
-          d: state.userPos ? distKm(state.userPos.lat, state.userPos.lon, s.lat, s.lon) : null
-        }))
-        .sort((a,b) => {
-          if(b.fit.score !== a.fit.score) return b.fit.score - a.fit.score;
-          if(levelOrder[a.level] !== levelOrder[b.level]) return levelOrder[a.level] - levelOrder[b.level];
-          if(a.d == null && b.d == null) return 0;
-          if(a.d == null) return 1;
-          if(b.d == null) return -1;
-          return a.d - b.d;
-        });
-
-      return pool[0];
+      return pool.sort((a,b) => b.weatherFit.score - a.weatherFit.score || a.distance - b.distance)[0];
     }
 
-    function showPlanner(title, intro, rows){
-      plannerTitle.textContent = title;
-      plannerIntro.textContent = intro + (state.weatherNote ? " • " + state.weatherNote : "");
-      plannerList.innerHTML = rows.map(row => {
-        if(!row.spot){
-          return `
-            <div class="day-item">
-              <div class="day-kicker">${row.kicker}</div>
-              <div class="day-main">Nessuna proposta</div>
-              <div class="day-sub">Con i filtri attuali non ho trovato una tappa coerente.</div>
-            </div>
-          `;
-        }
-
-        const fit = weatherSuitability(row.spot);
-
-        return `
-          <div class="day-item">
-            <div class="day-kicker">${row.kicker}</div>
-            <div class="day-main">${escapeHtml(row.spot.name)}</div>
-            <div class="badge-row" style="margin-bottom:8px">
-              <span class="badge ${fit.cls}">${escapeHtml(fit.label)}</span>
-            </div>
-            <div class="day-sub">${escapeHtml(row.note)} ${escapeHtml(row.spot.desc)}</div>
-            <div class="mini-row">
-              <button class="btn-secondary mini-btn" onclick="openDetailFromPlanner('${row.spot.id}')">Dettagli</button>
-              <button class="btn-main mini-btn" onclick="openMapsById('${row.spot.id}')">Maps</button>
-            </div>
-          </div>
-        `;
-      }).join("");
-
-      plannerOverlay.classList.add("show");
-      document.body.classList.add("modal-open");
+    function toast(message){
+      const wrap = $("toastWrap");
+      const el = document.createElement("div");
+      el.className = "toast";
+      el.textContent = message;
+      wrap.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = "0";
+        el.style.transform = "translateY(8px)";
+        setTimeout(() => el.remove(), 180);
+      }, 2200);
     }
 
-    function renderManualPlanner(){
-      const slots = [
-        { key:"alba", kicker:"🌅 Alba", hint:"Metti uno spot da alba o apertura giornata." },
-        { key:"main", kicker:"🥾 Attività centrale", hint:"Metti il blocco principale della giornata." },
-        { key:"tramonto", kicker:"🌇 Tramonto", hint:"Metti la chiusura forte o più rilassata." }
-      ];
-
-      manualPlannerList.innerHTML = slots.map(slot => {
-        const spotId = state.planner[slot.key];
-        const spot = spotId ? findSpot(spotId) : null;
-
-        if(!spot){
-          return `
-            <div class="day-item">
-              <div class="slot-head">
-                <div class="day-kicker">${slot.kicker}</div>
-              </div>
-              <div class="slot-empty">${escapeHtml(slot.hint)}</div>
-            </div>
-          `;
-        }
-
-        const fit = weatherSuitability(spot);
-
-        return `
-          <div class="day-item">
-            <div class="slot-head">
-              <div class="day-kicker">${slot.kicker}</div>
-              <button class="btn-danger mini-btn" onclick="clearPlannerSlotPublic('${slot.key}')">Rimuovi</button>
-            </div>
-            <div class="day-main">${escapeHtml(spot.name)}</div>
-            <div class="badge-row" style="margin-bottom:8px">
-              <span class="badge b-light">${badgeIconLight(spot.light)} ${escapeHtml(spot.light)}</span>
-              <span class="badge b-zone">🧭 ${escapeHtml(spot.zone)}</span>
-              <span class="badge b-act">${badgeIconActivity(spot.activity)} ${escapeHtml(spot.activity)}</span>
-              <span class="badge ${fit.cls}">${escapeHtml(fit.label)}</span>
-            </div>
-            <div class="day-sub">${escapeHtml(spot.desc)}</div>
-            <div class="mini-row">
-              <button class="btn-secondary mini-btn" onclick="openDetailFromManual('${spot.id}')">Dettagli</button>
-              <button class="btn-main mini-btn" onclick="openMapsById('${spot.id}')">Maps</button>
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    window.clearPlannerSlotPublic = function(slot){
-      clearPlannerSlot(slot);
-    };
-
-    window.openDetailFromPlanner = function(id){
-      plannerOverlay.classList.remove("show");
-      openDetail(id);
-    };
-
-    window.openDetailFromManual = function(id){
-      manualPlannerOverlay.classList.remove("show");
-      openDetail(id);
-    };
-
-    function closePlanner(){
-      plannerOverlay.classList.remove("show");
-      document.body.classList.remove("modal-open");
-    }
-
-    function closeManualPlanner(){
-      manualPlannerOverlay.classList.remove("show");
-      document.body.classList.remove("modal-open");
-    }
-
-    plannerOverlay.addEventListener("click", e => {
-      if(e.target === plannerOverlay) closePlanner();
-    });
-    manualPlannerOverlay.addEventListener("click", e => {
-      if(e.target === manualPlannerOverlay) closeManualPlanner();
-    });
-
-    document.getElementById("closePlannerBtn").addEventListener("click", closePlanner);
-    document.getElementById("closeManualPlannerBtn").addEventListener("click", closeManualPlanner);
-
-    document.getElementById("mapBtn").addEventListener("click", () => {
-      mapModal.classList.add("show");
-      document.body.classList.add("modal-open");
-      initOrRefreshMap();
-    });
-
-    document.getElementById("closeMapBtn").addEventListener("click", () => {
-      mapModal.classList.remove("show");
-      document.body.classList.remove("modal-open");
-    });
-
-    document.getElementById("fitMapBtn").addEventListener("click", () => {
-      initOrRefreshMap(true);
-    });
-
-    function initOrRefreshMap(fitOnly=false){
-      if(!mapInstance){
-        mapInstance = L.map("map").setView([32.75,-16.95], 10);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution:"© OpenStreetMap"
-        }).addTo(mapInstance);
-        mapLayer = L.layerGroup().addTo(mapInstance);
-      }
-
-      mapLayer.clearLayers();
-
-      const items = filteredSpots();
-      const latlngs = [];
-
-      items.forEach(s => {
-        const marker = L.circleMarker([s.lat, s.lon], {
-          radius: s.level === "core" ? 8 : s.level === "secondary" ? 7 : 6,
-          color: markerColor(s.light),
-          weight: s.level === "core" ? 3 : 2,
-          fillColor: markerColor(s.light),
-          fillOpacity:.85
-        }).addTo(mapLayer);
-
-        const levelText = s.level === "core" ? "🔥 TOP" : s.level === "secondary" ? "⭐ Bello" : "• Extra";
-        const fitText = weatherSuitability(s).label;
-        marker.bindPopup(`
-          <strong>${escapeHtml(s.name)}</strong><br>
-          ${levelText} • ${escapeHtml(s.light)} • ${escapeHtml(s.zone)}<br>
-          ${escapeHtml(fitText)}<br>
-          <button onclick="openDetailFromPlanner('${s.id}')">Dettagli</button>
-        `);
-
-        latlngs.push([s.lat, s.lon]);
+    function switchPage(pageName){
+      state.activePage = pageName;
+      document.querySelectorAll(".page").forEach(page => {
+        page.classList.toggle("active", page.id === `page-${pageName}`);
+      });
+      document.querySelectorAll(".nav-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.page === pageName);
       });
 
-      setTimeout(() => mapInstance.invalidateSize(), 60);
+      if(!state.isMapFullscreen) {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
 
-      if(latlngs.length){
-        mapInstance.fitBounds(L.latLngBounds(latlngs).pad(0.18));
-      } else if(!fitOnly){
-        mapInstance.setView([32.75,-16.95], 10);
+      if(pageName === "map" && state.map){
+        setTimeout(() => state.map.invalidateSize(), 220);
       }
     }
 
-    function markerColor(light){
-      if(light === "alba") return "#f5c451";
-      if(light === "tramonto") return "#ff9696";
-      return "#71b8ff";
-    }
+    function toggleMapFullscreen(){
+      state.isMapFullscreen = !state.isMapFullscreen;
+      document.body.classList.toggle("fullscreen-map-active", state.isMapFullscreen);
+      $("appWrap").classList.toggle("hidden-for-map", state.isMapFullscreen);
+      $("bottomNav").classList.toggle("hidden-for-map", state.isMapFullscreen);
+      $("mapFullscreenBtn").textContent = state.isMapFullscreen ? "Chiudi mappa" : "Espandi mappa";
 
-    function slotLabel(slot){
-      if(slot === "alba") return "alba";
-      if(slot === "main") return "attività";
-      return "tramonto";
-    }
-
-    const toastWrap = document.getElementById("toastWrap");
-
-    function showToast(msg, type = "success", title = null){
-      const icons = { success:"✅", error:"⚠️", info:"ℹ️" };
-      const titles = { success:"Fatto", error:"Errore", info:"Info" };
-
-      const el = document.createElement("div");
-      el.className = `toast t-${type}`;
-      el.innerHTML = `
-        <div class="toast-icon">${icons[type] || "✅"}</div>
-        <div class="toast-body">
-          <div class="toast-title">${escapeHtml(title || titles[type] || "Fatto")}</div>
-          <div class="toast-msg">${escapeHtml(msg)}</div>
-        </div>
-      `;
-
-      toastWrap.appendChild(el);
+      if(state.isMapFullscreen){
+        document.querySelectorAll(".page").forEach(page => page.classList.remove("active"));
+        $("page-map").classList.add("active");
+      }else{
+        switchPage(state.activePage);
+      }
 
       setTimeout(() => {
-        el.classList.add("hiding");
-        setTimeout(() => el.remove(), 220);
-      }, 2800);
+        if(state.map) state.map.invalidateSize();
+      }, 260);
     }
 
-    // alias per compatibilità interna
-    function showToastLikeMessage(text){
-      showToast(text, "success", "Planner aggiornato");
+    function markerColor(spot){
+      if(TOP_WOW_NAMES.includes(spot.name)) return "#f5c451";
+      if(spot.light === "tramonto") return "#ff9fbc";
+      return "#59b6ff";
     }
 
-    function escapeHtml(str){
-      return String(str)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
+    function createMarkerIcon(color){
+      return L.divIcon({
+        className:"",
+        html: `
+          <div style="
+            width:18px;
+            height:18px;
+            border-radius:50%;
+            background:${color};
+            border:2px solid rgba(255,255,255,.9);
+            box-shadow:0 0 0 6px rgba(0,0,0,.14), 0 0 18px ${color}55;
+          "></div>
+        `,
+        iconSize:[18,18],
+        iconAnchor:[9,9],
+        popupAnchor:[0,-10]
+      });
+    }
+
+    function initMap(){
+      state.map = L.map("map", { zoomControl:true }).setView([32.75, -16.95], 10);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom:18,
+        attribution:"&copy; OpenStreetMap"
+      }).addTo(state.map);
+
+      renderMarkers();
+    }
+
+    function renderMarkers(){
+      if(!state.map) return;
+      state.markers.forEach(m => state.map.removeLayer(m));
+      state.markers = [];
+      state.markerBySpotId.clear();
+
+      const items = getMapFilteredSpots();
+      const latlngs = [];
+
+      items.forEach(spot => {
+        const marker = L.marker([spot.lat, spot.lon], {
+          icon:createMarkerIcon(markerColor(spot))
+        }).addTo(state.map);
+
+        marker.bindPopup(`
+          <div style="min-width:180px">
+            <div style="font-weight:800;font-size:15px;margin-bottom:6px">${escapeHtml(spot.name)}</div>
+            <div style="font-size:12px;color:#cfe0ef;margin-bottom:8px">${escapeHtml(spot.desc || "")}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <span style="font-size:11px;padding:5px 7px;border-radius:999px;background:#1a2638;border:1px solid #2c405d">${escapeHtml(spot.zone)}</span>
+              <span style="font-size:11px;padding:5px 7px;border-radius:999px;background:#1a2638;border:1px solid #2c405d">${escapeHtml(spot.light)}</span>
+            </div>
+          </div>
+        `);
+
+        marker.on("click", () => {
+          showSpotDetail(spot);
+        });
+
+        state.markers.push(marker);
+        state.markerBySpotId.set(spot.id, marker);
+        latlngs.push([spot.lat, spot.lon]);
+      });
+
+      if(latlngs.length){
+        state.map.fitBounds(L.latLngBounds(latlngs).pad(0.18));
+      }
     }
 
     function renderWeatherBox(){
       const w = state.weatherData;
       if(!w){
-        weatherBox.innerHTML = `
-          <div class="weather-main">⚠️ Meteo non disponibile</div>
-          <div class="weather-sub">Non sono riuscito a leggere le condizioni attuali.</div>
-        `;
+        $("tempNow").textContent = "—";
+        $("windNow").textContent = "—";
+        $("cloudNow").textContent = "—";
+        $("rainNow").textContent = "—";
+        $("weatherAlert").className = "alert warn";
+        $("weatherAlert").textContent = "Meteo non disponibile.";
         return;
       }
 
-      const tags = [];
-      tags.push(`<span class="weather-tag">🌡️ ${Math.round(w.temp)}°</span>`);
-      tags.push(`<span class="weather-tag">🌬️ ${Math.round(w.wind)} km/h</span>`);
-      tags.push(`<span class="weather-tag">☁️ ${Math.round(w.cloud)}%</span>`);
-      tags.push(`<span class="weather-tag">🌧️ ${Math.round(w.rain)}%</span>`);
-      tags.push(`<span class="weather-tag">${w.periodIcon} ${escapeHtml(w.periodLabel)}</span>`);
+      $("tempNow").textContent = `${Math.round(w.temp)}°`;
+      $("windNow").textContent = `${Math.round(w.wind)} km/h`;
+      $("cloudNow").textContent = `${Math.round(w.cloud)}%`;
+      $("rainNow").textContent = `${Math.round(w.rain)}%`;
 
-      weatherBox.innerHTML = `
-        <div class="weather-main">${escapeHtml(w.headline)}</div>
-        <div class="weather-sub">${escapeHtml(w.advice)}</div>
-        <div class="weather-tags">${tags.join("")}</div>
+      let cls = "ok";
+      if(w.rain >= 55 || w.wind >= 32) cls = "warn";
+      if(w.rain >= 70 || w.wind >= 45) cls = "danger";
+
+      $("weatherAlert").className = `alert ${cls}`;
+      $("weatherAlert").textContent = `${w.headline} — ${w.advice}`;
+    }
+
+    function renderHomeCards(){
+      const bestToday = getBestSpotToday();
+      const bestWow = getBestWowSpot();
+      const bestSunset = getBestSunsetSpot();
+
+      $("bestTodayTitle").textContent = bestToday ? bestToday.name : "—";
+      $("bestTodayDesc").textContent = bestToday ? bestToday.desc : "Nessuna proposta.";
+
+      $("bestWowTitle").textContent = bestWow ? bestWow.name : "—";
+      $("bestWowDesc").textContent = bestWow ? bestWow.tip : "Nessuna proposta.";
+
+      $("bestSunsetTitle").textContent = bestSunset ? bestSunset.name : "—";
+      $("bestSunsetDesc").textContent = bestSunset ? bestSunset.tip : "Nessuna proposta.";
+    }
+
+    function renderTopLists(){
+      const wow = TOP_WOW_NAMES.map(name => SPOTS.find(s => s.name === name)).filter(Boolean);
+      const sunset = TOP_SUNSET_NAMES.map(name => SPOTS.find(s => s.name === name)).filter(Boolean);
+
+      $("topWowList").innerHTML = wow.map((s, i) => `
+        <div class="featured-card wow" data-top-id="${escapeHtml(s.id)}">
+          <div class="featured-rank">${i + 1}</div>
+          <div>
+            <div class="featured-name">${escapeHtml(s.name)}</div>
+            <div class="featured-desc">${escapeHtml(s.desc)}</div>
+            <div class="featured-badge">wow spot</div>
+          </div>
+        </div>
+      `).join("");
+
+      $("topSunsetList").innerHTML = sunset.map((s, i) => `
+        <div class="featured-card sunset" data-sunset-id="${escapeHtml(s.id)}">
+          <div class="featured-rank">${i + 1}</div>
+          <div>
+            <div class="featured-name">${escapeHtml(s.name)}</div>
+            <div class="featured-desc">${escapeHtml(s.desc)}</div>
+            <div class="featured-badge">tramonto top</div>
+          </div>
+        </div>
+      `).join("");
+
+      [...document.querySelectorAll("[data-top-id]")].forEach(el => {
+        el.addEventListener("click", () => {
+          const s = SPOTS.find(x => x.id === el.dataset.topId);
+          if(s){
+            showSpotDetail(s);
+            switchPage("detail");
+          }
+        });
+      });
+
+      [...document.querySelectorAll("[data-sunset-id]")].forEach(el => {
+        el.addEventListener("click", () => {
+          const s = SPOTS.find(x => x.id === el.dataset.sunsetId);
+          if(s){
+            showSpotDetail(s);
+            switchPage("detail");
+          }
+        });
+      });
+    }
+
+    function levelTag(level){
+      if(level === "core") return { text:"top", cls:"gold" };
+      if(level === "secondary") return { text:"bello", cls:"blue" };
+      return { text:"extra", cls:"green" };
+    }
+
+    function fitTag(fit){
+      if(fit.cls === "green") return { text:fit.label, cls:"green" };
+      if(fit.cls === "pink") return { text:fit.label, cls:"pink" };
+      return { text:fit.label, cls:"gold" };
+    }
+
+    function renderSpotList(){
+      const items = getFilteredSpots();
+      $("resultNote").textContent = `${items.length} spot · filtro: ${currentFilterLabel()}`;
+
+      if(!items.length){
+        $("spotList").innerHTML = `<div class="detail-empty">Nessuno spot con questi filtri.</div>`;
+        return;
+      }
+
+      $("spotList").innerHTML = items.map(s => {
+        const lvl = levelTag(s.level);
+        const fit = fitTag(s.weatherFit);
+
+        return `
+          <div class="spot-card" data-spot-id="${escapeHtml(s.id)}">
+            <div class="spot-head">
+              <div>
+                <div class="spot-name">${escapeHtml(s.name)}</div>
+                <div class="spot-sub">${escapeHtml(displayDistance(s.distance))}</div>
+              </div>
+              <button class="fav-btn" data-fav-id="${escapeHtml(s.id)}" type="button">${isFavorite(s.id) ? "★" : "☆"}</button>
+            </div>
+
+            <div class="spot-meta">
+              <span class="tag ${lvl.cls}">${escapeHtml(lvl.text)}</span>
+              <span class="tag blue">${escapeHtml(s.zone)}</span>
+              <span class="tag">${escapeHtml(s.activity)}</span>
+              <span class="tag">${escapeHtml(s.difficulty)}</span>
+              <span class="tag pink">${escapeHtml(s.light)}</span>
+              <span class="tag ${fit.cls}">${escapeHtml(fit.text)}</span>
+              ${TOP_WOW_NAMES.includes(s.name) ? `<span class="tag gold">wow</span>` : ``}
+              ${TOP_SUNSET_NAMES.includes(s.name) ? `<span class="tag pink">tramonto top</span>` : ``}
+            </div>
+
+            <div class="spot-desc">${escapeHtml(s.desc)}</div>
+          </div>
+        `;
+      }).join("");
+
+      [...document.querySelectorAll("[data-spot-id]")].forEach(card => {
+        card.addEventListener("click", (e) => {
+          if(e.target.matches("[data-fav-id]")) return;
+          const s = SPOTS.find(x => x.id === card.dataset.spotId);
+          if(s){
+            showSpotDetail(s);
+            switchPage("detail");
+          }
+        });
+      });
+
+      [...document.querySelectorAll("[data-fav-id]")].forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggleFavorite(btn.dataset.favId);
+        });
+      });
+    }
+
+    function renderPlannerBox(){
+      const slots = [
+        { key:"alba", title:"Alba", hint:"Aggiungi uno spot da alba." },
+        { key:"main", title:"Attività", hint:"Aggiungi lo spot centrale della giornata." },
+        { key:"tramonto", title:"Tramonto", hint:"Aggiungi la chiusura serale." }
+      ];
+
+      $("plannerBox").innerHTML = slots.map(slot => {
+        const spotId = state.planner[slot.key];
+        const spot = spotId ? SPOTS.find(s => s.id === spotId) : null;
+
+        if(!spot){
+          return `
+            <div class="planner-slot">
+              <div class="planner-slot-head">
+                <div class="planner-slot-title">${slot.title}</div>
+              </div>
+              <div class="planner-slot-sub">${slot.hint}</div>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="planner-slot">
+            <div class="planner-slot-head">
+              <div class="planner-slot-title">${slot.title}</div>
+              <button class="btn btn-secondary" data-clear-slot="${slot.key}" type="button" style="width:auto;padding:8px 12px">Rimuovi</button>
+            </div>
+            <div class="planner-slot-name">${escapeHtml(spot.name)}</div>
+            <div class="planner-slot-sub">${escapeHtml(spot.desc)}</div>
+          </div>
+        `;
+      }).join("");
+
+      [...document.querySelectorAll("[data-clear-slot]")].forEach(btn => {
+        btn.addEventListener("click", () => clearPlannerSlot(btn.dataset.clearSlot));
+      });
+    }
+
+    function currentFilterLabel(){
+      const parts = [];
+      if(state.level !== "all") parts.push(levelLabel(state.level));
+      if(state.light !== "all") parts.push(state.light);
+      if(state.zone !== "all") parts.push(state.zone);
+      if(state.activity !== "all") parts.push(state.activity);
+      if(state.favoritesFilter === "favorites") parts.push("preferiti");
+      if(state.search) parts.push("ricerca");
+      return parts.length ? parts.join(" • ") : "tutti";
+    }
+
+    function showSpotDetail(spot){
+      state.currentSpot = spot;
+
+      const fit = weatherSuitability(spot);
+      const lvl = levelTag(spot.level);
+
+      $("spotDetail").innerHTML = `
+        <div class="detail-hero" style="background-image:
+          linear-gradient(180deg, rgba(4,8,14,.10), rgba(4,8,14,.82)),
+          url('${getSpotImage(spot)}')">
+          <div class="detail-hero-inner">
+            <h3 class="detail-title">${escapeHtml(spot.name)}</h3>
+            <div class="detail-sub">${escapeHtml(spot.desc)}</div>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-box">
+            <div class="k">Livello</div>
+            <div class="v">${escapeHtml(lvl.text)}</div>
+          </div>
+          <div class="detail-box">
+            <div class="k">Zona</div>
+            <div class="v">${escapeHtml(spot.zone)}</div>
+          </div>
+          <div class="detail-box">
+            <div class="k">Luce ideale</div>
+            <div class="v">${escapeHtml(spot.light)}</div>
+          </div>
+          <div class="detail-box">
+            <div class="k">Attività</div>
+            <div class="v">${escapeHtml(spot.activity)}</div>
+          </div>
+          <div class="detail-box">
+            <div class="k">Difficoltà</div>
+            <div class="v">${escapeHtml(spot.difficulty)}</div>
+          </div>
+          <div class="detail-box">
+            <div class="k">Valutazione oggi</div>
+            <div class="v">${escapeHtml(fit.label)}</div>
+          </div>
+        </div>
+
+        <div class="spot-meta">
+          <span class="tag ${lvl.cls}">${escapeHtml(lvl.text)}</span>
+          <span class="tag blue">${escapeHtml(spot.zone)}</span>
+          <span class="tag pink">${escapeHtml(spot.light)}</span>
+          <span class="tag">${escapeHtml(spot.activity)}</span>
+          <span class="tag">${escapeHtml(spot.difficulty)}</span>
+          <span class="tag ${fit.cls === "green" ? "green" : fit.cls === "pink" ? "pink" : "gold"}">${escapeHtml(fit.label)}</span>
+          ${TOP_WOW_NAMES.includes(spot.name) ? `<span class="tag gold">wow spot</span>` : ``}
+          ${TOP_SUNSET_NAMES.includes(spot.name) ? `<span class="tag pink">tramonto top</span>` : ``}
+          ${isFavorite(spot.id) ? `<span class="tag gold">preferito</span>` : ``}
+        </div>
+
+        <div class="detail-section">
+          <h3>Consiglio pratico</h3>
+          <p>${escapeHtml(spot.tip)}</p>
+        </div>
+
+        <div class="detail-section">
+          <h3>Azioni</h3>
+          <div class="action-grid">
+            <button class="btn btn-primary" id="detailMapBtn" type="button">Apri sulla mappa</button>
+            <a class="btn btn-secondary" href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank" rel="noopener noreferrer">Apri in Google Maps</a>
+            <button class="btn btn-secondary" id="detailFavBtn" type="button">${isFavorite(spot.id) ? "Rimuovi preferito" : "Salva preferito"}</button>
+            <a class="btn btn-secondary" href="https://www.google.com/search?q=${encodeURIComponent(spot.name + " Madeira")}&tbm=isch" target="_blank" rel="noopener noreferrer">Vedi foto reali</a>
+            <button class="btn btn-secondary" id="detailAlbaBtn" type="button">Aggiungi ad Alba</button>
+            <button class="btn btn-secondary" id="detailMainBtn" type="button">Aggiungi ad Attività</button>
+            <button class="btn btn-secondary" id="detailSunsetBtn" type="button">Aggiungi a Tramonto</button>
+          </div>
+        </div>
       `;
+
+      $("detailMapBtn").addEventListener("click", () => centerSpot(spot.id));
+      $("detailFavBtn").addEventListener("click", () => toggleFavorite(spot.id));
+      $("detailAlbaBtn").addEventListener("click", () => setPlannerSlot("alba", spot.id));
+      $("detailMainBtn").addEventListener("click", () => setPlannerSlot("main", spot.id));
+      $("detailSunsetBtn").addEventListener("click", () => setPlannerSlot("tramonto", spot.id));
+    }
+
+    function centerSpot(id){
+      const spot = SPOTS.find(s => s.id === id);
+      if(!spot) return;
+
+      switchPage("map");
+      setTimeout(() => {
+        state.map.setView([spot.lat, spot.lon], 13, { animate:true });
+        const marker = state.markerBySpotId.get(id);
+        if(marker) marker.openPopup();
+      }, 180);
+
+      showSpotDetail(spot);
     }
 
     async function loadWeather(){
@@ -2035,69 +2164,184 @@
         const rain = data?.hourly?.precipitation_probability?.[0] ?? 0;
 
         const period = currentPeriod();
-        const periodLabel = period === "alba" ? "momento alba" : period === "tramonto" ? "momento tramonto" : "fascia giorno";
-        const periodIcon = period === "alba" ? "🌅" : period === "tramonto" ? "🌇" : "☀️";
 
-        let headline = "🌤️ Meteo flessibile";
+        let headline = "Meteo flessibile";
         let advice = "Giornata abbastanza aperta: puoi muoverti tra view, trekking e spot relax.";
 
         if(rain >= 55){
-          headline = "🌧️ Pioggia probabile";
+          headline = "Pioggia probabile";
           advice = "Meglio foreste, levada più riparate, paesi o spot relax. Evita creste esposte e viewpoint troppo aperti.";
         }else if(wind >= 32){
-          headline = "🌬️ Vento forte";
+          headline = "Vento forte";
           advice = "Meglio zone riparate, paesi o passeggiate facili. Evita picchi, creste e punti molto esposti.";
         }else if(cloud >= 70){
-          headline = "☁️ Cielo chiuso o molto coperto";
+          headline = "Cielo coperto";
           advice = "Buona giornata per foreste, atmosfere nebbiose e trekking immersivi. Meno ideale per tramonti puliti.";
         }else if(cloud <= 35 && rain < 25){
           if(period === "tramonto"){
-            headline = "🔥 Finestra ottima per tramonto";
+            headline = "Finestra ottima per tramonto";
             advice = "Punta viewpoint forti, scogliere e costa ovest/sud: oggi la luce può rendere molto bene.";
           }else if(period === "alba"){
-            headline = "🌅 Finestra ottima per alba";
+            headline = "Finestra ottima per alba";
             advice = "Punta spot est, montagne o viewpoint iconici: condizioni buone per partire forte.";
           }else{
-            headline = "☀️ Ottimo meteo outdoor";
+            headline = "Ottimo meteo outdoor";
             advice = "Giornata buona per panorami, trekking e spot fotografici aperti.";
           }
         }
 
-        state.weatherData = {
-          temp, wind, cloud, rain,
-          period, periodLabel, periodIcon,
-          headline, advice
-        };
-
-        state.weatherNote = `${headline} — ${advice}`;
-        renderWeatherBox();
-        render();
-      }catch(e){
+        state.weatherData = { temp, wind, cloud, rain, period, headline, advice };
+      }catch{
         state.weatherData = null;
-        state.weatherNote = "";
-        renderWeatherBox();
       }
+
+      renderWeatherBox();
+      renderHomeCards();
+      renderSpotList();
+      renderMarkers();
+      if(state.currentSpot) showSpotDetail(state.currentSpot);
     }
 
-    render();
-    renderManualPlanner();
-    updateCounts();
-    loadWeather();
-
-    window.addEventListener("load", () => {
-      setTimeout(() => {
-        const splash = document.getElementById("splashScreen");
-        const app = document.querySelector(".app");
-        if(app) app.classList.add("appReady");
-        if(!splash) return;
-        splash.style.opacity = "0";
-        setTimeout(() => splash.remove(), 600);
-      }, 900);
-    });
-
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js");
+    function renderAll(){
+      $("eyebrowRegion").textContent = `Zona attiva: Madeira • ${SPOTS.length} spot`;
+      renderHomeCards();
+      renderWeatherBox();
+      renderTopLists();
+      renderSpotList();
+      renderPlannerBox();
+      renderMarkers();
+      if(state.currentSpot) showSpotDetail(state.currentSpot);
     }
+
+    function bindChipGroup(id, stateKey, datasetKey){
+      document.getElementById(id).addEventListener("click", e => {
+        const btn = e.target.closest(`[data-${datasetKey}]`);
+        if(!btn) return;
+        [...document.querySelectorAll(`#${id} .chip`)].forEach(x => x.classList.remove("active"));
+        btn.classList.add("active");
+        state[stateKey] = btn.dataset[datasetKey];
+        renderAll();
+      });
+    }
+
+    function bindEvents(){
+      bindChipGroup("levelChips", "level", "level");
+      bindChipGroup("lightChips", "light", "light");
+      bindChipGroup("zoneChips", "zone", "zone");
+      bindChipGroup("activityChips", "activity", "activity");
+      bindChipGroup("favoriteChips", "favoritesFilter", "favoritesfilter");
+      bindChipGroup("mapQuickFilters", "mapQuickFilter", "quick");
+
+      [...document.querySelectorAll(".nav-btn")].forEach(btn => {
+        btn.addEventListener("click", () => switchPage(btn.dataset.page));
+      });
+
+      $("searchInput").addEventListener("input", () => {
+        state.search = $("searchInput").value.trim();
+        renderSpotList();
+      });
+
+      $("searchBtn").addEventListener("click", () => {
+        const q = $("searchInput").value.trim();
+        if(!q) return;
+        const found = SPOTS.find(s => normalizeText(s.name).includes(normalizeText(q)));
+        if(found){
+          showSpotDetail(found);
+          switchPage("detail");
+          toast("Spot trovato");
+        }else{
+          toast("Nessuno spot trovato");
+        }
+      });
+
+      $("spotNowBtn").addEventListener("click", () => {
+        const s = getBestSpotToday();
+        if(s){
+          showSpotDetail(s);
+          switchPage("detail");
+        }
+      });
+
+      $("dayBtn").addEventListener("click", () => {
+        const alba = bestSpot({ light:"alba", activity:["view","trekking","relax"] });
+        const main = bestSpot({ activity:["trekking","view","relax","mtb"], exclude:[alba?.id] });
+        const tram = bestSpot({ light:"tramonto", activity:["view","relax"], exclude:[alba?.id, main?.id] });
+
+        if(alba) state.planner.alba = alba.id;
+        if(main) state.planner.main = main.id;
+        if(tram) state.planner.tramonto = tram.id;
+        saveJson(STORAGE_KEYS.planner, state.planner);
+        renderPlannerBox();
+        toast("Planner smart creato");
+        switchPage("home");
+      });
+
+      $("autofillPlannerBtn").addEventListener("click", () => {
+        const alba = bestSpot({ light:"alba", activity:["view","trekking","relax"] });
+        const main = bestSpot({ activity:["trekking","view","relax","mtb"], exclude:[alba?.id] });
+        const tram = bestSpot({ light:"tramonto", activity:["view","relax"], exclude:[alba?.id, main?.id] });
+
+        state.planner = {
+          alba: alba?.id || null,
+          main: main?.id || null,
+          tramonto: tram?.id || null
+        };
+        saveJson(STORAGE_KEYS.planner, state.planner);
+        renderPlannerBox();
+        toast("Planner auto compilato");
+      });
+
+      $("plannerOpenBtn").addEventListener("click", () => switchPage("home"));
+      $("clearPlannerBtn").addEventListener("click", clearPlannerAll);
+
+      $("gpsBtn").addEventListener("click", () => {
+        if(!navigator.geolocation){
+          toast("GPS non disponibile");
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            state.userPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+            renderAll();
+            toast("Posizione aggiornata");
+          },
+          () => toast("Permesso GPS negato"),
+          { enableHighAccuracy:true, timeout:8000 }
+        );
+      });
+
+      $("mapFullscreenBtn").addEventListener("click", toggleMapFullscreen);
+
+      window.addEventListener("orientationchange", () => {
+        setTimeout(() => state.map && state.map.invalidateSize(), 300);
+      });
+    }
+
+    function initApp(){
+      bindEvents();
+      initMap();
+      renderAll();
+      loadWeather();
+
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          state.userPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+          renderAll();
+        },
+        () => {},
+        { enableHighAccuracy:true, timeout:8000 }
+      );
+
+      if("serviceWorker" in navigator){
+        navigator.serviceWorker.register("service-worker.js").catch(() => {});
+      }
+
+      window.addEventListener("load", () => {
+        setTimeout(() => $("splash").classList.add("hide"), 850);
+      });
+    }
+
+    initApp();
   </script>
 </body>
 </html>
