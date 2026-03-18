@@ -565,6 +565,72 @@
       .spot-quick{grid-template-columns:1fr}
       .modal-actions{grid-template-columns:1fr}
     }
+
+    /* ── Toast system ── */
+    .toastWrap{
+      position:fixed;
+      bottom:calc(24px + env(safe-area-inset-bottom));
+      left:50%;
+      transform:translateX(-50%);
+      display:flex;
+      flex-direction:column-reverse;
+      align-items:center;
+      gap:8px;
+      z-index:99999;
+      pointer-events:none;
+    }
+
+    .toast{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      padding:12px 14px;
+      border-radius:16px;
+      background:#1a2438;
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:0 12px 28px rgba(0,0,0,.35);
+      min-width:220px;
+      max-width:min(360px, 90vw);
+      pointer-events:auto;
+      animation:toastIn .22s cubic-bezier(.22,1,.36,1) both;
+    }
+
+    .toast.hiding{
+      animation:toastOut .2s ease forwards;
+    }
+
+    @keyframes toastIn{
+      from{opacity:0;transform:translateY(10px) scale(.96)}
+      to{opacity:1;transform:translateY(0) scale(1)}
+    }
+
+    @keyframes toastOut{
+      from{opacity:1;transform:translateY(0) scale(1)}
+      to{opacity:0;transform:translateY(6px) scale(.97)}
+    }
+
+    .toast-icon{font-size:1rem;flex-shrink:0;margin-top:1px}
+
+    .toast-body{flex:1}
+
+    .toast-title{
+      font-weight:800;
+      font-size:.82rem;
+      margin-bottom:2px;
+    }
+
+    .toast-msg{
+      font-size:.82rem;
+      color:var(--muted);
+      line-height:1.35;
+    }
+
+    .toast.t-success{border-color:rgba(105,218,164,.22);background:rgba(14,28,22,.95)}
+    .toast.t-success .toast-title{color:#69daa4}
+    .toast.t-error{border-color:rgba(255,150,150,.22);background:rgba(28,14,14,.95)}
+    .toast.t-error .toast-title{color:#ff9696}
+    .toast.t-info{border-color:rgba(113,184,255,.20);background:rgba(12,20,34,.95)}
+    .toast.t-info .toast-title{color:#71b8ff}
   </style>
 </head>
 <body>
@@ -761,6 +827,8 @@
       </div>
     </div>
   </div>
+
+  <div id="toastWrap" class="toastWrap"></div>
 
   <div class="overlay" id="mapModal">
     <div id="mapWrap">
@@ -1821,12 +1889,33 @@
       return "tramonto";
     }
 
-    function showToastLikeMessage(text){
-      weatherBox.innerHTML = `
-        <div class="weather-main">✅ Azione eseguita</div>
-        <div class="weather-sub">${escapeHtml(text)}</div>
+    const toastWrap = document.getElementById("toastWrap");
+
+    function showToast(msg, type = "success", title = null){
+      const icons = { success:"✅", error:"⚠️", info:"ℹ️" };
+      const titles = { success:"Fatto", error:"Errore", info:"Info" };
+
+      const el = document.createElement("div");
+      el.className = `toast t-${type}`;
+      el.innerHTML = `
+        <div class="toast-icon">${icons[type] || "✅"}</div>
+        <div class="toast-body">
+          <div class="toast-title">${escapeHtml(title || titles[type] || "Fatto")}</div>
+          <div class="toast-msg">${escapeHtml(msg)}</div>
+        </div>
       `;
-      setTimeout(() => renderWeatherBox(), 1400);
+
+      toastWrap.appendChild(el);
+
+      setTimeout(() => {
+        el.classList.add("hiding");
+        setTimeout(() => el.remove(), 220);
+      }, 2800);
+    }
+
+    // alias per compatibilità interna
+    function showToastLikeMessage(text){
+      showToast(text, "success", "Planner aggiornato");
     }
 
     function escapeHtml(str){
