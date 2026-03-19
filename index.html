@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
   <title>Travel & Sail Planner</title>
 
   <link rel="manifest" href="manifest.json">
@@ -22,12 +22,12 @@
     <div class="splash-card">
       <div class="splash-emoji">🧭</div>
       <div class="splash-title">Travel &amp; Sail Planner</div>
-      <div class="splash-sub">Travel mode oggi. Sail mode pronta per quando ti serve.</div>
+      <div class="splash-sub">Travel oggi. Sail pronta per quando ti serve.</div>
       <div class="splash-bar"><div></div></div>
     </div>
   </div>
 
-  <div class="wrap" id="appWrap">
+  <div class="wrap">
     <section class="hero">
       <div class="hero-top">
         <div class="eyebrow">
@@ -47,7 +47,7 @@
         </label>
       </div>
 
-      <h1>Scopri meglio il posto.<br>Vai negli spot giusti.</h1>
+      <h1 id="heroTitle">Scopri meglio il posto.<br>Vai negli spot giusti.</h1>
 
       <p id="heroDescription">
         Guida travel e outdoor con mappa, spot wow, tramonti, planner giornata e una Sail mode pronta per vento, onde e spot vela.
@@ -129,7 +129,7 @@
         <div class="featured-panel glass">
           <div class="featured-head">
             <div class="featured-sub" id="topBox1Sub">I più forti del posto</div>
-            <h2 class="featured-title" id="topBox1Title">Top 10 wow</h2>
+            <h2 class="featured-title" id="topBox1Title">Top wow</h2>
           </div>
           <div id="topWowList" class="featured-scroll"></div>
         </div>
@@ -137,7 +137,7 @@
         <div class="featured-panel glass">
           <div class="featured-head">
             <div class="featured-sub" id="topBox2Sub">Luce serale</div>
-            <h2 class="featured-title" id="topBox2Title">Top 10 tramonti</h2>
+            <h2 class="featured-title" id="topBox2Title">Top tramonti</h2>
           </div>
           <div id="topSunsetList" class="featured-scroll"></div>
         </div>
@@ -162,6 +162,7 @@
       <div class="stack">
         <div class="panel glass subtoolbar">
           <h2>Filtri spot</h2>
+
           <div id="travelFilters">
             <div class="toolbar" id="levelChips"></div>
             <div class="toolbar" id="lightChips"></div>
@@ -226,8 +227,8 @@
 
   <div class="toast-wrap" id="toastWrap"></div>
 
-  <script src="app.js"></script>
-  <script src="ui.js"></script>
   <script src="sail.js"></script>
+  <script src="ui.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

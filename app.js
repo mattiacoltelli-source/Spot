@@ -49,17 +49,17 @@
     return document.getElementById(id);
   }
 
-  function deepCopy(v) {
-    return JSON.parse(JSON.stringify(v));
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
   }
 
   function loadJson(key, fallback) {
     try {
       const raw = localStorage.getItem(key);
-      if (!raw) return deepCopy(fallback);
+      if (!raw) return clone(fallback);
       return JSON.parse(raw);
     } catch {
-      return deepCopy(fallback);
+      return clone(fallback);
     }
   }
 
@@ -99,7 +99,10 @@
 
   function formatTime(dateObj) {
     if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) return "—";
-    return dateObj.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+    return dateObj.toLocaleTimeString("it-IT", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
   }
 
   function getMinutesDiff(from, to) {
@@ -137,8 +140,11 @@
   }
 
   function toggleFavorite(id) {
-    if (isFavorite(id)) APP.favorites = APP.favorites.filter(x => x !== id);
-    else APP.favorites = [...APP.favorites, id];
+    if (isFavorite(id)) {
+      APP.favorites = APP.favorites.filter(x => x !== id);
+    } else {
+      APP.favorites = [...APP.favorites, id];
+    }
 
     saveJson(STORAGE_KEYS.favorites, APP.favorites);
     renderAll();
@@ -162,7 +168,7 @@
   }
 
   function clearPlannerAll() {
-    APP.planner = deepCopy(DEFAULT_PLANNER);
+    APP.planner = clone(DEFAULT_PLANNER);
     saveJson(STORAGE_KEYS.planner, APP.planner);
     renderPlannerBox();
     toast("Planner svuotato");
@@ -296,13 +302,29 @@
     )[0] || null;
   }
 
-  function bestSpot({ light = null, activity = null, exclude = [] }) {
-    let pool = getAllSpotsWithMeta().filter(s => !exclude.includes(s.id));
-    if (light) pool = pool.filter(s => s.light === light);
-    if (activity) pool = pool.filter(s => activity.includes(s.activity));
-    if (APP.zone !== "all") pool = pool.filter(s => s.zone === APP.zone);
-    if (APP.level !== "all") pool = pool.filter(s => s.level === APP.level);
-    if (!pool.length) pool = getAllSpotsWithMeta().filter(s => !exclude.includes(s.id));
+  function bestSpot(options) {
+    let pool = getAllSpotsWithMeta();
+
+    if (options.light) {
+      pool = pool.filter(s => s.light === options.light);
+    }
+
+    if (options.activity) {
+      pool = pool.filter(s => options.activity.includes(s.activity));
+    }
+
+    if (options.exclude?.length) {
+      pool = pool.filter(s => !options.exclude.includes(s.id));
+    }
+
+    if (APP.zone !== "all") {
+      pool = pool.filter(s => s.zone === APP.zone);
+    }
+
+    if (APP.level !== "all") {
+      pool = pool.filter(s => s.level === APP.level);
+    }
+
     if (!pool.length) return null;
 
     return pool.sort((a, b) =>
@@ -313,8 +335,8 @@
   function getSunPhaseInfo() {
     if (!APP.sunTimes?.sunset) {
       return {
-        clockText: "🌇 Tramonto —",
-        phaseText: "✨ Luce da leggere",
+        clockText: "Tramonto —",
+        phaseText: "Luce da leggere",
         mainText: "Sto leggendo la luce di oggi",
         subText: "Fra poco trovi countdown e stato tramonto.",
         timeText: "—"
@@ -329,8 +351,8 @@
 
     if (now < sunrise) {
       return {
-        clockText: `🌇 Tramonto ${formatTime(sunset)}`,
-        phaseText: "🌄 Prima dell'alba",
+        clockText: `Tramonto ${formatTime(sunset)}`,
+        phaseText: "Prima dell'alba",
         mainText: "Luce ancora chiusa",
         subText: "La giornata deve ancora aprirsi. Per spot alba, stai già guardando la finestra giusta.",
         timeText: formatCountdown(getMinutesDiff(now, sunrise))
@@ -339,8 +361,8 @@
 
     if (now < goldenStart) {
       return {
-        clockText: `🌇 Tramonto ${formatTime(sunset)}`,
-        phaseText: "☀️ Prima della golden hour",
+        clockText: `Tramonto ${formatTime(sunset)}`,
+        phaseText: "Prima della golden hour",
         mainText: "La luce migliore arriva più tardi",
         subText: "Hai ancora margine. Se vuoi un tramonto forte, inizia a muoverti quando la luce comincia a scaldarsi.",
         timeText: formatCountdown(getMinutesDiff(now, goldenStart))
@@ -349,8 +371,8 @@
 
     if (now >= goldenStart && now < sunset) {
       return {
-        clockText: `🌇 Tramonto ${formatTime(sunset)}`,
-        phaseText: "✨ Golden hour in corso",
+        clockText: `Tramonto ${formatTime(sunset)}`,
+        phaseText: "Golden hour in corso",
         mainText: "Se vuoi il tramonto, questo è il momento",
         subText: "La luce è nella fascia giusta per viewpoint, costa o scogliere. Adesso conviene già essere sul posto.",
         timeText: formatCountdown(getMinutesDiff(now, sunset))
@@ -359,8 +381,8 @@
 
     if (now >= sunset && now < blueEnd) {
       return {
-        clockText: `🌇 Tramonto ${formatTime(sunset)}`,
-        phaseText: "🌌 Blue hour",
+        clockText: `Tramonto ${formatTime(sunset)}`,
+        phaseText: "Blue hour",
         mainText: "Il sole è appena sceso",
         subText: "Hai ancora una finestra breve, morbida e molto bella per skyline, costa e luci artificiali leggere.",
         timeText: formatCountdown(getMinutesDiff(now, blueEnd))
@@ -368,8 +390,8 @@
     }
 
     return {
-      clockText: `🌇 Tramonto ${formatTime(sunset)}`,
-      phaseText: "🌙 Dopo il tramonto",
+      clockText: `Tramonto ${formatTime(sunset)}`,
+      phaseText: "Dopo il tramonto",
       mainText: "La finestra serale è finita",
       subText: "Per una nuova lettura forte della luce, guarda già la giornata di domani o prepara una partenza all'alba.",
       timeText: "chiuso"
@@ -378,9 +400,13 @@
 
   function startSunsetCountdown() {
     if (APP.sunsetTimer) clearInterval(APP.sunsetTimer);
-    if (window.UI) window.UI.renderSunPhase(APP);
+    if (window.UI?.renderSunPhase) {
+      window.UI.renderSunPhase(APP);
+    }
     APP.sunsetTimer = setInterval(() => {
-      if (window.UI) window.UI.renderSunPhase(APP);
+      if (window.UI?.renderSunPhase) {
+        window.UI.renderSunPhase(APP);
+      }
     }, 30000);
   }
 
@@ -453,13 +479,39 @@
       const sunset = parseSunTime(forecast?.daily?.sunset?.[0]);
 
       APP.sunTimes = { sunrise, sunset };
+
+      let headline = "Meteo aggiornato";
+      let advice = "Controlla rapidamente la situazione della giornata.";
+
+      if (rain >= 55) {
+        headline = "Pioggia probabile";
+        advice = "Meglio spot più riparati o giornate flessibili.";
+      } else if (wind >= 32) {
+        headline = "Vento forte";
+        advice = "Attenzione ai punti molto esposti.";
+      } else if (cloud <= 35 && rain < 25) {
+        headline = "Finestra interessante";
+        advice = "Buona giornata per spot aperti e luce più pulita.";
+      }
+
       APP.weatherData = {
-        temp, wind, windDir, gust, cloud, rain,
+        temp,
+        wind,
+        windDir,
+        gust,
+        cloud,
+        rain,
         period: currentPeriod(),
-        headline: "Meteo aggiornato",
-        advice: "Controlla rapidamente la situazione della giornata."
+        headline,
+        advice
       };
-      APP.marineData = { waveHeight, waveDirection, wavePeriod };
+
+      APP.marineData = {
+        waveHeight,
+        waveDirection,
+        wavePeriod
+      };
+
       APP.hourlyData = getNext12Hours(forecast.hourly, marine.hourly);
     } catch {
       APP.weatherData = null;
@@ -504,7 +556,10 @@
     const mapEl = $("map");
     if (!mapEl || typeof L === "undefined") return;
 
-    APP.map = L.map("map", { zoomControl: true }).setView(APP_SPOTS.center || [32.75, -16.95], APP_SPOTS.zoom || 10);
+    APP.map = L.map("map", { zoomControl: true }).setView(
+      APP_SPOTS.center || [32.75, -16.95],
+      APP_SPOTS.zoom || 10
+    );
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 18,
@@ -556,7 +611,9 @@
 
   function showSpotDetail(spot) {
     APP.currentSpot = spot;
-    if (window.UI) window.UI.renderSpotDetail(APP, spot);
+    if (window.UI?.renderSpotDetail) {
+      window.UI.renderSpotDetail(APP, spot);
+    }
   }
 
   function centerSpot(id) {
@@ -575,7 +632,9 @@
   }
 
   function renderPlannerBox() {
-    if (window.UI) window.UI.renderPlannerBox(APP);
+    if (window.UI?.renderPlannerBox) {
+      window.UI.renderPlannerBox(APP);
+    }
   }
 
   function switchPage(pageName) {
@@ -633,7 +692,10 @@
     APP.search = q;
     renderAll();
 
-    const found = APP_SPOTS.spots.find(s => normalizeText(s.name).includes(normalizeText(q)));
+    const found = APP_SPOTS.spots.find(s =>
+      normalizeText(s.name).includes(normalizeText(q))
+    );
+
     if (found) {
       showSpotDetail(found);
       switchPage("detail");
@@ -664,6 +726,7 @@
       toast("GPS non disponibile");
       return;
     }
+
     if (APP.gpsWatchId) return;
 
     APP.gpsWatchId = navigator.geolocation.watchPosition(
@@ -674,6 +737,7 @@
         const heading = pos.coords.heading;
 
         APP.gpsPath.push([lat, lon]);
+
         if (APP.gpsLine) APP.gpsLine.setLatLngs(APP.gpsPath);
 
         if (!APP.gpsMarker) {
@@ -688,7 +752,9 @@
           APP.gpsMarker.setLatLng([lat, lon]);
         }
 
-        if (window.UI) window.UI.renderGpsBox(APP, { speedMs, heading });
+        if (window.UI?.renderGpsBox) {
+          window.UI.renderGpsBox(APP, { speedMs, heading });
+        }
       },
       () => toast("Permesso GPS negato o posizione non disponibile"),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
@@ -710,13 +776,17 @@
       APP.map.removeLayer(APP.gpsMarker);
       APP.gpsMarker = null;
     }
-    if (window.UI) window.UI.renderGpsBox(APP, null);
+    if (window.UI?.renderGpsBox) {
+      window.UI.renderGpsBox(APP, null);
+    }
   }
 
   function bindEvents() {
     const modeToggle = $("sailModeToggle");
     if (modeToggle) {
-      modeToggle.addEventListener("change", () => toggleMode(modeToggle.checked ? "sail" : "travel"));
+      modeToggle.addEventListener("change", () => {
+        toggleMode(modeToggle.checked ? "sail" : "travel");
+      });
     }
 
     document.querySelectorAll(".nav-btn").forEach(btn => {
@@ -729,6 +799,7 @@
         APP.search = searchInput.value.trim();
         renderAll();
       });
+
       searchInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") searchSpot();
       });
@@ -754,9 +825,13 @@
         toast("GPS non disponibile");
         return;
       }
+
       navigator.geolocation.getCurrentPosition(
         pos => {
-          APP.userPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+          APP.userPos = {
+            lat: pos.coords.latitude,
+            lon: pos.coords.longitude
+          };
           renderAll();
           toast("Posizione aggiornata");
         },
@@ -775,12 +850,16 @@
   }
 
   function renderAll() {
-    if (window.UI) window.UI.renderAll(APP);
+    if (window.UI?.renderAll) {
+      window.UI.renderAll(APP);
+    }
     renderMarkers();
   }
 
   function toast(message) {
-    if (window.UI?.toast) window.UI.toast(message);
+    if (window.UI?.toast) {
+      window.UI.toast(message);
+    }
   }
 
   function initApp() {
@@ -809,13 +888,32 @@
   }
 
   window.APP_UTILS = {
-    $, escapeHtml, normalizeText, formatTime, formatCountdown,
-    currentPeriod, displayDistance, getSpotImage,
-    isFavorite, toggleFavorite, setPlannerSlot, clearPlannerSlot, clearPlannerAll,
-    getFilteredSpots, getMapFilteredSpots, getAllSpotsWithMeta,
-    getBestSpotToday, getBestWowSpot, getBestSunsetSpot,
-    getSunPhaseInfo, showSpotDetail, switchPage, centerSpot,
-    renderPlannerBox, toggleMode, renderAll
+    $,
+    escapeHtml,
+    normalizeText,
+    formatTime,
+    formatCountdown,
+    currentPeriod,
+    displayDistance,
+    getSpotImage,
+    isFavorite,
+    toggleFavorite,
+    setPlannerSlot,
+    clearPlannerSlot,
+    clearPlannerAll,
+    getFilteredSpots,
+    getMapFilteredSpots,
+    getAllSpotsWithMeta,
+    getBestSpotToday,
+    getBestWowSpot,
+    getBestSunsetSpot,
+    getSunPhaseInfo,
+    showSpotDetail,
+    switchPage,
+    centerSpot,
+    renderPlannerBox,
+    toggleMode,
+    renderAll
   };
 
   document.addEventListener("DOMContentLoaded", initApp);

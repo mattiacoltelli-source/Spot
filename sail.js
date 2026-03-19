@@ -26,13 +26,6 @@
     });
   }
 
-  function getLiveScoreClass(score) {
-    if (score == null) return "gold";
-    if (score >= 8) return "green";
-    if (score >= 5) return "gold";
-    return "pink";
-  }
-
   function scoreSpot(spot, app) {
     if (!hasSailData(spot) || !app.weatherData) return null;
 
@@ -50,16 +43,22 @@
     if (waveHeight <= (sail.waveMaxMeters || 999)) score += 2;
     if (sail.sailSpot) score += 1;
     if ((sail.beautyScore || 0) >= 4) score += 0.5;
-    if (app.sailFilter === "night" && sail.nightShelter) score += 1.5;
 
     return Number(score.toFixed(1));
   }
 
-  function getLabel(score) {
+  function labelFromScore(score) {
     if (score == null) return "n/d";
     if (score >= 8) return "ottimo";
     if (score >= 5) return "buono";
     return "così così";
+  }
+
+  function getScoreClass(score) {
+    if (score == null) return "gold";
+    if (score >= 8) return "green";
+    if (score >= 5) return "gold";
+    return "pink";
   }
 
   function getSpotSailMeta(spot, app) {
@@ -67,8 +66,8 @@
       return {
         enabled: false,
         score: 0,
-        cls: "gold",
         label: "n/d",
+        cls: "gold",
         nightShelter: false,
         beautifulWater: false,
         topWater: false,
@@ -84,8 +83,8 @@
     return {
       enabled: true,
       score,
-      cls: getLiveScoreClass(score),
-      label: getLabel(score),
+      label: labelFromScore(score),
+      cls: getScoreClass(score),
       nightShelter: !!sail.nightShelter,
       beautifulWater: !!sail.beautifulWater,
       topWater: !!sail.topWater,
@@ -114,7 +113,7 @@
   }
 
   function getBestSailSpot(app) {
-    const items = APP_SPOTS.spots
+    const items = (window.APP_SPOTS?.spots || [])
       .filter(hasSailData)
       .map(spot => ({ ...spot, sailMeta: getSpotSailMeta(spot, app) }))
       .sort((a, b) => (b.sailMeta.score || 0) - (a.sailMeta.score || 0));
@@ -123,7 +122,7 @@
   }
 
   function getBestSailSunsetSpot(app) {
-    const items = APP_SPOTS.spots
+    const items = (window.APP_SPOTS?.spots || [])
       .filter(hasSailData)
       .map(spot => ({
         ...spot,
