@@ -15,13 +15,97 @@
     return window.APP_UTILS.isFavorite(id);
   }
 
-  function quickCard(title, name, desc, extraHtml = "", extraClass = "") {
+  function buildTravelQuickCards(app) {
+    const bestToday = window.APP_UTILS.getBestSpotToday();
+    const bestWow = window.APP_UTILS.getBestWowSpot();
+    const bestSunset = window.APP_UTILS.getBestSunsetSpot();
+
     return `
-      <div class="quick-card glass tap ${extraClass}">
-        <div class="quick-label">${title}</div>
-        <div class="quick-title">${name ? esc(name) : "—"}</div>
-        <div class="quick-desc">${desc ? esc(desc) : "—"}</div>
-        ${extraHtml}
+      <div class="quick-card glass best tap">
+        <div class="quick-label">Spot del giorno</div>
+        <div class="quick-title">${bestToday ? esc(bestToday.name) : "—"}</div>
+        <div class="quick-desc">${bestToday ? esc(bestToday.desc || bestToday.tip || "") : "In attesa del meteo."}</div>
+
+        <div class="sunset-chip-row">
+          <div class="mini-chip blue">Travel</div>
+          <div class="mini-chip ${bestToday?.weatherFit?.cls === "green" ? "gold" : "blue"}">
+            ${bestToday?.weatherFit?.label || "lettura in corso"}
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-card glass tap">
+        <div class="quick-label">Wow spot</div>
+        <div class="quick-title">${bestWow ? esc(bestWow.name) : "—"}</div>
+        <div class="quick-desc">${bestWow ? esc(bestWow.tip || bestWow.desc || "") : "I posti più forti visivamente."}</div>
+      </div>
+
+      <div class="quick-card glass sunset-card tap">
+        <div class="quick-label">Tramonto premium</div>
+        <div class="quick-title">${bestSunset ? esc(bestSunset.name) : "—"}</div>
+        <div class="quick-desc">${bestSunset ? esc(bestSunset.tip || bestSunset.desc || "") : "In attesa della lettura luce."}</div>
+
+        <div class="sunset-chip-row" style="margin-top:12px">
+          <div class="mini-chip gold" id="sunsetClockChip">Tramonto —</div>
+          <div class="mini-chip blue" id="sunPhaseChip">Luce da leggere</div>
+        </div>
+
+        <div class="sunset-countdown" style="margin-top:12px">
+          <div style="min-width:0;flex:1 1 auto">
+            <div class="sunset-countdown-main" id="sunsetCountdownMain">Sto leggendo la luce di oggi</div>
+            <div class="sunset-countdown-sub" id="sunsetCountdownSub">Fra poco trovi countdown e stato tramonto.</div>
+          </div>
+          <div class="sunset-countdown-time" id="sunsetCountdownTime">—</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildSailQuickCards(app) {
+    const bestToday = window.APP_UTILS.getBestSpotToday();
+    const bestSunset = window.APP_UTILS.getBestSunsetSpot();
+
+    const sailSpots = window.APP_UTILS.getAllSpotsWithMeta()
+      .filter(s => s.sailMeta?.enabled && s.sailMeta?.nightShelter)
+      .sort((a, b) => (b.sailMeta?.score || 0) - (a.sailMeta?.score || 0));
+
+    const bestNight = sailSpots[0] || null;
+
+    return `
+      <div class="quick-card glass best tap">
+        <div class="quick-label">Spot vela oggi</div>
+        <div class="quick-title">${bestToday ? esc(bestToday.name) : "—"}</div>
+        <div class="quick-desc">${bestToday?.sailMeta?.enabled ? esc(bestToday.sailMeta.detailText || "Compatibilità live") : "Nessun dato vela negli spot attuali."}</div>
+
+        <div class="sunset-chip-row">
+          <div class="mini-chip blue">Sail</div>
+          <div class="mini-chip gold">${bestToday?.sailMeta?.label || "n/d"}</div>
+        </div>
+      </div>
+
+      <div class="quick-card glass tap">
+        <div class="quick-label">Riparo notte</div>
+        <div class="quick-title">${bestNight ? esc(bestNight.name) : "—"}</div>
+        <div class="quick-desc">${bestNight?.sailMeta?.enabled ? esc(bestNight.sailMeta.detailText || "Buon riparo per la notte.") : "Nessun riparo notte disponibile nei dati."}</div>
+      </div>
+
+      <div class="quick-card glass sunset-card tap">
+        <div class="quick-label">Spot serale</div>
+        <div class="quick-title">${bestSunset ? esc(bestSunset.name) : "—"}</div>
+        <div class="quick-desc">${bestSunset?.sailMeta?.enabled ? esc(bestSunset.sailMeta.sunsetText || "Spot forte per serata e luce.") : "Nessun dato sail sunset nei dati attuali."}</div>
+
+        <div class="sunset-chip-row" style="margin-top:12px">
+          <div class="mini-chip gold">Onde ${app.marineData ? Number(app.marineData.waveHeight || 0).toFixed(1) + " m" : "—"}</div>
+          <div class="mini-chip blue">Dir ${app.weatherData ? Math.round(app.weatherData.windDir || 0) + "°" : "—"}</div>
+        </div>
+
+        <div class="sunset-countdown" style="margin-top:12px">
+          <div style="min-width:0;flex:1 1 auto">
+            <div class="sunset-countdown-main">Sail mode attiva</div>
+            <div class="sunset-countdown-sub">Quando aggiungerai spot con dati sail, qui avrai lettura live migliore.</div>
+          </div>
+          <div class="sunset-countdown-time">${app.weatherData ? Math.round(app.weatherData.wind || 0) + " km/h" : "—"}</div>
+        </div>
       </div>
     `;
   }
@@ -29,91 +113,8 @@
   function renderQuickGrid(app) {
     const box = $("quickGrid");
     if (!box) return;
-
-    const bestToday = window.APP_UTILS.getBestSpotToday();
-    const bestWow = window.APP_UTILS.getBestWowSpot();
-    const bestSunset = window.APP_UTILS.getBestSunsetSpot();
-
-    if (app.mode === "sail") {
-      const sailSpots = window.APP_UTILS.getAllSpotsWithMeta()
-        .filter(s => s.sailMeta?.enabled && s.sailMeta?.nightShelter)
-        .sort((a, b) => (b.sailMeta?.score || 0) - (a.sailMeta?.score || 0));
-
-      const bestNight = sailSpots[0] || null;
-
-      box.innerHTML =
-        quickCard(
-          "Spot vela oggi",
-          bestToday?.name,
-          bestToday?.sailMeta?.enabled ? (bestToday.sailMeta.detailText || "Compatibilità live.") : "Nessun dato vela presente negli spot attuali.",
-          `<div class="sunset-chip-row">
-            <div class="mini-chip blue">⛵ Sail</div>
-            <div class="mini-chip gold">${esc(bestToday?.sailMeta?.label || "n/d")}</div>
-          </div>`,
-          "best"
-        ) +
-        quickCard(
-          "Riparo notte",
-          bestNight?.name,
-          bestNight?.sailMeta?.enabled ? (bestNight.sailMeta.detailText || "Buon riparo per la notte.") : "Nessun riparo notte nei dati attuali."
-        ) +
-        quickCard(
-          "Spot serale",
-          bestSunset?.name,
-          bestSunset?.sailMeta?.enabled ? (bestSunset.sailMeta.sunsetText || "Spot interessante per serata e luce.") : "Nessun dato sail sunset nei dati attuali.",
-          `<div class="sunset-chip-row">
-            <div class="mini-chip gold">🌊 Onde ${app.marineData ? Number(app.marineData.waveHeight || 0).toFixed(1) + " m" : "—"}</div>
-            <div class="mini-chip blue">🧭 ${app.weatherData ? Math.round(app.weatherData.windDir || 0) + "°" : "—"}</div>
-          </div>`,
-          "sunset-card"
-        );
-      return;
-    }
-
-    box.innerHTML =
-      quickCard(
-        "Spot del giorno",
-        bestToday?.name,
-        bestToday?.desc || "In attesa del meteo.",
-        `<div class="sunset-chip-row">
-          <div class="mini-chip blue">Travel</div>
-          <div class="mini-chip gold">${esc(bestToday?.weatherFit?.label || "lettura in corso")}</div>
-        </div>`,
-        "best"
-      ) +
-      quickCard(
-        "Wow spot",
-        bestWow?.name,
-        bestWow?.tip || bestWow?.desc || "I posti più forti visivamente."
-      ) +
-      quickCard(
-        "Tramonto premium",
-        bestSunset?.name,
-        bestSunset?.tip || bestSunset?.desc || "In attesa della lettura luce.",
-        `<div class="sunset-chip-row">
-          <div class="mini-chip gold" id="sunsetClockChip">🌇 Tramonto —</div>
-          <div class="mini-chip blue" id="sunPhaseChip">✨ Luce da leggere</div>
-        </div>
-        <div class="sunset-countdown">
-          <div>
-            <div class="sunset-countdown-main" id="sunsetCountdownMain">Sto leggendo la luce di oggi</div>
-            <div class="sunset-countdown-sub" id="sunsetCountdownSub">Fra poco trovi countdown e stato tramonto.</div>
-          </div>
-          <div class="sunset-countdown-time" id="sunsetCountdownTime">—</div>
-        </div>`,
-        "sunset-card"
-      );
+    box.innerHTML = app.mode === "sail" ? buildSailQuickCards(app) : buildTravelQuickCards(app);
   }
-
-  UI.renderSunPhase = function () {
-    const data = window.APP_UTILS.getSunPhaseInfo();
-
-    if ($("sunsetClockChip")) $("sunsetClockChip").textContent = data.clockText;
-    if ($("sunPhaseChip")) $("sunPhaseChip").textContent = data.phaseText;
-    if ($("sunsetCountdownMain")) $("sunsetCountdownMain").textContent = data.mainText;
-    if ($("sunsetCountdownSub")) $("sunsetCountdownSub").textContent = data.subText;
-    if ($("sunsetCountdownTime")) $("sunsetCountdownTime").textContent = data.timeText;
-  };
 
   function renderStatsGrid(app) {
     const box = $("statsGrid");
@@ -146,36 +147,25 @@
     }
   }
 
-  function renderWeatherAlert(app) {
-    const box = $("weatherAlert");
-    if (!box) return;
+  UI.renderSunPhase = function (app) {
+    const data = window.APP_UTILS.getSunPhaseInfo();
 
-    if (!app.weatherData) {
-      box.className = "alert warn";
-      box.textContent = "Meteo non disponibile.";
-      return;
-    }
+    const clock = $("sunsetClockChip");
+    const phase = $("sunPhaseChip");
+    const main = $("sunsetCountdownMain");
+    const sub = $("sunsetCountdownSub");
+    const time = $("sunsetCountdownTime");
 
-    if (app.mode === "sail") {
-      const waveText = app.marineData ? `Onde ${Number(app.marineData.waveHeight || 0).toFixed(1)} m` : "Onde n/d";
-      let cls = "ok";
-      if ((app.weatherData.wind || 0) >= 32 || (app.marineData?.waveHeight || 0) >= 1.8) cls = "warn";
-      if ((app.weatherData.wind || 0) >= 45 || (app.marineData?.waveHeight || 0) >= 2.6) cls = "danger";
-      box.className = `alert ${cls}`;
-      box.textContent = `${waveText} · direzione ${Math.round(app.weatherData.windDir || 0)}° · raffiche ${Math.round(app.weatherData.gust || 0)} km/h`;
-      return;
-    }
-
-    let cls = "ok";
-    if ((app.weatherData.rain || 0) >= 55 || (app.weatherData.wind || 0) >= 32) cls = "warn";
-    if ((app.weatherData.rain || 0) >= 70 || (app.weatherData.wind || 0) >= 45) cls = "danger";
-
-    box.className = `alert ${cls}`;
-    box.textContent = `${app.weatherData.headline} — ${app.weatherData.advice}`;
-  }
+    if (clock) clock.textContent = data.clockText;
+    if (phase) phase.textContent = data.phaseText;
+    if (main) main.textContent = data.mainText;
+    if (sub) sub.textContent = data.subText;
+    if (time) time.textContent = data.timeText;
+  };
 
   function hourlyMood(item) {
     let score = 0;
+
     if (item.rain <= 20) score += 3;
     else if (item.rain <= 40) score += 1;
     else score -= 3;
@@ -205,12 +195,12 @@
     }
 
     const bestHour = app.hourlyData[0];
-    const hourText = String(bestHour.date.getHours()).padStart(2, "0") + ":00";
+    const hh = String(bestHour.date.getHours()).padStart(2, "0") + ":00";
 
     if (main) {
       main.textContent = app.mode === "sail"
-        ? `Finestra letta: ${hourText} · vento, direzione e onde`
-        : `Finestra letta: ${hourText} · prossime 12 ore`;
+        ? `Finestra letta: ${hh} · vento, direzione e onde`
+        : `Finestra letta: ${hh} · prossime 12 ore`;
     }
 
     if (sub) {
@@ -219,15 +209,25 @@
         : "Lettura rapida di meteo e comfort delle prossime ore.";
     }
 
+    strip.style.display = "flex";
+    strip.style.flexWrap = "nowrap";
+    strip.style.overflowX = "auto";
+    strip.style.overflowY = "hidden";
+    strip.style.gap = "10px";
+    strip.style.paddingBottom = "6px";
+    strip.style.alignItems = "stretch";
+    strip.style.scrollSnapType = "x proximity";
+    strip.style.webkitOverflowScrolling = "touch";
+
     strip.innerHTML = app.hourlyData.map(item => {
       const mood = hourlyMood(item);
-      const hh = String(item.date.getHours()).padStart(2, "0") + ":00";
+      const hourText = String(item.date.getHours()).padStart(2, "0") + ":00";
 
       if (app.mode === "sail") {
         return `
-          <div class="hour-card ${mood.cls}">
+          <div class="hour-card ${mood.cls}" style="flex:0 0 150px;min-width:150px;max-width:150px;scroll-snap-align:start;">
             <div class="hour-top">
-              <div class="hour-time">${hh}</div>
+              <div class="hour-time">${hourText}</div>
               <div class="hour-emoji">${mood.emoji}</div>
             </div>
             <div class="hour-line"><span class="hour-label">Vento</span><strong>${Math.round(item.wind)} km/h</strong></div>
@@ -240,9 +240,9 @@
       }
 
       return `
-        <div class="hour-card ${mood.cls}">
+        <div class="hour-card ${mood.cls}" style="flex:0 0 150px;min-width:150px;max-width:150px;scroll-snap-align:start;">
           <div class="hour-top">
-            <div class="hour-time">${hh}</div>
+            <div class="hour-time">${hourText}</div>
             <div class="hour-emoji">${mood.emoji}</div>
           </div>
           <div class="hour-line"><span class="hour-label">Temp</span><strong>${Math.round(item.temp)}°</strong></div>
@@ -250,12 +250,9 @@
           <div class="hour-line"><span class="hour-label">Pioggia</span><strong>${Math.round(item.rain)}%</strong></div>
           <div class="hour-line"><span class="hour-label">Nuvole</span><strong>${Math.round(item.cloud)}%</strong></div>
           <div class="hour-pill ${mood.cls}">${mood.label}</div>
-        `;
+        </div>
+      `;
     }).join("");
-  }
-
-  function chipButton(label, attr, value, active) {
-    return `<button class="chip ${active ? "active" : ""}" data-${attr}="${value}" type="button">${label}</button>`;
   }
 
   function renderFilterBars(app) {
@@ -267,50 +264,57 @@
     const favoriteChips = $("favoriteChips");
     const sailChips = $("sailChips");
 
-    mapQuickFilters.innerHTML =
-      chipButton("Tutti", "mapquick", "all", app.mapQuickFilter === "all") +
-      chipButton("Wow", "mapquick", "wow", app.mapQuickFilter === "wow") +
-      chipButton("Tramonti", "mapquick", "sunset", app.mapQuickFilter === "sunset") +
-      chipButton("Albe", "mapquick", "alba", app.mapQuickFilter === "alba") +
-      chipButton("Preferiti", "mapquick", "favorites", app.mapQuickFilter === "favorites");
+    mapQuickFilters.innerHTML = `
+      <button class="chip ${app.mapQuickFilter === "all" ? "active" : ""}" data-mapquick="all" type="button">Tutti</button>
+      <button class="chip ${app.mapQuickFilter === "wow" ? "active" : ""}" data-mapquick="wow" type="button">Wow</button>
+      <button class="chip ${app.mapQuickFilter === "sunset" ? "active" : ""}" data-mapquick="sunset" type="button">Tramonti</button>
+      <button class="chip ${app.mapQuickFilter === "alba" ? "active" : ""}" data-mapquick="alba" type="button">Albe</button>
+      <button class="chip ${app.mapQuickFilter === "favorites" ? "active" : ""}" data-mapquick="favorites" type="button">Preferiti</button>
+    `;
 
-    levelChips.innerHTML =
-      chipButton("Tutti", "level", "all", app.level === "all") +
-      chipButton("Top", "level", "core", app.level === "core") +
-      chipButton("Belli", "level", "secondary", app.level === "secondary") +
-      chipButton("Extra", "level", "extra", app.level === "extra");
+    levelChips.innerHTML = `
+      <button class="chip ${app.level === "all" ? "active" : ""}" data-level="all" type="button">Tutti</button>
+      <button class="chip ${app.level === "core" ? "active" : ""}" data-level="core" type="button">Top</button>
+      <button class="chip ${app.level === "secondary" ? "active" : ""}" data-level="secondary" type="button">Belli</button>
+      <button class="chip ${app.level === "extra" ? "active" : ""}" data-level="extra" type="button">Extra</button>
+    `;
 
-    lightChips.innerHTML =
-      chipButton("Tutta la luce", "light", "all", app.light === "all") +
-      chipButton("Alba", "light", "alba", app.light === "alba") +
-      chipButton("Tramonto", "light", "tramonto", app.light === "tramonto") +
-      chipButton("Giorno", "light", "giorno", app.light === "giorno");
+    lightChips.innerHTML = `
+      <button class="chip ${app.light === "all" ? "active" : ""}" data-light="all" type="button">Tutta la luce</button>
+      <button class="chip ${app.light === "alba" ? "active" : ""}" data-light="alba" type="button">Alba</button>
+      <button class="chip ${app.light === "tramonto" ? "active" : ""}" data-light="tramonto" type="button">Tramonto</button>
+      <button class="chip ${app.light === "giorno" ? "active" : ""}" data-light="giorno" type="button">Giorno</button>
+    `;
 
-    zoneChips.innerHTML =
-      chipButton("Tutte le zone", "zone", "all", app.zone === "all") +
-      chipButton("Nord", "zone", "nord", app.zone === "nord") +
-      chipButton("Sud", "zone", "sud", app.zone === "sud") +
-      chipButton("Est", "zone", "est", app.zone === "est") +
-      chipButton("Ovest", "zone", "ovest", app.zone === "ovest") +
-      chipButton("Montagna", "zone", "montagna", app.zone === "montagna");
+    zoneChips.innerHTML = `
+      <button class="chip ${app.zone === "all" ? "active" : ""}" data-zone="all" type="button">Tutte le zone</button>
+      <button class="chip ${app.zone === "nord" ? "active" : ""}" data-zone="nord" type="button">Nord</button>
+      <button class="chip ${app.zone === "sud" ? "active" : ""}" data-zone="sud" type="button">Sud</button>
+      <button class="chip ${app.zone === "est" ? "active" : ""}" data-zone="est" type="button">Est</button>
+      <button class="chip ${app.zone === "ovest" ? "active" : ""}" data-zone="ovest" type="button">Ovest</button>
+      <button class="chip ${app.zone === "montagna" ? "active" : ""}" data-zone="montagna" type="button">Montagna</button>
+    `;
 
-    activityChips.innerHTML =
-      chipButton("Tutte", "activity", "all", app.activity === "all") +
-      chipButton("Trekking", "activity", "trekking", app.activity === "trekking") +
-      chipButton("MTB", "activity", "mtb", app.activity === "mtb") +
-      chipButton("View", "activity", "view", app.activity === "view") +
-      chipButton("Relax", "activity", "relax", app.activity === "relax");
+    activityChips.innerHTML = `
+      <button class="chip ${app.activity === "all" ? "active" : ""}" data-activity="all" type="button">Tutte</button>
+      <button class="chip ${app.activity === "trekking" ? "active" : ""}" data-activity="trekking" type="button">Trekking</button>
+      <button class="chip ${app.activity === "mtb" ? "active" : ""}" data-activity="mtb" type="button">MTB</button>
+      <button class="chip ${app.activity === "view" ? "active" : ""}" data-activity="view" type="button">View</button>
+      <button class="chip ${app.activity === "relax" ? "active" : ""}" data-activity="relax" type="button">Relax</button>
+    `;
 
-    favoriteChips.innerHTML =
-      chipButton("Tutti", "favoritesfilter", "all", app.favoritesFilter === "all") +
-      chipButton("Solo preferiti", "favoritesfilter", "favorites", app.favoritesFilter === "favorites");
+    favoriteChips.innerHTML = `
+      <button class="chip ${app.favoritesFilter === "all" ? "active" : ""}" data-favoritesfilter="all" type="button">Tutti</button>
+      <button class="chip ${app.favoritesFilter === "favorites" ? "active" : ""}" data-favoritesfilter="favorites" type="button">Solo preferiti</button>
+    `;
 
-    sailChips.innerHTML =
-      chipButton("Tutti", "sailfilter", "all", app.sailFilter === "all") +
-      chipButton("Compatibili oggi", "sailfilter", "compat", app.sailFilter === "compat") +
-      chipButton("Vela", "sailfilter", "sail", app.sailFilter === "sail") +
-      chipButton("Riparo notte", "sailfilter", "night", app.sailFilter === "night") +
-      chipButton("Spot belli", "sailfilter", "beautiful", app.sailFilter === "beautiful");
+    sailChips.innerHTML = `
+      <button class="chip ${app.sailFilter === "all" ? "active" : ""}" data-sailfilter="all" type="button">Tutti</button>
+      <button class="chip ${app.sailFilter === "compat" ? "active" : ""}" data-sailfilter="compat" type="button">Compatibili oggi</button>
+      <button class="chip ${app.sailFilter === "sail" ? "active" : ""}" data-sailfilter="sail" type="button">Vela</button>
+      <button class="chip ${app.sailFilter === "night" ? "active" : ""}" data-sailfilter="night" type="button">Riparo notte</button>
+      <button class="chip ${app.sailFilter === "beautiful" ? "active" : ""}" data-sailfilter="beautiful" type="button">Spot belli</button>
+    `;
 
     mapQuickFilters.querySelectorAll("[data-mapquick]").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -318,36 +322,42 @@
         window.APP_UTILS.renderAll();
       });
     });
+
     levelChips.querySelectorAll("[data-level]").forEach(btn => {
       btn.addEventListener("click", () => {
         app.level = btn.dataset.level;
         window.APP_UTILS.renderAll();
       });
     });
+
     lightChips.querySelectorAll("[data-light]").forEach(btn => {
       btn.addEventListener("click", () => {
         app.light = btn.dataset.light;
         window.APP_UTILS.renderAll();
       });
     });
+
     zoneChips.querySelectorAll("[data-zone]").forEach(btn => {
       btn.addEventListener("click", () => {
         app.zone = btn.dataset.zone;
         window.APP_UTILS.renderAll();
       });
     });
+
     activityChips.querySelectorAll("[data-activity]").forEach(btn => {
       btn.addEventListener("click", () => {
         app.activity = btn.dataset.activity;
         window.APP_UTILS.renderAll();
       });
     });
+
     favoriteChips.querySelectorAll("[data-favoritesfilter]").forEach(btn => {
       btn.addEventListener("click", () => {
         app.favoritesFilter = btn.dataset.favoritesfilter;
         window.APP_UTILS.renderAll();
       });
     });
+
     sailChips.querySelectorAll("[data-sailfilter]").forEach(btn => {
       btn.addEventListener("click", () => {
         app.sailFilter = btn.dataset.sailfilter;
@@ -360,37 +370,29 @@
     const box = $("mapLegend");
     if (!box) return;
 
-    if (app.mode === "sail") {
-      box.innerHTML = `
+    box.innerHTML = app.mode === "sail"
+      ? `
         <div class="legend-item"><span class="legend-dot legend-blue"></span> Spot vela</div>
         <div class="legend-item"><span class="legend-dot legend-gold"></span> Spot belli / top acqua</div>
         <div class="legend-item"><span class="legend-dot legend-pink"></span> Spot serali</div>
         <div class="legend-item"><span class="legend-dot" style="background:#36c275"></span> Riparo notte</div>
+      `
+      : `
+        <div class="legend-item"><span class="legend-dot legend-gold"></span> Wow</div>
+        <div class="legend-item"><span class="legend-dot legend-pink"></span> Tramonto</div>
+        <div class="legend-item"><span class="legend-dot legend-blue"></span> Altri spot</div>
       `;
-      return;
-    }
-
-    box.innerHTML = `
-      <div class="legend-item"><span class="legend-dot legend-gold"></span> Wow</div>
-      <div class="legend-item"><span class="legend-dot legend-pink"></span> Tramonto</div>
-      <div class="legend-item"><span class="legend-dot legend-blue"></span> Altri spot</div>
-    `;
   }
 
   function renderTopLists(app) {
     const wowBox = $("topWowList");
     const sunsetBox = $("topSunsetList");
 
-    const wow = (window.APP_SPOTS.topWowNames || [])
-      .map(name => window.APP_SPOTS.spots.find(s => s.name === name))
-      .filter(Boolean);
-
-    const sunset = (window.APP_SPOTS.topSunsetNames || [])
-      .map(name => window.APP_SPOTS.spots.find(s => s.name === name))
-      .filter(Boolean);
+    const wow = (APP_SPOTS.topWowNames || []).map(name => APP_SPOTS.spots.find(s => s.name === name)).filter(Boolean);
+    const sunset = (APP_SPOTS.topSunsetNames || []).map(name => APP_SPOTS.spots.find(s => s.name === name)).filter(Boolean);
 
     wowBox.innerHTML = wow.map((s, i) => `
-      <div class="featured-card tap" data-top-id="${esc(s.id)}">
+      <div class="featured-card wow tap" data-top-id="${esc(s.id)}">
         <div class="featured-rank">${i + 1}</div>
         <div>
           <div class="featured-name">${esc(s.name)}</div>
@@ -413,7 +415,7 @@
 
     wowBox.querySelectorAll("[data-top-id]").forEach(el => {
       el.addEventListener("click", () => {
-        const s = window.APP_SPOTS.spots.find(x => x.id === el.dataset.topId);
+        const s = APP_SPOTS.spots.find(x => x.id === el.dataset.topId);
         if (s) {
           window.APP_UTILS.showSpotDetail(s);
           window.APP_UTILS.switchPage("detail");
@@ -423,7 +425,7 @@
 
     sunsetBox.querySelectorAll("[data-sunset-id]").forEach(el => {
       el.addEventListener("click", () => {
-        const s = window.APP_SPOTS.spots.find(x => x.id === el.dataset.sunsetId);
+        const s = APP_SPOTS.spots.find(x => x.id === el.dataset.sunsetId);
         if (s) {
           window.APP_UTILS.showSpotDetail(s);
           window.APP_UTILS.switchPage("detail");
@@ -474,7 +476,7 @@
     box.querySelectorAll("[data-spot-id]").forEach(card => {
       card.addEventListener("click", (e) => {
         if (e.target.matches("[data-fav-id]")) return;
-        const s = window.APP_SPOTS.spots.find(x => x.id === card.dataset.spotId);
+        const s = APP_SPOTS.spots.find(x => x.id === card.dataset.spotId);
         if (s) {
           window.APP_UTILS.showSpotDetail(s);
           window.APP_UTILS.switchPage("detail");
@@ -492,9 +494,6 @@
 
   UI.renderSpotDetail = function (app, spot) {
     const box = $("spotDetail");
-    if (!box) return;
-
-    const fit = spot.weatherFit || { label: "n/d" };
     const sail = window.SAIL ? window.SAIL.getSpotSailMeta(spot, app) : null;
 
     box.innerHTML = `
@@ -513,7 +512,7 @@
         <div class="detail-box"><div class="k">Luce ideale</div><div class="v">${esc(spot.light)}</div></div>
         <div class="detail-box"><div class="k">Attività</div><div class="v">${esc(spot.activity)}</div></div>
         <div class="detail-box"><div class="k">Difficoltà</div><div class="v">${esc(spot.difficulty)}</div></div>
-        <div class="detail-box"><div class="k">Valutazione oggi</div><div class="v">${esc(fit.label)}</div></div>
+        <div class="detail-box"><div class="k">Valutazione oggi</div><div class="v">${esc(spot.weatherFit?.label || "n/d")}</div></div>
         ${app.mode === "sail" ? `<div class="detail-box"><div class="k">Vela oggi</div><div class="v">${esc(sail?.label || "n/d")}</div></div>` : ``}
         ${app.mode === "sail" ? `<div class="detail-box"><div class="k">Onde</div><div class="v">${app.marineData ? Number(app.marineData.waveHeight || 0).toFixed(1) + " m" : "—"}</div></div>` : ``}
       </div>
@@ -533,7 +532,7 @@
           <button class="btn btn-primary tap" id="detailMapBtn" type="button">Apri sulla mappa</button>
           <a class="btn btn-secondary tap" href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank" rel="noopener noreferrer">Apri in Google Maps</a>
           <button class="btn btn-secondary tap" id="detailFavBtn" type="button">${isFavorite(spot.id) ? "Rimuovi preferito" : "Salva preferito"}</button>
-          <a class="btn btn-secondary tap" href="https://www.google.com/search?q=${encodeURIComponent(spot.name + " " + (window.APP_SPOTS.region || ""))}&tbm=isch" target="_blank" rel="noopener noreferrer">Vedi foto reali</a>
+          <a class="btn btn-secondary tap" href="https://www.google.com/search?q=${encodeURIComponent(spot.name + " " + (APP_SPOTS.region || ""))}&tbm=isch" target="_blank" rel="noopener noreferrer">Vedi foto reali</a>
           <button class="btn btn-secondary tap" id="detailAlbaBtn" type="button">Aggiungi ad Alba</button>
           <button class="btn btn-secondary tap" id="detailMainBtn" type="button">Aggiungi ad Attività</button>
           <button class="btn btn-secondary tap" id="detailSunsetBtn" type="button">Aggiungi a Tramonto</button>
@@ -550,8 +549,6 @@
 
   UI.renderPlannerBox = function (app) {
     const box = $("plannerBox");
-    if (!box) return;
-
     const slots = [
       { key: "alba", title: "Alba", hint: "Aggiungi uno spot da alba." },
       { key: "main", title: app.mode === "sail" ? "Spot principale" : "Attività", hint: "Aggiungi lo spot centrale della giornata." },
@@ -560,7 +557,7 @@
 
     box.innerHTML = slots.map(slot => {
       const spotId = app.planner[slot.key];
-      const spot = spotId ? window.APP_SPOTS.spots.find(s => s.id === spotId) : null;
+      const spot = spotId ? APP_SPOTS.spots.find(s => s.id === spotId) : null;
 
       if (!spot) {
         return `
@@ -648,7 +645,7 @@
   };
 
   UI.renderAll = function (app) {
-    $("eyebrowRegion") && ($("eyebrowRegion").textContent = `Zona attiva: ${window.APP_SPOTS.region || "Area"} • ${window.APP_SPOTS.spots.length} spot`);
+    $("eyebrowRegion") && ($("eyebrowRegion").textContent = `Zona attiva: ${APP_SPOTS.region || "Area"} • ${APP_SPOTS.spots.length} spot`);
 
     $("conditionsTitle") && ($("conditionsTitle").textContent = app.mode === "sail" ? "Condizioni vela" : "Meteo e mood del giorno");
     $("conditionsSub") && ($("conditionsSub").textContent = app.mode === "sail" ? "Sail" : "Travel");
@@ -656,28 +653,42 @@
     $("forecastSub") && ($("forecastSub").textContent = app.mode === "sail" ? "Vento · direzione · onde" : "Lettura rapida");
 
     $("topBox1Sub") && ($("topBox1Sub").textContent = app.mode === "sail" ? "Spot belli / forti" : "I più forti del posto");
-    $("topBox1Title") && ($("topBox1Title").textContent = app.mode === "sail" ? "Top spot belli" : "Top wow");
+    $("topBox1Title") && ($("topBox1Title").textContent = app.mode === "sail" ? "Top spot belli" : "Top 10 wow");
     $("topBox2Sub") && ($("topBox2Sub").textContent = "Luce serale");
-    $("topBox2Title") && ($("topBox2Title").textContent = "Top tramonti");
+    $("topBox2Title") && ($("topBox2Title").textContent = "Top 10 tramonti");
 
     document.querySelectorAll(".sail-only").forEach(el => {
       el.style.display = app.mode === "sail" ? "" : "none";
     });
 
-    if ($("travelFilters")) $("travelFilters").style.display = app.mode === "sail" ? "none" : "";
-    if ($("sailFilters")) $("sailFilters").style.display = app.mode === "sail" ? "" : "none";
+    $("travelFilters").style.display = app.mode === "sail" ? "none" : "";
+    $("sailFilters").style.display = app.mode === "sail" ? "" : "";
 
     renderQuickGrid(app);
     renderStatsGrid(app);
-    renderWeatherAlert(app);
     renderHourly(app);
     renderFilterBars(app);
     renderLegend(app);
     renderTopLists(app);
     renderSpotList(app);
 
+    if ($("weatherAlert")) {
+      if (!app.weatherData) {
+        $("weatherAlert").className = "alert warn";
+        $("weatherAlert").textContent = "Meteo non disponibile.";
+      } else if (app.mode === "sail") {
+        $("weatherAlert").className = "alert ok";
+        $("weatherAlert").textContent = app.marineData
+          ? `Vento ${Math.round(app.weatherData.wind)} km/h · onde ${Number(app.marineData.waveHeight || 0).toFixed(1)} m`
+          : "Lettura vela aggiornata.";
+      } else {
+        $("weatherAlert").className = "alert ok";
+        $("weatherAlert").textContent = `${app.weatherData.headline} — ${app.weatherData.advice}`;
+      }
+    }
+
     if (app.currentSpot) UI.renderSpotDetail(app, app.currentSpot);
-    if (app.mode === "travel") UI.renderSunPhase();
+    if (app.mode === "travel") UI.renderSunPhase(app);
   };
 
   window.UI = UI;
