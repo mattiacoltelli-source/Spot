@@ -16,11 +16,14 @@
   <style>
     :root{
       --bg:#0b0f14;
-      --panel:#121a27cc;
+      --panel:rgba(18,26,39,.78);
+      --panel-2:rgba(15,22,34,.94);
       --panel-solid:#121a27;
       --line:#243247;
+      --line-2:rgba(255,255,255,.09);
       --text:#f4f7fb;
       --muted:#9eb0c2;
+      --muted-2:#7f93a8;
       --accent:#59b6ff;
       --accent2:#f5c76a;
       --ok:#3ecf8e;
@@ -28,12 +31,20 @@
       --danger:#ff6b6b;
       --pink:#ff9fbc;
       --shadow:0 16px 34px rgba(0,0,0,.32);
-      --radius:18px;
+      --shadow-soft:0 12px 24px rgba(0,0,0,.22);
+      --glow-blue:0 0 0 1px rgba(89,182,255,.14), 0 10px 30px rgba(89,182,255,.12);
+      --glow-gold:0 0 0 1px rgba(245,199,106,.14), 0 10px 28px rgba(245,199,106,.12);
+      --radius:20px;
+      --radius-sm:14px;
       --blur:18px;
       --safe-top: env(safe-area-inset-top, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --nav-h:80px;
+      --nav-h:82px;
       --maxw:920px;
+      --fast:140ms;
+      --normal:220ms;
+      --slow:420ms;
+      --ease:cubic-bezier(.22,1,.36,1);
     }
 
     *{box-sizing:border-box;min-width:0}
@@ -50,8 +61,12 @@
       -webkit-text-size-adjust:100%;
     }
 
-    body{min-height:100vh;position:relative}
-    button,input,a{font:inherit}
+    body{
+      min-height:100vh;
+      position:relative;
+    }
+
+    button,input,select,a{font:inherit}
     img,svg{max-width:100%;display:block}
 
     .app-bg{
@@ -59,17 +74,20 @@
       inset:0;
       z-index:-2;
       background:
-        linear-gradient(180deg, rgba(5,8,13,.38), rgba(5,8,13,.90)),
+        linear-gradient(180deg, rgba(5,8,13,.34), rgba(5,8,13,.92)),
         radial-gradient(circle at top, rgba(89,182,255,.18), transparent 35%),
-        radial-gradient(circle at top right, rgba(245,199,106,.12), transparent 25%),
+        radial-gradient(circle at top right, rgba(245,199,106,.14), transparent 26%),
         url('https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1600&auto=format&fit=crop') center/cover no-repeat;
+      transform:scale(1.02);
     }
 
     .app-bg::after{
       content:"";
       position:absolute;
       inset:0;
-      background:linear-gradient(180deg, rgba(11,15,20,.18), rgba(11,15,20,.72) 34%, rgba(11,15,20,.97));
+      background:
+        linear-gradient(180deg, rgba(11,15,20,.16), rgba(11,15,20,.70) 34%, rgba(11,15,20,.97)),
+        radial-gradient(circle at 50% 0%, rgba(255,255,255,.05), transparent 30%);
     }
 
     .splash{
@@ -119,7 +137,13 @@
       width:100%;
       max-width:var(--maxw);
       margin:0 auto;
-      padding:calc(14px + var(--safe-top)) 14px calc(var(--nav-h) + 22px + var(--safe-bottom));
+      padding:calc(14px + var(--safe-top)) 14px calc(var(--nav-h) + 24px + var(--safe-bottom));
+      animation:pageIn .45s var(--ease);
+    }
+
+    @keyframes pageIn{
+      from{opacity:0;transform:translateY(6px)}
+      to{opacity:1;transform:translateY(0)}
     }
 
     .glass{
@@ -130,9 +154,27 @@
       border:1px solid rgba(255,255,255,.08);
       box-shadow:var(--shadow);
       border-radius:var(--radius);
+      transition:
+        transform var(--normal) var(--ease),
+        border-color var(--normal) var(--ease),
+        box-shadow var(--normal) var(--ease),
+        background var(--normal) var(--ease);
     }
 
-    .hero{padding:10px 0 16px}
+    .glass:hover{
+      border-color:rgba(255,255,255,.11);
+    }
+
+    .tap{
+      transition:transform var(--fast) ease, filter var(--fast) ease;
+    }
+
+    .tap:active{
+      transform:translateY(1px) scale(.986);
+      filter:brightness(.98);
+    }
+
+    .hero{padding:10px 0 14px}
 
     .eyebrow{
       display:inline-flex;
@@ -145,6 +187,7 @@
       padding:8px 12px;
       font-size:12px;
       max-width:100%;
+      box-shadow:0 8px 20px rgba(0,0,0,.10);
     }
 
     .eyebrow-dot{
@@ -193,6 +236,13 @@
       border-radius:14px;
       padding:14px;
       outline:none;
+      transition:border-color var(--normal), box-shadow var(--normal), background var(--normal);
+    }
+
+    .search-box input:focus{
+      border-color:rgba(89,182,255,.35);
+      box-shadow:0 0 0 3px rgba(89,182,255,.09);
+      background:#101a28;
     }
 
     .search-box input::placeholder{color:#7f93a8}
@@ -202,7 +252,13 @@
       border-radius:14px;
       padding:14px 16px;
       cursor:pointer;
-      transition:transform .18s ease, filter .18s ease, opacity .18s ease;
+      transition:
+        transform var(--fast) ease,
+        filter var(--fast) ease,
+        opacity var(--fast) ease,
+        box-shadow var(--normal) ease,
+        border-color var(--normal) ease,
+        background var(--normal) ease;
       color:#08131d;
       font-weight:800;
       text-decoration:none;
@@ -212,19 +268,51 @@
       gap:8px;
       width:100%;
       text-align:center;
+      position:relative;
+      overflow:hidden;
     }
 
     .btn:hover{transform:translateY(-1px);filter:brightness(1.03)}
-    .btn:active{transform:translateY(1px)}
+    .btn:active{transform:translateY(1px) scale(.988)}
     .btn:disabled{opacity:.65;cursor:default;transform:none}
 
-    .btn-primary{background:linear-gradient(135deg,var(--accent),#88d0ff)}
-    .btn-gold{background:linear-gradient(135deg,var(--accent2),#ffd977);color:#14181f}
-    .btn-secondary{color:var(--text);background:#172233;border:1px solid var(--line)}
-    .btn-danger{color:#fff;background:linear-gradient(135deg,#ff6b6b,#ff8c8c)}
+    .btn-primary{
+      background:linear-gradient(135deg,var(--accent),#88d0ff);
+      box-shadow:var(--glow-blue);
+    }
+
+    .btn-gold{
+      background:linear-gradient(135deg,var(--accent2),#ffd977);
+      color:#14181f;
+      box-shadow:var(--glow-gold);
+    }
+
+    .btn-secondary{
+      color:var(--text);
+      background:#172233;
+      border:1px solid var(--line);
+    }
+
+    .btn-secondary:hover{
+      background:#1a2940;
+      border-color:#345175;
+    }
+
+    .btn-danger{
+      color:#fff;
+      background:linear-gradient(135deg,#ff6b6b,#ff8c8c);
+    }
 
     .page{display:none}
-    .page.active{display:block}
+    .page.active{
+      display:block;
+      animation:screenFade .24s var(--ease);
+    }
+
+    @keyframes screenFade{
+      from{opacity:0;transform:translateY(4px)}
+      to{opacity:1;transform:translateY(0)}
+    }
 
     .stack{
       display:grid;
@@ -233,7 +321,11 @@
       width:100%;
     }
 
-    .panel{padding:14px;width:100%}
+    .panel{
+      padding:14px;
+      width:100%;
+    }
+
     .panel h2{
       font-size:16px;
       margin:0 0 12px;
@@ -247,10 +339,11 @@
     }
 
     .quick-card{
-      padding:14px;
-      min-height:120px;
+      padding:16px;
+      min-height:132px;
       position:relative;
       overflow:hidden;
+      isolation:isolate;
     }
 
     .quick-card::before{
@@ -258,22 +351,36 @@
       position:absolute;
       right:-18px;
       top:-18px;
-      width:84px;
-      height:84px;
+      width:90px;
+      height:90px;
       border-radius:50%;
       background:rgba(255,255,255,.04);
+      z-index:-1;
     }
+
+    .quick-card::after{
+      content:"";
+      position:absolute;
+      inset:auto auto 0 0;
+      width:100%;
+      height:1px;
+      background:linear-gradient(90deg, rgba(255,255,255,.12), transparent);
+      opacity:.55;
+    }
+
+    .quick-card.best{box-shadow:var(--shadow), 0 0 0 1px rgba(89,182,255,.08)}
+    .quick-card.sunset-card{box-shadow:var(--shadow), 0 0 0 1px rgba(245,199,106,.08)}
 
     .quick-label{
       color:var(--muted);
-      font-size:12px;
+      font-size:11px;
       text-transform:uppercase;
-      letter-spacing:.08em;
+      letter-spacing:.12em;
       margin-bottom:8px;
     }
 
     .quick-title{
-      font-size:20px;
+      font-size:21px;
       font-weight:800;
       line-height:1.12;
       margin-bottom:8px;
@@ -287,6 +394,74 @@
       word-break:break-word;
     }
 
+    .sunset-chip-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:12px;
+    }
+
+    .mini-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-size:11px;
+      padding:7px 10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+      color:#e8f1fa;
+      white-space:nowrap;
+    }
+
+    .mini-chip.gold{
+      background:rgba(245,199,106,.14);
+      border-color:rgba(245,199,106,.22);
+      color:#ffe7b5;
+    }
+
+    .mini-chip.blue{
+      background:rgba(89,182,255,.12);
+      border-color:rgba(89,182,255,.22);
+      color:#d7efff;
+    }
+
+    .sunset-countdown{
+      margin-top:10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 13px;
+      background:linear-gradient(135deg, rgba(245,199,106,.12), rgba(255,159,188,.10));
+      border:1px solid rgba(245,199,106,.18);
+      border-radius:16px;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);
+    }
+
+    .sunset-countdown-main{
+      font-size:14px;
+      font-weight:800;
+      line-height:1.3;
+      color:#fff3d1;
+    }
+
+    .sunset-countdown-sub{
+      font-size:12px;
+      color:#e2d7bc;
+      margin-top:4px;
+      line-height:1.45;
+    }
+
+    .sunset-countdown-time{
+      font-size:22px;
+      font-weight:900;
+      letter-spacing:-.02em;
+      color:#fff3d1;
+      white-space:nowrap;
+      text-shadow:0 0 18px rgba(245,199,106,.18);
+    }
+
     .stats-grid{
       display:grid;
       grid-template-columns:repeat(2,minmax(0,1fr));
@@ -294,11 +469,16 @@
     }
 
     .stat{
-      padding:12px;
+      padding:13px;
       background:#0f1724;
       border:1px solid var(--line);
-      border-radius:14px;
-      min-height:84px;
+      border-radius:16px;
+      min-height:88px;
+      transition:transform var(--normal) var(--ease), border-color var(--normal);
+    }
+
+    .stat:active{
+      transform:translateY(1px) scale(.992);
     }
 
     .stat .k{
@@ -332,21 +512,30 @@
       border-radius:999px;
       cursor:pointer;
       font-size:13px;
+      transition:
+        transform var(--fast) ease,
+        background var(--normal) ease,
+        border-color var(--normal) ease,
+        box-shadow var(--normal) ease;
     }
 
     .chip.active{
       background:linear-gradient(135deg, rgba(89,182,255,.24), rgba(245,199,106,.18));
       border-color:rgba(89,182,255,.38);
+      box-shadow:0 8px 20px rgba(89,182,255,.08);
     }
+
+    .chip:active{transform:scale(.97)}
 
     .subtoolbar{display:grid;gap:10px}
 
     .alert{
       padding:12px 14px;
-      border-radius:14px;
+      border-radius:16px;
       font-size:14px;
       border:1px solid transparent;
       word-break:break-word;
+      line-height:1.45;
     }
 
     .alert.ok{
@@ -373,10 +562,10 @@
       justify-content:space-between;
       gap:12px;
       margin-bottom:12px;
-      padding:12px;
+      padding:13px;
       background:#0f1724;
       border:1px solid var(--line);
-      border-radius:14px;
+      border-radius:16px;
     }
 
     .hourly-summary-main{
@@ -402,25 +591,24 @@
       -webkit-overflow-scrolling:touch;
     }
 
-    .hourly-strip::-webkit-scrollbar{
-      height:6px;
-    }
-
+    .hourly-strip::-webkit-scrollbar{height:6px}
     .hourly-strip::-webkit-scrollbar-thumb{
       background:#2a3a52;
       border-radius:999px;
     }
 
     .hour-card{
-      min-width:126px;
-      max-width:126px;
+      min-width:132px;
+      max-width:132px;
       padding:12px;
       background:#0f1724;
       border:1px solid var(--line);
       border-radius:16px;
       scroll-snap-align:start;
+      transition:transform var(--normal) var(--ease), border-color var(--normal), box-shadow var(--normal);
     }
 
+    .hour-card:hover{transform:translateY(-1px)}
     .hour-card.good{
       border-color:rgba(62,207,142,.24);
       box-shadow:inset 0 0 0 1px rgba(62,207,142,.06);
@@ -450,9 +638,7 @@
       color:#f4f7fb;
     }
 
-    .hour-emoji{
-      font-size:16px;
-    }
+    .hour-emoji{font-size:16px}
 
     .hour-line{
       display:flex;
@@ -463,9 +649,7 @@
       color:#dbe7f3;
     }
 
-    .hour-label{
-      color:var(--muted);
-    }
+    .hour-label{color:var(--muted)}
 
     .hour-pill{
       display:inline-flex;
@@ -539,19 +723,22 @@
       grid-template-columns:52px minmax(0,1fr);
       gap:12px;
       align-items:center;
-      padding:12px;
-      border-radius:16px;
+      padding:13px;
+      border-radius:18px;
       background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.025));
       border:1px solid rgba(255,255,255,.07);
       cursor:pointer;
-      transition:transform .18s ease, border-color .18s ease, background .18s ease;
+      transition:transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
     }
 
     .featured-card:hover{
       transform:translateY(-1px);
       border-color:#37506e;
       background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      box-shadow:var(--shadow-soft);
     }
+
+    .featured-card:active{transform:translateY(1px) scale(.992)}
 
     .featured-rank{
       width:52px;
@@ -609,7 +796,7 @@
       width:100%;
       height:56vh;
       min-height:360px;
-      border-radius:16px;
+      border-radius:18px;
       overflow:hidden;
       border:1px solid rgba(255,255,255,.06);
       background:#0f1724;
@@ -644,22 +831,32 @@
 
     .spot-list{
       display:grid;
-      gap:10px;
+      gap:11px;
     }
 
     .spot-card{
       background:#0f1724;
       border:1px solid var(--line);
-      border-radius:16px;
-      padding:12px;
+      border-radius:18px;
+      padding:13px;
       cursor:pointer;
-      transition:transform .18s ease, border-color .18s ease, background .18s ease;
+      transition:
+        transform .18s ease,
+        border-color .18s ease,
+        background .18s ease,
+        box-shadow .18s ease;
+      box-shadow:0 8px 16px rgba(0,0,0,.06);
     }
 
     .spot-card:hover{
       transform:translateY(-1px);
       border-color:#365270;
       background:#132033;
+      box-shadow:var(--shadow-soft);
+    }
+
+    .spot-card:active{
+      transform:translateY(1px) scale(.993);
     }
 
     .spot-head{
@@ -667,13 +864,14 @@
       justify-content:space-between;
       align-items:flex-start;
       gap:10px;
-      margin-bottom:8px;
+      margin-bottom:9px;
     }
 
     .spot-name{
       font-weight:800;
       font-size:18px;
       word-break:break-word;
+      line-height:1.15;
     }
 
     .spot-sub{
@@ -693,13 +891,19 @@
       padding:0;
       width:auto;
       flex:0 0 auto;
+      transition:transform var(--fast) ease, filter var(--fast) ease;
+    }
+
+    .fav-btn:active{
+      transform:scale(.9);
+      filter:brightness(1.08);
     }
 
     .spot-meta{
       display:flex;
       flex-wrap:wrap;
       gap:6px;
-      margin-bottom:8px;
+      margin-bottom:9px;
     }
 
     .tag{
@@ -731,8 +935,8 @@
     }
 
     .detail-hero{
-      min-height:210px;
-      border-radius:16px;
+      min-height:228px;
+      border-radius:18px;
       overflow:hidden;
       position:relative;
       margin-bottom:12px;
@@ -740,13 +944,16 @@
       background-size:cover;
       background-position:center;
       background-repeat:no-repeat;
+      box-shadow:var(--shadow-soft);
     }
 
     .detail-hero::after{
       content:"";
       position:absolute;
       inset:0;
-      background:linear-gradient(180deg, rgba(4,8,14,.08), rgba(4,8,14,.82));
+      background:
+        linear-gradient(180deg, rgba(4,8,14,.08), rgba(4,8,14,.82)),
+        radial-gradient(circle at top right, rgba(245,199,106,.14), transparent 30%);
     }
 
     .detail-hero-inner{
@@ -762,12 +969,14 @@
       font-size:24px;
       font-weight:800;
       word-break:break-word;
+      line-height:1.08;
     }
 
     .detail-sub{
       color:#d5e4f2;
       font-size:14px;
       word-break:break-word;
+      line-height:1.45;
     }
 
     .detail-grid{
@@ -781,7 +990,7 @@
       padding:12px;
       background:#0f1724;
       border:1px solid var(--line);
-      border-radius:14px;
+      border-radius:16px;
     }
 
     .detail-box .k{
@@ -828,10 +1037,16 @@
     }
 
     .planner-slot{
-      padding:12px;
+      padding:13px;
       background:#0f1724;
       border:1px solid var(--line);
-      border-radius:14px;
+      border-radius:16px;
+      transition:border-color var(--normal), transform var(--normal) var(--ease), box-shadow var(--normal);
+    }
+
+    .planner-slot:hover{
+      border-color:#324c6f;
+      box-shadow:var(--shadow-soft);
     }
 
     .planner-slot-head{
@@ -874,11 +1089,11 @@
       right:0;
       bottom:0;
       z-index:1000;
-      padding:8px 10px calc(8px + var(--safe-bottom));
-      background:linear-gradient(180deg, rgba(11,15,20,.1), rgba(11,15,20,.96));
-      backdrop-filter:blur(12px);
-      -webkit-backdrop-filter:blur(12px);
-      border-top:1px solid rgba(255,255,255,.08);
+      padding:9px 12px calc(8px + var(--safe-bottom));
+      background:linear-gradient(180deg, rgba(11,15,20,.06), rgba(11,15,20,.96));
+      backdrop-filter:blur(16px);
+      -webkit-backdrop-filter:blur(16px);
+      border-top:1px solid rgba(255,255,255,.07);
       width:100%;
       max-width:100%;
     }
@@ -890,12 +1105,17 @@
       display:grid;
       grid-template-columns:repeat(5,minmax(0,1fr));
       gap:8px;
+      background:rgba(11,15,20,.26);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:22px;
+      padding:6px;
+      box-shadow:0 14px 28px rgba(0,0,0,.16);
     }
 
     .nav-btn{
-      background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.08);
-      color:var(--text);
+      background:transparent;
+      border:1px solid transparent;
+      color:var(--muted);
       border-radius:16px;
       padding:8px 4px;
       text-align:center;
@@ -907,12 +1127,18 @@
       gap:4px;
       min-width:0;
       width:100%;
+      transition:
+        transform var(--fast) ease,
+        background var(--normal) ease,
+        border-color var(--normal) ease,
+        color var(--normal) ease,
+        box-shadow var(--normal) ease;
     }
 
     .nav-btn svg{
       width:18px;
       height:18px;
-      opacity:.95;
+      opacity:.98;
     }
 
     .nav-btn strong{
@@ -920,11 +1146,18 @@
       font-size:11px;
       margin:0;
       white-space:nowrap;
+      font-weight:800;
     }
 
     .nav-btn.active{
-      background:linear-gradient(135deg, rgba(89,182,255,.24), rgba(245,199,106,.18));
-      border-color:rgba(89,182,255,.38);
+      background:linear-gradient(135deg, rgba(89,182,255,.18), rgba(245,199,106,.14));
+      border-color:rgba(89,182,255,.24);
+      color:#f4f9ff;
+      box-shadow:0 10px 20px rgba(89,182,255,.08);
+    }
+
+    .nav-btn:active{
+      transform:translateY(1px) scale(.97);
     }
 
     .footer-note{
@@ -938,7 +1171,7 @@
 
     .toast-wrap{
       position:fixed;
-      bottom:calc(96px + var(--safe-bottom));
+      bottom:calc(98px + var(--safe-bottom));
       left:50%;
       transform:translateX(-50%);
       z-index:9999;
@@ -980,6 +1213,16 @@
       .stats-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
       .search-box{grid-template-columns:minmax(0,1fr) 150px 150px}
     }
+
+    @media (max-width: 640px){
+      .detail-grid{grid-template-columns:1fr 1fr}
+      .sunset-countdown{
+        align-items:flex-start;
+      }
+      .sunset-countdown-time{
+        font-size:20px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1011,14 +1254,14 @@
       <div class="hero-actions">
         <div class="search-box glass">
           <input id="searchInput" type="text" placeholder="Es. Pico do Arieiro, Fanal, Porto Moniz">
-          <button class="btn btn-primary" id="searchBtn" type="button">Cerca</button>
-          <button class="btn btn-secondary" id="spotNowBtn" type="button">Spot ora</button>
+          <button class="btn btn-primary tap" id="searchBtn" type="button">Cerca</button>
+          <button class="btn btn-secondary tap" id="spotNowBtn" type="button">Spot ora</button>
         </div>
 
         <div class="panel glass" style="display:grid;gap:10px">
-          <button class="btn btn-gold" id="dayBtn" type="button">Giornata smart</button>
-          <button class="btn btn-secondary" id="autofillPlannerBtn" type="button">Auto planner</button>
-          <button class="btn btn-secondary" id="gpsBtn" type="button">Usa GPS</button>
+          <button class="btn btn-gold tap" id="dayBtn" type="button">Giornata smart</button>
+          <button class="btn btn-secondary tap" id="autofillPlannerBtn" type="button">Auto planner</button>
+          <button class="btn btn-secondary tap" id="gpsBtn" type="button">Usa GPS</button>
         </div>
       </div>
     </section>
@@ -1026,39 +1269,54 @@
     <section id="page-home" class="page active">
       <div class="stack">
         <div class="quick-grid">
-          <div class="quick-card glass">
+          <div class="quick-card glass best tap">
             <div class="quick-label">Spot del giorno</div>
             <div class="quick-title" id="bestTodayTitle">—</div>
             <div class="quick-desc" id="bestTodayDesc">In attesa del meteo.</div>
           </div>
-          <div class="quick-card glass">
+
+          <div class="quick-card glass tap">
             <div class="quick-label">Wow spot</div>
             <div class="quick-title" id="bestWowTitle">—</div>
             <div class="quick-desc" id="bestWowDesc">I posti più forti visivamente.</div>
           </div>
-          <div class="quick-card glass">
-            <div class="quick-label">Tramonto top</div>
+
+          <div class="quick-card glass sunset-card tap">
+            <div class="quick-label">Tramonto premium</div>
             <div class="quick-title" id="bestSunsetTitle">—</div>
             <div class="quick-desc" id="bestSunsetDesc">In attesa della lettura luce.</div>
+
+            <div class="sunset-chip-row">
+              <div class="mini-chip gold" id="sunsetClockChip">🌇 Tramonto —</div>
+              <div class="mini-chip blue" id="sunPhaseChip">✨ Luce da leggere</div>
+            </div>
+
+            <div class="sunset-countdown">
+              <div>
+                <div class="sunset-countdown-main" id="sunsetCountdownMain">Sto leggendo la luce di oggi</div>
+                <div class="sunset-countdown-sub" id="sunsetCountdownSub">Fra poco trovi countdown e stato tramonto.</div>
+              </div>
+              <div class="sunset-countdown-time" id="sunsetCountdownTime">—</div>
+            </div>
           </div>
         </div>
 
         <div class="panel glass">
           <h2>Meteo e mood del giorno</h2>
           <div class="stats-grid">
-            <div class="stat">
+            <div class="stat tap">
               <div class="k">Temperatura</div>
               <div class="v" id="tempNow">—</div>
             </div>
-            <div class="stat">
+            <div class="stat tap">
               <div class="k">Vento</div>
               <div class="v" id="windNow">—</div>
             </div>
-            <div class="stat">
+            <div class="stat tap">
               <div class="k">Nuvole</div>
               <div class="v" id="cloudNow">—</div>
             </div>
-            <div class="stat">
+            <div class="stat tap">
               <div class="k">Pioggia</div>
               <div class="v" id="rainNow">—</div>
             </div>
@@ -1092,8 +1350,8 @@
           <h2>Planner giornata</h2>
           <div class="planner-box" id="plannerBox"></div>
           <div class="planner-actions">
-            <button class="btn btn-secondary" id="plannerOpenBtn" type="button">Apri planner</button>
-            <button class="btn btn-danger" id="clearPlannerBtn" type="button">Svuota planner</button>
+            <button class="btn btn-secondary tap" id="plannerOpenBtn" type="button">Apri planner</button>
+            <button class="btn btn-danger tap" id="clearPlannerBtn" type="button">Svuota planner</button>
           </div>
         </div>
       </div>
@@ -1213,23 +1471,23 @@
   <nav class="bottom-nav" id="bottomNav">
     <div class="bottom-nav-inner">
       <button class="nav-btn active" data-page="home" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11.5 12 4l9 7.5"/><path d="M6 10.5V20h12v-9.5"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85"><path d="M3 11.5 12 4l9 7.5"/><path d="M6 10.5V20h12v-9.5"/></svg>
         <strong>Home</strong>
       </button>
       <button class="nav-btn" data-page="top" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18"/><path d="M5 9h5"/><path d="M14 15h5"/><path d="M5 15h3"/><path d="M16 9h3"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85"><path d="M12 3v18"/><path d="M5 9h5"/><path d="M14 15h5"/><path d="M5 15h3"/><path d="M16 9h3"/></svg>
         <strong>Top</strong>
       </button>
       <button class="nav-btn" data-page="map" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14"/><path d="M15 6v14"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14"/><path d="M15 6v14"/></svg>
         <strong>Mappa</strong>
       </button>
       <button class="nav-btn" data-page="spots" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><circle cx="4" cy="6" r="1.2"/><circle cx="4" cy="12" r="1.2"/><circle cx="4" cy="18" r="1.2"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><circle cx="4" cy="6" r="1.2"/><circle cx="4" cy="12" r="1.2"/><circle cx="4" cy="18" r="1.2"/></svg>
         <strong>Spot</strong>
       </button>
       <button class="nav-btn" data-page="detail" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85"><path d="M7 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
         <strong>Dettaglio</strong>
       </button>
     </div>
@@ -1264,6 +1522,8 @@
       currentSpot:null,
       weatherData:null,
       hourlyData:[],
+      sunTimes:null,
+      sunsetTimer:null,
       favorites:loadJson(STORAGE_KEYS.favorites, []),
       planner:loadJson(STORAGE_KEYS.planner, defaultPlanner),
       activePage:"home",
@@ -1374,6 +1634,104 @@
     function displayDistance(d){
       if(d == null) return "distanza non disponibile";
       return `${d.toFixed(1)} km da te`;
+    }
+
+    function formatTime(dateObj){
+      if(!(dateObj instanceof Date) || isNaN(dateObj.getTime())) return "—";
+      return dateObj.toLocaleTimeString("it-IT", { hour:"2-digit", minute:"2-digit" });
+    }
+
+    function getMinutesDiff(from, to){
+      return Math.floor((to.getTime() - from.getTime()) / 60000);
+    }
+
+    function formatCountdown(totalMinutes){
+      if(!Number.isFinite(totalMinutes)) return "—";
+      if(totalMinutes <= 0) return "ora";
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
+      if(h <= 0) return `${m}m`;
+      return `${h}h ${String(m).padStart(2,"0")}m`;
+    }
+
+    function parseSunTime(raw){
+      if(!raw) return null;
+      const d = new Date(raw);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    function getSunPhaseInfo(){
+      const chip = $("sunPhaseChip");
+      const main = $("sunsetCountdownMain");
+      const sub = $("sunsetCountdownSub");
+      const timeEl = $("sunsetCountdownTime");
+      const clockChip = $("sunsetClockChip");
+
+      if(!chip || !main || !sub || !timeEl || !clockChip) return;
+      if(!state.sunTimes?.sunset){
+        clockChip.textContent = "🌇 Tramonto —";
+        chip.textContent = "✨ Luce da leggere";
+        main.textContent = "Sto leggendo la luce di oggi";
+        sub.textContent = "Fra poco trovi countdown e stato tramonto.";
+        timeEl.textContent = "—";
+        return;
+      }
+
+      const now = new Date();
+      const sunrise = state.sunTimes.sunrise;
+      const sunset = state.sunTimes.sunset;
+      const goldenStart = new Date(sunset.getTime() - 60 * 60000);
+      const blueStart = new Date(sunset.getTime() + 10 * 60000);
+      const blueEnd = new Date(sunset.getTime() + 40 * 60000);
+
+      clockChip.textContent = `🌇 Tramonto ${formatTime(sunset)}`;
+
+      if(now < sunrise){
+        const mins = getMinutesDiff(now, sunrise);
+        chip.textContent = "🌄 Prima dell'alba";
+        main.textContent = "Luce ancora chiusa";
+        sub.textContent = "La giornata deve ancora aprirsi. Per spot alba, stai già guardando la finestra giusta.";
+        timeEl.textContent = formatCountdown(mins);
+        return;
+      }
+
+      if(now < goldenStart){
+        const mins = getMinutesDiff(now, goldenStart);
+        chip.textContent = "☀️ Prima della golden hour";
+        main.textContent = "La luce migliore arriva più tardi";
+        sub.textContent = "Hai ancora margine. Se vuoi un tramonto forte, inizia a muoverti quando la luce comincia a scaldarsi.";
+        timeEl.textContent = formatCountdown(mins);
+        return;
+      }
+
+      if(now >= goldenStart && now < sunset){
+        const mins = getMinutesDiff(now, sunset);
+        chip.textContent = "✨ Golden hour in corso";
+        main.textContent = "Se vuoi il tramonto, questo è il momento";
+        sub.textContent = "La luce è nella fascia giusta per viewpoint, costa o scogliere. Adesso conviene già essere sul posto.";
+        timeEl.textContent = formatCountdown(mins);
+        return;
+      }
+
+      if(now >= sunset && now < blueEnd){
+        const mins = getMinutesDiff(now, blueEnd);
+        chip.textContent = "🌌 Blue hour";
+        main.textContent = "Il sole è appena sceso";
+        sub.textContent = "Hai ancora una finestra breve, morbida e molto bella per skyline, costa e luci artificiali leggere.";
+        timeEl.textContent = formatCountdown(mins);
+        return;
+      }
+
+      chip.textContent = "🌙 Dopo il tramonto";
+      main.textContent = "La finestra serale è finita";
+      sub.textContent = "Per una nuova lettura forte della luce, guarda già la giornata di domani o prepara una partenza all'alba.";
+      timeEl.textContent = "chiuso";
+    }
+
+    function startSunsetCountdown(){
+      if(state.sunsetTimer) clearInterval(state.sunsetTimer);
+      getSunPhaseInfo();
+      state.sunsetTimer = setInterval(getSunPhaseInfo, 30000);
     }
 
     function weatherSuitability(spot){
@@ -1710,7 +2068,7 @@
       const sunset = TOP_SUNSET_NAMES.map(name => SPOTS.find(s => s.name === name)).filter(Boolean);
 
       $("topWowList").innerHTML = wow.map((s, i) => `
-        <div class="featured-card wow" data-top-id="${escapeHtml(s.id)}">
+        <div class="featured-card wow tap" data-top-id="${escapeHtml(s.id)}">
           <div class="featured-rank">${i + 1}</div>
           <div>
             <div class="featured-name">${escapeHtml(s.name)}</div>
@@ -1721,7 +2079,7 @@
       `).join("");
 
       $("topSunsetList").innerHTML = sunset.map((s, i) => `
-        <div class="featured-card sunset" data-sunset-id="${escapeHtml(s.id)}">
+        <div class="featured-card sunset tap" data-sunset-id="${escapeHtml(s.id)}">
           <div class="featured-rank">${i + 1}</div>
           <div>
             <div class="featured-name">${escapeHtml(s.name)}</div>
@@ -1778,7 +2136,7 @@
         const fit = fitTag(s.weatherFit);
 
         return `
-          <div class="spot-card" data-spot-id="${escapeHtml(s.id)}">
+          <div class="spot-card tap" data-spot-id="${escapeHtml(s.id)}">
             <div class="spot-head">
               <div>
                 <div class="spot-name">${escapeHtml(s.name)}</div>
@@ -1835,7 +2193,7 @@
 
         if(!spot){
           return `
-            <div class="planner-slot">
+            <div class="planner-slot tap">
               <div class="planner-slot-head">
                 <div class="planner-slot-title">${slot.title}</div>
               </div>
@@ -1845,10 +2203,10 @@
         }
 
         return `
-          <div class="planner-slot">
+          <div class="planner-slot tap">
             <div class="planner-slot-head">
               <div class="planner-slot-title">${slot.title}</div>
-              <button class="btn btn-secondary" data-clear-slot="${slot.key}" type="button" style="width:auto;padding:8px 12px">Rimuovi</button>
+              <button class="btn btn-secondary tap" data-clear-slot="${slot.key}" type="button" style="width:auto;padding:8px 12px">Rimuovi</button>
             </div>
             <div class="planner-slot-name">${escapeHtml(spot.name)}</div>
             <div class="planner-slot-sub">${escapeHtml(spot.desc)}</div>
@@ -1949,13 +2307,13 @@
         <div class="detail-section">
           <h3>Azioni</h3>
           <div class="action-grid">
-            <button class="btn btn-primary" id="detailMapBtn" type="button">Apri sulla mappa</button>
-            <a class="btn btn-secondary" href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank" rel="noopener noreferrer">Apri in Google Maps</a>
-            <button class="btn btn-secondary" id="detailFavBtn" type="button">${isFavorite(spot.id) ? "Rimuovi preferito" : "Salva preferito"}</button>
-            <a class="btn btn-secondary" href="https://www.google.com/search?q=${encodeURIComponent(spot.name + " " + (APP_SPOTS.region || ""))}&tbm=isch" target="_blank" rel="noopener noreferrer">Vedi foto reali</a>
-            <button class="btn btn-secondary" id="detailAlbaBtn" type="button">Aggiungi ad Alba</button>
-            <button class="btn btn-secondary" id="detailMainBtn" type="button">Aggiungi ad Attività</button>
-            <button class="btn btn-secondary" id="detailSunsetBtn" type="button">Aggiungi a Tramonto</button>
+            <button class="btn btn-primary tap" id="detailMapBtn" type="button">Apri sulla mappa</button>
+            <a class="btn btn-secondary tap" href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank" rel="noopener noreferrer">Apri in Google Maps</a>
+            <button class="btn btn-secondary tap" id="detailFavBtn" type="button">${isFavorite(spot.id) ? "Rimuovi preferito" : "Salva preferito"}</button>
+            <a class="btn btn-secondary tap" href="https://www.google.com/search?q=${encodeURIComponent(spot.name + " " + (APP_SPOTS.region || ""))}&tbm=isch" target="_blank" rel="noopener noreferrer">Vedi foto reali</a>
+            <button class="btn btn-secondary tap" id="detailAlbaBtn" type="button">Aggiungi ad Alba</button>
+            <button class="btn btn-secondary tap" id="detailMainBtn" type="button">Aggiungi ad Attività</button>
+            <button class="btn btn-secondary tap" id="detailSunsetBtn" type="button">Aggiungi a Tramonto</button>
           </div>
         </div>
       `;
@@ -2001,14 +2359,27 @@
       try{
         const lat = (APP_SPOTS.center && APP_SPOTS.center[0]) || 32.75;
         const lon = (APP_SPOTS.center && APP_SPOTS.center[1]) || -16.95;
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,cloud_cover&hourly=temperature_2m,wind_speed_10m,cloud_cover,precipitation_probability&forecast_days=2`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,cloud_cover&hourly=temperature_2m,wind_speed_10m,cloud_cover,precipitation_probability&daily=sunrise,sunset&forecast_days=2&timezone=auto`;
         const res = await fetch(url);
         const data = await res.json();
 
         const temp = data?.current?.temperature_2m ?? 0;
         const wind = data?.current?.wind_speed_10m ?? 0;
         const cloud = data?.current?.cloud_cover ?? 0;
-        const rain = data?.hourly?.precipitation_probability?.[0] ?? 0;
+
+        const currentHour = new Date().getHours();
+        const currentHourlyIndex = (data?.hourly?.time || []).findIndex(t => {
+          const d = new Date(t);
+          return d.getHours() === currentHour && d.toDateString() === new Date().toDateString();
+        });
+        const rain = currentHourlyIndex >= 0
+          ? (data?.hourly?.precipitation_probability?.[currentHourlyIndex] ?? 0)
+          : (data?.hourly?.precipitation_probability?.[0] ?? 0);
+
+        const sunrise = parseSunTime(data?.daily?.sunrise?.[0]);
+        const sunset = parseSunTime(data?.daily?.sunset?.[0]);
+        state.sunTimes = { sunrise, sunset };
+
         const period = currentPeriod();
 
         let headline = "Meteo flessibile";
@@ -2041,6 +2412,7 @@
       }catch{
         state.weatherData = null;
         state.hourlyData = [];
+        state.sunTimes = null;
       }
 
       renderWeatherBox();
@@ -2048,6 +2420,8 @@
       renderHomeCards();
       renderSpotList();
       renderMarkers();
+      startSunsetCountdown();
+
       if(state.currentSpot) showSpotDetail(state.currentSpot);
     }
 
@@ -2060,6 +2434,7 @@
       renderSpotList();
       renderPlannerBox();
       renderMarkers();
+      getSunPhaseInfo();
       if(state.currentSpot) showSpotDetail(state.currentSpot);
     }
 
