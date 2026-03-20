@@ -332,6 +332,104 @@
     )[0];
   }
 
+  function rankSpotForGoNow(spot) {
+    let score = 0;
+
+    score += (spot.weatherFit?.score || 0) * 12;
+
+    const period = currentPeriod();
+    if (spot.light === period) score += 22;
+    else if (period === "giorno" && spot.light === "giorno") score += 10;
+    else score -= 3;
+
+    const levelBoost = { core: 18, secondary: 10, extra: 4 };
+    score += levelBoost[spot.level] || 0;
+
+    if (spot.distance != null) {
+      if (spot.distance <= 8) score += 22;
+      else if (spot.distance <= 18) score += 16;
+      else if (spot.distance <= 30) score += 10;
+      else if (spot.distance <= 50) score += 4;
+      else score -= Math.min(18, Math.round(spot.distance / 10));
+    }
+
+    if (period === "alba" && (spot.activity === "view" || spot.activity === "relax")) score += 7;
+    if (period === "giorno" && (spot.activity === "trekking" || spot.activity === "view")) score += 6;
+    if (period === "tramonto" && (spot.activity === "view" || spot.activity === "relax")) score += 8;
+
+    return score;
+  }
+
+  function getGoNowSuggestions() {
+    if (APP.mode === "sail" && window.SAIL) {
+      const best = window.SAIL.getBestSailSpot(APP);
+      return { best: best || null, alternatives: [] };
+    }
+
+    let pool = getAllSpotsWithMeta().map(s => ({
+      ...s,
+      goNowScore: rankSpotForGoNow(s)
+    }));
+
+    pool.sort((a, b) => b.goNowScore - a.goNowScore);
+
+    const best = pool[0] || null;
+    const alternatives = pool.filter(s => !best || s.id !== best.id).slice(0, 2);
+
+    return { best, alternatives };
+  }
+
+  function runGoNow() {
+    const result = getGoNowSuggestions();
+    if (!result.best) {
+      toast("Nessuno spot disponibile");
+      return;
+    }
+
+    showSpotDetail(result.best);
+    switchPage("detail");
+    toast("Ti ho scelto lo spot migliore di adesso");
+  }
+
+  function buildDayPlanner() {
+    const albaCandidate = bestSpot({ light: "alba", activity: ["view", "trekking", "relax"] });
+    const mainCandidate = bestSpot({
+      activity: ["trekking", "view", "relax", "mtb"],
+      exclude: [albaCandidate?.id]
+    });
+    const sunsetCandidate = bestSpot({
+      light: "tramonto",
+      activity: ["view", "relax"],
+      exclude: [albaCandidate?.id, mainCandidate?.id]
+    });
+
+    const period = currentPeriod();
+
+    if (period === "tramonto") {
+      APP.planner = {
+        alba: null,
+        main: mainCandidate?.id || null,
+        tramonto: sunsetCandidate?.id || mainCandidate?.id || null
+      };
+    } else if (period === "giorno") {
+      APP.planner = {
+        alba: null,
+        main: mainCandidate?.id || null,
+        tramonto: sunsetCandidate?.id || null
+      };
+    } else {
+      APP.planner = {
+        alba: albaCandidate?.id || null,
+        main: mainCandidate?.id || null,
+        tramonto: sunsetCandidate?.id || null
+      };
+    }
+
+    saveJson(STORAGE_KEYS.planner, APP.planner);
+    renderPlannerBox();
+    toast("Giornata pianificata");
+  }
+
   function getSunPhaseInfo() {
     if (!APP.sunTimes?.sunset) {
       return {
@@ -465,10 +563,10 @@
       const waveDirection = marine?.current?.wave_direction ?? 0;
       const wavePeriod = marine?.current?.wave_period ?? 0;
 
-      const currentHour = new Date().getHours();
       const currentHourlyIndex = (forecast?.hourly?.time || []).findIndex(t => {
         const d = new Date(t);
-        return d.getHours() === currentHour && d.toDateString() === new Date().toDateString();
+        const now = new Date();
+        return d.getHours() === now.getHours() && d.toDateString() === now.toDateString();
       });
 
       const rain = currentHourlyIndex >= 0
@@ -668,7 +766,7 @@
     if (hero) {
       hero.textContent = APP.mode === "sail"
         ? "Modalità vela attiva: vento, onde, rotta live e spot compatibili quando presenti nei dati."
-        : "Guida travel e outdoor con mappa, spot wow, tramonti, planner giornata e una Sail mode pronta per vento, onde e spot vela.";
+        : "Guida travel e outdoor con mappa, spot wow, tramonti, vai ora intelligente, planner giornata e preferiti personali.";
     }
 
     document.body.classList.toggle("mode-sail", APP.mode === "sail");
@@ -703,22 +801,6 @@
     } else {
       toast("Nessuno spot trovato");
     }
-  }
-
-  function bestForDayPlanner() {
-    const alba = bestSpot({ light: "alba", activity: ["view", "trekking", "relax"] });
-    const main = bestSpot({ activity: ["trekking", "view", "relax", "mtb"], exclude: [alba?.id] });
-    const tram = bestSpot({ light: "tramonto", activity: ["view", "relax"], exclude: [alba?.id, main?.id] });
-
-    APP.planner = {
-      alba: alba?.id || null,
-      main: main?.id || null,
-      tramonto: tram?.id || null
-    };
-
-    saveJson(STORAGE_KEYS.planner, APP.planner);
-    renderPlannerBox();
-    toast("Planner smart creato");
   }
 
   function startGPSRoute() {
@@ -806,17 +888,8 @@
     }
 
     $("searchBtn")?.addEventListener("click", searchSpot);
-
-    $("spotNowBtn")?.addEventListener("click", () => {
-      const s = getBestSpotToday();
-      if (s) {
-        showSpotDetail(s);
-        switchPage("detail");
-      }
-    });
-
-    $("dayBtn")?.addEventListener("click", bestForDayPlanner);
-    $("autofillPlannerBtn")?.addEventListener("click", bestForDayPlanner);
+    $("goNowBtn")?.addEventListener("click", runGoNow);
+    $("autofillPlannerBtn")?.addEventListener("click", buildDayPlanner);
     $("plannerOpenBtn")?.addEventListener("click", () => switchPage("home"));
     $("clearPlannerBtn")?.addEventListener("click", clearPlannerAll);
 
@@ -907,6 +980,7 @@
     getBestSpotToday,
     getBestWowSpot,
     getBestSunsetSpot,
+    getGoNowSuggestions,
     getSunPhaseInfo,
     showSpotDetail,
     switchPage,
