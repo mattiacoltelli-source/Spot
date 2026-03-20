@@ -24,8 +24,8 @@
     const bestNow = goNow?.best || null;
     const alt1 = goNow?.alternatives?.[0] || null;
     const alt2 = goNow?.alternatives?.[1] || null;
-    const bestWow = window.APP_UTILS.getBestWowSpot();
     const bestSunset = window.APP_UTILS.getBestSunsetSpot();
+    const closestSpot = window.APP_UTILS.getClosestSpot();
 
     return `
       <div class="quick-card glass best tap" data-quick-id="${bestNow ? esc(bestNow.id) : ""}">
@@ -47,10 +47,15 @@
         ` : ``}
       </div>
 
-      <div class="quick-card glass tap" data-quick-id="${bestWow ? esc(bestWow.id) : ""}">
-        <div class="quick-label">Wow spot</div>
-        <div class="quick-title">${bestWow ? esc(bestWow.name) : "—"}</div>
-        <div class="quick-desc">${bestWow ? esc(bestWow.tip || bestWow.desc || "") : "I posti più forti visivamente."}</div>
+      <div class="quick-card glass tap" data-quick-id="${closestSpot ? esc(closestSpot.id) : ""}">
+        <div class="quick-label">Spot vicino a te</div>
+        <div class="quick-title">${closestSpot ? esc(closestSpot.name) : "—"}</div>
+        <div class="quick-desc">${closestSpot ? esc(closestSpot.tip || closestSpot.desc || "") : "Attiva il GPS per vedere lo spot più vicino."}</div>
+
+        <div class="sunset-chip-row">
+          <div class="mini-chip blue">${closestSpot?.distance != null ? esc(window.APP_UTILS.displayDistance(closestSpot.distance)) : "GPS non attivo"}</div>
+          <div class="mini-chip gold">${closestSpot ? esc(closestSpot.zone) : "zona n/d"}</div>
+        </div>
       </div>
 
       <div class="quick-card glass sunset-card tap" data-quick-id="${bestSunset ? esc(bestSunset.id) : ""}">

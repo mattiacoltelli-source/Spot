@@ -302,6 +302,20 @@
     )[0] || null;
   }
 
+  function getClosestSpot() {
+    if (!APP.userPos) return null;
+
+    let pool = getAllSpotsWithMeta().filter(s => s.distance != null);
+
+    if (APP.mode === "sail" && window.SAIL) {
+      pool = pool.filter(s => window.SAIL.filterSpotForSailMode(s, APP));
+    }
+
+    if (!pool.length) return null;
+
+    return pool.sort((a, b) => a.distance - b.distance)[0] || null;
+  }
+
   function bestSpot(options) {
     let pool = getAllSpotsWithMeta();
 
@@ -980,6 +994,7 @@
     getBestSpotToday,
     getBestWowSpot,
     getBestSunsetSpot,
+    getClosestSpot,
     getGoNowSuggestions,
     getSunPhaseInfo,
     showSpotDetail,
