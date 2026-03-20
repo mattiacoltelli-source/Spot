@@ -267,6 +267,7 @@
     if (APP.mapQuickFilter === "sunset") return items.filter(s => s.light === "tramonto");
     if (APP.mapQuickFilter === "alba") return items.filter(s => s.light === "alba");
     if (APP.mapQuickFilter === "favorites") return items.filter(s => isFavorite(s.id));
+
     return items;
   }
 
@@ -302,6 +303,10 @@
     )[0] || null;
   }
 
+  // getClosestSpot migliorata:
+  // Preferisce lo spot più vicino che non sia "meno ideale" (cls === "pink").
+  // Accetta fino a 15 km in più rispetto al nearest per trovarne uno decente.
+  // Ricade sul più vicino assoluto solo se non trova alternative valide.
   function getClosestSpot() {
     if (!APP.userPos) return null;
 
@@ -313,7 +318,61 @@
 
     if (!pool.length) return null;
 
-    return pool.sort((a, b) => a.distance - b.distance)[0] || null;
+    pool.sort((a, b) => a.distance - b.distance);
+
+    const nearest = pool[0];
+
+    if (nearest.weatherFit.cls !== "pink") return nearest;
+
+    const EXTRA_KM_TOLERANCE = 15;
+    const decent = pool.find(
+      s => s.weatherFit.cls !== "pink" && s.distance <= nearest.distance + EXTRA_KM_TOLERANCE
+    );
+
+    return decent || nearest;
+  }
+
+  // explainGoNow: genera una stringa breve con i motivi della scelta "Vai ora".
+  // Combina al massimo 3 ragioni separate da " · ".
+  function explainGoNow(spot) {
+    if (!spot) return "";
+
+    const reasons = [];
+    const period = currentPeriod();
+    const w = APP.weatherData;
+
+    // Motivo 1: meteo
+    if (spot.weatherFit?.cls === "green") {
+      reasons.push("meteo favorevole");
+    } else if (w && w.cloud <= 35 && w.rain < 25) {
+      reasons.push("cielo aperto");
+    } else if (w && w.rain >= 55) {
+      reasons.push("riparato dalla pioggia");
+    }
+
+    // Motivo 2: luce / orario
+    if (spot.light === period) {
+      if (period === "alba") reasons.push("luce perfetta per l'alba");
+      else if (period === "tramonto") reasons.push("luce perfetta per il tramonto");
+      else reasons.push("orario ideale");
+    } else if (period === "tramonto" && spot.light === "tramonto") {
+      reasons.push("tramonto imminente");
+    }
+
+    // Motivo 3: distanza
+    if (spot.distance != null) {
+      if (spot.distance <= 8) reasons.push("vicinissimo a te");
+      else if (spot.distance <= 18) reasons.push("raggiungibile facilmente");
+      else if (spot.distance <= 30) reasons.push("a portata di mano");
+    }
+
+    // Fallback se abbiamo meno di 2 ragioni
+    if (reasons.length < 2) {
+      if (spot.level === "core") reasons.push("spot di prima fascia");
+      else if (spot.activity === "view" && period !== "giorno") reasons.push("viewpoint ideale");
+    }
+
+    return reasons.slice(0, 3).join(" · ");
   }
 
   function bestSpot(options) {
@@ -902,7 +961,7 @@
     }
 
     $("searchBtn")?.addEventListener("click", searchSpot);
-    $("goNowBtn")?.addEventListener("click", runGoNow);
+    $("spotNowBtn")?.addEventListener("click", runGoNow);   // ← corretto da goNowBtn
     $("autofillPlannerBtn")?.addEventListener("click", buildDayPlanner);
     $("plannerOpenBtn")?.addEventListener("click", () => switchPage("home"));
     $("clearPlannerBtn")?.addEventListener("click", clearPlannerAll);
@@ -996,6 +1055,7 @@
     getBestSunsetSpot,
     getClosestSpot,
     getGoNowSuggestions,
+    explainGoNow,
     getSunPhaseInfo,
     showSpotDetail,
     switchPage,

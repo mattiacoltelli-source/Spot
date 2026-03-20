@@ -27,10 +27,25 @@
     const bestSunset = window.APP_UTILS.getBestSunsetSpot();
     const closestSpot = window.APP_UTILS.getClosestSpot();
 
+    // Spiegazione "Vai ora" — generata da explainGoNow
+    const goNowExplanation = bestNow
+      ? window.APP_UTILS.explainGoNow(bestNow)
+      : "";
+
+    // Stato qualità "Spot vicino a te": usa direttamente cls dal weatherFit
+    const closestFit = closestSpot?.weatherFit || null;
+    const closestQualityChipCls = closestFit?.cls || "blue";
+    const closestQualityLabel = closestFit ? closestFit.label : "stato n/d";
+
     return `
       <div class="quick-card glass best tap" data-quick-id="${bestNow ? esc(bestNow.id) : ""}">
         <div class="quick-label">Vai ora</div>
         <div class="quick-title">${bestNow ? esc(bestNow.name) : "—"}</div>
+
+        ${goNowExplanation ? `
+          <div class="quick-desc" style="font-size:13px;opacity:.90;font-style:italic;margin-bottom:8px;margin-top:2px">${esc(goNowExplanation)}</div>
+        ` : ``}
+
         <div class="quick-desc">${bestNow ? esc(bestNow.desc || bestNow.tip || "") : "Sto leggendo il miglior spot del momento."}</div>
 
         <div class="sunset-chip-row">
@@ -55,6 +70,7 @@
         <div class="sunset-chip-row">
           <div class="mini-chip blue">${closestSpot?.distance != null ? esc(window.APP_UTILS.displayDistance(closestSpot.distance)) : "GPS non attivo"}</div>
           <div class="mini-chip gold">${closestSpot ? esc(closestSpot.zone) : "zona n/d"}</div>
+          ${closestSpot ? `<div class="mini-chip ${esc(closestQualityChipCls)}">${esc(closestQualityLabel)}</div>` : ``}
         </div>
       </div>
 
