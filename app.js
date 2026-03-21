@@ -163,32 +163,8 @@
     return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
   }
 
-  function getRegionCenter() {
-    return {
-      lat: APP_SPOTS.center?.[0] ?? 32.75,
-      lon: APP_SPOTS.center?.[1] ?? -16.95
-    };
-  }
-
-  function getDistanceFromRegionCenter() {
-    if (!APP.userPos) return null;
-    const center = getRegionCenter();
-    return distKm(APP.userPos.lat, APP.userPos.lon, center.lat, center.lon);
-  }
-
-  function isUserNearRegion() {
-    const d = getDistanceFromRegionCenter();
-    if (d == null) return false;
-    return d <= 180;
-  }
-
-  function shouldUseLiveDistance() {
-    return isUserNearRegion();
-  }
-
   function displayDistance(d) {
     if (d == null) return "distanza non disponibile";
-    if (!shouldUseLiveDistance()) return "distanza locale non attiva";
     return `${d.toFixed(1)} km da te`;
   }
 
@@ -359,12 +335,10 @@
       if (b.weatherFit.score !== a.weatherFit.score) return b.weatherFit.score - a.weatherFit.score;
       if ((levelOrder[a.level] ?? 9) !== (levelOrder[b.level] ?? 9)) return (levelOrder[a.level] ?? 9) - (levelOrder[b.level] ?? 9);
 
-      if (shouldUseLiveDistance()) {
-        if (a.distance == null && b.distance == null) return a.name.localeCompare(b.name, "it");
-        if (a.distance == null) return 1;
-        if (b.distance == null) return -1;
-        if (a.distance !== b.distance) return a.distance - b.distance;
-      }
+      if (a.distance == null && b.distance == null) return a.name.localeCompare(b.name, "it");
+      if (a.distance == null) return 1;
+      if (b.distance == null) return -1;
+      if (a.distance !== b.distance) return a.distance - b.distance;
 
       return a.name.localeCompare(b.name, "it");
     });
@@ -387,6 +361,21 @@
     if (APP.mapQuickFilter === "favorites") return items.filter(s => isFavorite(s.id));
 
     return items;
+  }
+
+  function sortBestPool(pool) {
+    return [...pool].sort((a, b) => {
+      if (b.weatherFit.score !== a.weatherFit.score) return b.weatherFit.score - a.weatherFit.score;
+
+      const levelOrder = { core: 0, secondary: 1, extra: 2 };
+      if ((levelOrder[a.level] ?? 9) !== (levelOrder[b.level] ?? 9)) return (levelOrder[a.level] ?? 9) - (levelOrder[b.level] ?? 9);
+
+      const ad = a.distance ?? 999999;
+      const bd = b.distance ?? 999999;
+      if (ad !== bd) return ad - bd;
+
+      return a.name.localeCompare(b.name, "it");
+    });
   }
 
   function getBestSpotToday() {
@@ -445,7 +434,7 @@
   }
 
   function getClosestSpot() {
-    if (!APP.userPos || !shouldUseLiveDistance()) return null;
+    if (!APP.userPos) return null;
 
     let pool = getAllSpotsWithMeta().filter(s => s.distance != null);
 
@@ -507,10 +496,12 @@
       }
     }
 
-    if (shouldUseLiveDistance() && spot.distance != null) {
+    if (spot.distance != null) {
       if (spot.distance <= 8) reasons.push("vicinissimo a te");
       else if (spot.distance <= 18) reasons.push("facile da raggiungere");
       else if (spot.distance <= 30) reasons.push("raggiungibile senza sbatti");
+      else if (spot.distance <= 120) reasons.push("ancora gestibile");
+      else reasons.push("spot forte anche se lontano");
     } else {
       if (spot.level === "core") reasons.push("spot di prima fascia");
       else if (spot.level === "secondary") reasons.push("ottima alternativa intelligente");
@@ -523,23 +514,6 @@
     }
 
     return reasons.slice(0, 3).join(" · ");
-  }
-
-  function sortBestPool(pool) {
-    return [...pool].sort((a, b) => {
-      if (b.weatherFit.score !== a.weatherFit.score) return b.weatherFit.score - a.weatherFit.score;
-
-      const levelOrder = { core: 0, secondary: 1, extra: 2 };
-      if ((levelOrder[a.level] ?? 9) !== (levelOrder[b.level] ?? 9)) return (levelOrder[a.level] ?? 9) - (levelOrder[b.level] ?? 9);
-
-      if (shouldUseLiveDistance()) {
-        const ad = a.distance ?? 999999;
-        const bd = b.distance ?? 999999;
-        if (ad !== bd) return ad - bd;
-      }
-
-      return a.name.localeCompare(b.name, "it");
-    });
   }
 
   function bestSpot(options) {
@@ -571,13 +545,15 @@
   }
 
   function scoreDistanceForGoNow(spot) {
-    if (!shouldUseLiveDistance() || spot.distance == null) return 0;
+    if (spot.distance == null) return 0;
 
     if (spot.distance <= 5) return 22;
     if (spot.distance <= 12) return 16;
     if (spot.distance <= 20) return 11;
     if (spot.distance <= 35) return 5;
-    return -Math.min(14, Math.round(spot.distance / 12));
+    if (spot.distance <= 80) return 0;
+    if (spot.distance <= 180) return -4;
+    return -Math.min(12, Math.round(spot.distance / 50));
   }
 
   function scoreTimeForGoNow(spot) {
@@ -1141,9 +1117,7 @@
           APP.gpsMarker.setLatLng([lat, lon]);
         }
 
-        if (!APP.userPos || shouldUseLiveDistance()) {
-          APP.userPos = { lat, lon };
-        }
+        APP.userPos = { lat, lon };
 
         if (window.UI?.renderGpsBox) {
           window.UI.renderGpsBox(APP, { speedMs, heading });
@@ -1219,7 +1193,7 @@
             lon: pos.coords.longitude
           };
           renderAll();
-          toast(isUserNearRegion() ? "Posizione aggiornata" : "Posizione aggiornata fuori area viaggio");
+          toast("Posizione aggiornata");
         },
         () => toast("Permesso GPS negato"),
         { enableHighAccuracy: true, timeout: 8000 }

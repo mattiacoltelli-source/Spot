@@ -1,4 +1,4 @@
-const CACHE_NAME = "madeira-spot-planner-v5";
+const CACHE_NAME = "madeira-spot-planner-v6";
 
 const APP_SHELL = [
   "./",
