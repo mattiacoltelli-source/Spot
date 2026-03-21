@@ -1,851 +1,1268 @@
 window.APP_SPOTS = {
-  region: "Madeira",
-  center: [32.75, -16.95],
-  zoom: 10,
-
+  region: "Riva del Garda",
+  center: [45.885, 10.842],
+  zoom: 11,
   storageKeys: {
-    favorites: "madeira_favorites_v9",
-    planner: "madeira_day_planner_v9"
+    favorites: "riva_favorites_v2",
+    planner: "riva_day_planner_v2"
   },
 
   topWowNames: [
-    "Ponta de São Lourenço",
-    "Pico do Arieiro",
-    "Pico Ruivo Summit",
-    "PR1 Arieiro → Ruivo",
-    "Fanal Forest",
-    "Ribeira da Janela",
-    "Porto Moniz Pools",
-    "Cabo Girão",
-    "Bica da Cana",
-    "Eira do Serrado"
+    "Punta Larici",
+    "Sentiero del Ponale",
+    "Monte Brione",
+    "Bastione di Riva",
+    "Monte Altissimo",
+    "Lago di Tenno",
+    "Busatte Tempesta",
+    "Tremalzo Panorama",
+    "Belvedere di Pregasina",
+    "Lago di Ledro"
   ],
 
   topSunsetNames: [
-    "Ponta do Pargo Lighthouse",
-    "Câmara de Lobos",
-    "Cabo Girão",
-    "Ponta do Sol",
-    "Calheta Beach",
-    "Pico dos Barcelos",
-    "Miradouro do Pináculo",
-    "Jardim do Mar View",
-    "Paul do Mar",
-    "Porto Moniz Pools"
+    "Monte Brione",
+    "Bastione di Riva",
+    "Punta Larici",
+    "Lungolago Riva",
+    "Belvedere di Nago",
+    "Monte Altissimo",
+    "Torbole Waterfront",
+    "Belvedere di Pregasina",
+    "Lido di Riva",
+    "Lago di Tenno"
   ],
 
   spots: [
     {
       id: "core-0",
-      name: "Ponta de São Lourenço",
-      zone: "est",
-      light: "alba",
+      name: "Punta Larici",
+      zone: "ovest",
+      light: "tramonto",
       activity: "trekking",
       difficulty: "medio",
       level: "core",
-      lat: 32.744,
-      lon: -16.704,
-      desc: "Il promontorio più scenografico del lato est, con creste, oceano e senso di grande viaggio.",
-      tip: "Qui conviene davvero partire presto: all’alba cambia livello.",
-      longDescription: "È uno degli spot più iconici di Madeira e uno di quelli che danno di più anche emotivamente. Non è solo bello: ti fa proprio sentire di essere in un posto speciale. Ideale come giornata forte o come grande inizio viaggio.",
-      photoTips: "Luce bassa e laterale, linee della costa, contrasti terra-mare. Evita le ore centrali se vuoi il massimo.",
-      experience: { wow: 10, tipo: "trekking panoramico di cresta", tempo: "2-4h", mood: "epico" },
-      whenToGo: { best: "alba", note: "Top con luce pulita, cielo discreto e vento non troppo forte." },
-      whenToAvoid: ["vento forte", "ore centrali", "giornata già troppo piena"],
-      access: { difficolta: "medio", parcheggio: "facile vicino all'inizio", walk: "0 min", strada: "asfaltata" },
-      crowd: { best: "molto presto", worst: "metà mattina" },
-      smartTips: [
-        "Arriva 45-60 minuti prima dell’alba se vuoi farlo bene.",
-        "Porta acqua: qui il sole si sente più di quanto sembri.",
-        "Anche il primo tratto, se sei corto di tempo, vale comunque tanto."
+      lat: 45.8598,
+      lon: 10.8075,
+      desc: "Il viewpoint più forte della zona, balcone naturale enorme sopra il Garda.",
+      tip: "Se vuoi il colpo grosso, qui vai fortissimo soprattutto nel tardo pomeriggio.",
+      experience: {
+        wow: 10,
+        tipo: "trekking panoramico",
+        tempo: "2-4h",
+        mood: "epico"
+      },
+      whenToGo: {
+        best: "tramonto",
+        note: "luce bassa e cielo abbastanza pulito alzano tantissimo la resa"
+      },
+      whenToAvoid: [
+        "vento forte",
+        "temporali",
+        "visibilità molto chiusa"
       ],
-      image: "https://picsum.photos/seed/Ponta-de-Sao-Lourenco-Madeira/900/600"
+      access: {
+        difficolta: "medio",
+        parcheggio: "più comodo lato Pregasina",
+        walk: "variabile in base al punto di partenza",
+        strada: "asfaltata fino ai punti base"
+      },
+      crowd: {
+        best: "giorni feriali o arrivo anticipato",
+        worst: "tramonti perfetti e weekend"
+      },
+      smartTips: [
+        "Perfetto come highlight del giorno",
+        "Meglio non arrivare all'ultimo minuto",
+        "Ultimo tratto da rispettare se il terreno è brutto"
+      ],
+      image: "https://picsum.photos/seed/Punta-Larici-Riva/900/600"
     },
+
     {
       id: "core-1",
-      name: "Pico do Arieiro",
-      zone: "montagna",
-      light: "alba",
-      activity: "view",
-      difficulty: "facile",
+      name: "Sentiero del Ponale",
+      zone: "ovest",
+      light: "giorno",
+      activity: "mtb",
+      difficulty: "medio",
       level: "core",
-      lat: 32.7354,
-      lon: -16.9281,
-      desc: "Il classico sopra le nuvole, tra i punti più iconici e spettacolari dell’isola.",
-      tip: "Arriva prima dell’alba e vestiti bene: il freddo qui si sente.",
-      longDescription: "Quando funziona, questo è il Madeira poster shot: creste, nuvole sotto quota e luce che entra sulle montagne. È uno di quei posti che, se trovi la giornata giusta, rimangono davvero impressi.",
-      photoTips: "Lavora con silhouette, profondità e nuvole. Se il mare di nuvole c’è, hai già metà del lavoro fatto.",
-      experience: { wow: 10, tipo: "view alta quota", tempo: "30-90 min", mood: "iconico" },
-      whenToGo: { best: "alba", note: "Meglio con mare di nuvole e visibilità almeno discreta." },
-      whenToAvoid: ["nuvole basse chiuse", "vento forte", "visibilità pessima"],
-      access: { difficolta: "facile", parcheggio: "diretto ma si riempie", walk: "0-5 min", strada: "asfaltata" },
-      crowd: { best: "molto presto", worst: "alba popolare" },
-      smartTips: [
-        "Porta giacca antivento anche se giù fa caldo.",
-        "Aspetta qualche minuto dopo l’alba: spesso la luce migliore arriva lì.",
-        "Se è chiuso davvero, non fissarti: cambia spot."
+      lat: 45.8719,
+      lon: 10.8501,
+      desc: "La classica strada panoramica sul lago: iconica, facile da capire, fortissima da vivere.",
+      tip: "Vai presto se vuoi goderla davvero meglio.",
+      experience: {
+        wow: 10,
+        tipo: "bike / hike panoramico",
+        tempo: "1-3h",
+        mood: "iconico"
+      },
+      whenToGo: {
+        best: "giorno",
+        note: "molto bene la mattina o in ore non troppo piene"
+      },
+      whenToAvoid: [
+        "ore centrali affollate",
+        "giorni con meteo instabile forte"
       ],
-      image: "https://picsum.photos/seed/Pico-do-Arieiro-Madeira/900/600"
+      access: {
+        difficolta: "medio",
+        parcheggio: "facile da Riva",
+        walk: "0 min",
+        strada: "asfaltata e sterrata"
+      },
+      crowd: {
+        best: "presto",
+        worst: "metà mattina e pomeriggio nei giorni forti"
+      },
+      smartTips: [
+        "Uno dei migliori spot da spiegare a chi non conosce la zona",
+        "Ottimo sia in MTB che a piedi",
+        "Più atmosfera di movimento che spot statico"
+      ],
+      image: "https://picsum.photos/seed/Ponale-Riva/900/600"
     },
+
     {
       id: "core-2",
-      name: "Pico Ruivo Summit",
-      zone: "montagna",
-      light: "alba",
-      activity: "trekking",
-      difficulty: "impegnativo",
+      name: "Monte Brione",
+      zone: "lago",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "facile",
       level: "core",
-      lat: 32.7591,
-      lon: -16.9431,
-      desc: "La cima più alta dell’isola, con vista enorme quando il cielo collabora.",
-      tip: "In giornate limpide è uno dei top assoluti di Madeira.",
-      longDescription: "È uno degli spot che alzano davvero il livello del viaggio. Più che una tappa veloce, è un obiettivo serio. Se arrivi quassù con visibilità buona, la sensazione di spazio e profondità è fortissima.",
-      photoTips: "Meglio alba o prime ore. Con aria limpida lavora su piani lontani e linee pulite.",
-      experience: { wow: 10, tipo: "cima panoramica", tempo: "2-4h", mood: "grande panorama" },
-      whenToGo: { best: "alba", note: "Molto meglio con aria limpida e vento contenuto." },
-      whenToAvoid: ["nuvole basse persistenti", "vento forte", "scarpe inadatte"],
-      access: { difficolta: "impegnativo", parcheggio: "più comodo via Achada do Teixeira", walk: "circa 1.5h da Achada do Teixeira", strada: "asfaltata" },
-      crowd: { best: "prestissimo", worst: "mattina media" },
-      smartTips: [
-        "Usa Achada do Teixeira se vuoi la via più gestibile.",
-        "Porta uno strato caldo vero.",
-        "Qui la visibilità conta tantissimo: se è chiuso, perde molto."
+      lat: 45.8892,
+      lon: 10.8595,
+      desc: "Vista altissima ma accessibile su Riva, Torbole e tutto il lago nord.",
+      tip: "Uno dei migliori spot easy della zona.",
+      experience: {
+        wow: 9,
+        tipo: "viewpoint facile",
+        tempo: "30-90 min",
+        mood: "panorama pulito"
+      },
+      whenToGo: {
+        best: "tramonto",
+        note: "molto forte con luce morbida e aria pulita"
+      },
+      whenToAvoid: [
+        "luce dura",
+        "momenti molto pieni"
       ],
-      image: "https://picsum.photos/seed/Pico-Ruivo-Madeira/900/600"
+      access: {
+        difficolta: "facile",
+        parcheggio: "medio in base al lato",
+        walk: "breve",
+        strada: "asfaltata"
+      },
+      crowd: {
+        best: "tardo pomeriggio con un po' di anticipo",
+        worst: "sunset popolari"
+      },
+      smartTips: [
+        "Perfetto se vuoi resa alta con sforzo basso",
+        "Buono anche per far vedere l'app a qualcuno",
+        "Spot molto leggibile"
+      ],
+      image: "https://picsum.photos/seed/Monte-Brione-Riva/900/600"
     },
+
     {
       id: "core-3",
-      name: "PR1 Arieiro → Ruivo",
+      name: "Bastione di Riva",
+      zone: "lago",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "facile",
+      level: "core",
+      lat: 45.8871,
+      lon: 10.8404,
+      desc: "Vista alta su Riva del Garda, bellissima per finale di giornata senza troppa fatica.",
+      tip: "Molto bene in golden hour.",
+      experience: {
+        wow: 9,
+        tipo: "view urbano-lago",
+        tempo: "30-75 min",
+        mood: "forte ma semplice"
+      },
+      whenToGo: {
+        best: "tramonto",
+        note: "top come chiusura facile"
+      },
+      whenToAvoid: [
+        "ore centrali",
+        "meteo piatto e spento"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "molto comodo in città",
+        walk: "breve salita",
+        strada: "asfaltata"
+      },
+      crowd: {
+        best: "feriali o arrivo anticipato",
+        worst: "tramonti perfetti"
+      },
+      smartTips: [
+        "Ottimo piano B se non vuoi muoverti troppo",
+        "Molto utile come spot sunset rapido",
+        "Combina bene con centro storico"
+      ],
+      image: "https://picsum.photos/seed/Bastione-Riva/900/600"
+    },
+
+    {
+      id: "core-4",
+      name: "Monte Altissimo",
       zone: "montagna",
-      light: "alba",
+      light: "tramonto",
       activity: "trekking",
       difficulty: "impegnativo",
       level: "core",
-      lat: 32.7355,
-      lon: -16.9288,
-      desc: "Il trekking simbolo di Madeira: creste, tunnel e paesaggio da grande giornata.",
-      tip: "Da fare con meteo stabile e gambe buone.",
-      longDescription: "È il percorso iconico di alta quota dell’isola. Qui non fai solo uno spot: fai un’esperienza intera. Se ami le uscite memorabili, è uno di quei giorni da costruire bene e vivere come evento principale.",
-      photoTips: "Luce bassa, nuvole dinamiche, creste in profondità. Controlla sempre le condizioni del percorso prima.",
-      experience: { wow: 10, tipo: "trekking iconico di alta quota", tempo: "4-6h", mood: "avventura" },
-      whenToGo: { best: "alba", note: "Più forte se parti molto presto con visibilità buona." },
-      whenToAvoid: ["vento forte", "visibilità bassa", "meteo instabile"],
-      access: { difficolta: "impegnativo", parcheggio: "facile lato Arieiro", walk: "0 min", strada: "asfaltata" },
-      crowd: { best: "molto presto", worst: "fascia centrale del mattino" },
-      smartTips: [
-        "Controlla apertura e condizioni del percorso.",
-        "Porta torcia per i tunnel.",
-        "Meglio usarlo come esperienza centrale della giornata, non come riempitivo."
+      lat: 45.8962,
+      lon: 10.8508,
+      desc: "Grande classico di quota, con vista enorme sul Garda e sensazione vera di montagna.",
+      tip: "Da fare quando vuoi la giornata seria.",
+      experience: {
+        wow: 10,
+        tipo: "trekking di quota",
+        tempo: "4-7h",
+        mood: "grande panorama"
+      },
+      whenToGo: {
+        best: "giorno / tramonto",
+        note: "meglio con buona visibilità e poca instabilità"
+      },
+      whenToAvoid: [
+        "temporali",
+        "vento forte",
+        "giorni di scarsa visibilità"
       ],
-      image: "https://picsum.photos/seed/PR1-Arieiro-Ruivo-Madeira/900/600"
-    },
-    {
-      id: "core-4",
-      name: "Fanal Forest",
-      zone: "ovest",
-      light: "giorno",
-      activity: "trekking",
-      difficulty: "facile",
-      level: "core",
-      lat: 32.7603,
-      lon: -17.1476,
-      desc: "Foresta magica con alberi contorti e atmosfera unica, soprattutto con nebbia.",
-      tip: "Se trovi foschia, qui hai fatto centro.",
-      longDescription: "È completamente diversa dal resto di Madeira. Qui conta meno il grande panorama e molto di più l’atmosfera. Quando c’è nebbia o aria umida, diventa uno degli spot più forti e fotogenici dell’isola.",
-      photoTips: "Cerca scene semplici, alberi isolati, profondità morbida e composizioni pulite.",
-      experience: { wow: 9, tipo: "foresta atmosferica", tempo: "1-2h", mood: "mistico" },
-      whenToGo: { best: "giorno", note: "Le giornate grigie qui sono un vantaggio, non un problema." },
-      whenToAvoid: ["cielo limpido", "sole forte a picco"],
-      access: { difficolta: "facile", parcheggio: "vicino", walk: "0-5 min", strada: "asfaltata" },
-      crowd: { best: "presto o con meteo incerto", worst: "giornate molto social" },
+      access: {
+        difficolta: "impegnativo",
+        parcheggio: "variabile in base all'accesso scelto",
+        walk: "lungo",
+        strada: "asfaltata fino ai punti base"
+      },
+      crowd: {
+        best: "partenza presto",
+        worst: "giorni top di stagione"
+      },
       smartTips: [
-        "Qui il brutto tempo aiuta.",
-        "Cammina un po’ oltre la zona più immediata.",
-        "Non cercare il sole: cerca l’atmosfera."
+        "Da trattare come esperienza centrale",
+        "Non sprecarlo in mezza giornata scarsa",
+        "Se il cielo è chiuso, valuta un piano più basso"
       ],
-      image: "https://picsum.photos/seed/Fanal-Forest-Madeira/900/600"
+      image: "https://picsum.photos/seed/Monte-Altissimo-Riva/900/600"
     },
+
     {
       id: "core-5",
-      name: "Ribeira da Janela",
+      name: "Lago di Tenno",
       zone: "nord",
-      light: "alba",
-      activity: "view",
+      light: "giorno",
+      activity: "relax",
       difficulty: "facile",
       level: "core",
-      lat: 32.8652,
-      lon: -17.1446,
-      desc: "Rocce in mare tra le più iconiche e fotogeniche di Madeira.",
-      tip: "Rende molto meglio con mare vivo e luce bassa.",
-      longDescription: "È uno degli spot marini più forti dell’isola. Visivamente è semplice da capire ma molto potente. Se prendi bene la luce e un minimo di movimento del mare, ha una resa altissima.",
-      photoTips: "Alba, onde leggere, cielo con struttura. Lavora sulle rocce e sul respiro del mare.",
-      experience: { wow: 9, tipo: "costa rocciosa iconica", tempo: "20-40 min", mood: "classico fotografico" },
-      whenToGo: { best: "alba", note: "Top con mare un po’ vivo e luce bassa." },
-      whenToAvoid: ["mare troppo piatto", "luce dura", "meteo spento"],
-      access: { difficolta: "facile", parcheggio: "vicino", walk: "2 min", strada: "asfaltata" },
-      crowd: { best: "molto presto", worst: "orari comodi" },
-      smartTips: [
-        "Se il mare è vivo, lo spot sale tanto.",
-        "Ottimo in combo con Seixal e Porto Moniz.",
-        "Non serve restarci troppo se hai preso la luce giusta."
+      lat: 45.9381,
+      lon: 10.8109,
+      desc: "Lago turchese molto forte visivamente, ottimo per pausa bella e facile.",
+      tip: "La mattina rende benissimo.",
+      experience: {
+        wow: 9,
+        tipo: "lago relax",
+        tempo: "1-2h",
+        mood: "pulito e scenico"
+      },
+      whenToGo: {
+        best: "mattina / giorno",
+        note: "molto bello con luce ancora non dura"
+      },
+      whenToAvoid: [
+        "momenti troppo pieni",
+        "giorni molto caldi con molta gente"
       ],
-      image: "https://picsum.photos/seed/Ribeira-da-Janela-Madeira/900/600"
+      access: {
+        difficolta: "facile",
+        parcheggio: "comodo",
+        walk: "breve",
+        strada: "asfaltata"
+      },
+      crowd: {
+        best: "presto",
+        worst: "metà giornata in alta stagione"
+      },
+      smartTips: [
+        "Ottimo se vuoi un wow facile",
+        "Più da equilibrio e bellezza che da sport duro",
+        "Combina bene con Canale di Tenno"
+      ],
+      image: "https://picsum.photos/seed/Lago-di-Tenno-Riva/900/600"
     },
+
     {
       id: "core-6",
-      name: "Porto Moniz Pools",
-      zone: "nord",
-      light: "tramonto",
-      activity: "view",
-      difficulty: "facile",
-      level: "core",
-      lat: 32.8664,
-      lon: -17.1666,
-      desc: "Piscine vulcaniche e oceano aperto, tappa forte e molto leggibile.",
-      tip: "Rende molto meglio a luce morbida.",
-      longDescription: "È una tappa facile da capire e da godersi: roccia vulcanica, acqua, orizzonte e atmosfera. Funziona molto bene come finale di una giornata sul nord-ovest.",
-      photoTips: "Tardo pomeriggio e fine luce. Le rocce prendono più carattere quando il contrasto si abbassa.",
-      experience: { wow: 8, tipo: "mare e roccia vulcanica", tempo: "1-2h", mood: "scenico e facile" },
-      whenToGo: { best: "tramonto", note: "Meglio tardi che nel mezzo della giornata." },
-      whenToAvoid: ["mezzogiorno pieno", "troppa gente", "vento molto forte"],
-      access: { difficolta: "facile", parcheggio: "comodo in zona", walk: "0-3 min", strada: "asfaltata" },
-      crowd: { best: "fuori dagli orari più turistici", worst: "metà giornata" },
-      smartTips: [
-        "Più da chiusura di giornata che da stop centrale.",
-        "Resta se il cielo si accende.",
-        "Facilissimo da incastrare in un road day nord-ovest."
-      ],
-      image: "https://picsum.photos/seed/Porto-Moniz-Madeira/900/600"
-    },
-    {
-      id: "core-7",
-      name: "Cabo Girão",
-      zone: "sud",
-      light: "tramonto",
-      activity: "view",
-      difficulty: "facile",
-      level: "core",
-      lat: 32.6558,
-      lon: -17.0048,
-      desc: "Grande falesia con vista ampissima sul sud di Madeira.",
-      tip: "Vai verso sera: con luce dura perde parecchio.",
-      longDescription: "È uno spot immediato, accessibile e forte. Se vuoi grande panorama senza fatica, è una scelta molto solida. Va preso nel momento giusto, non buttato a caso in pieno giorno.",
-      photoTips: "Meglio tardo pomeriggio e luce più morbida. Cerca profondità e rapporto costa-mare.",
-      experience: { wow: 8, tipo: "viewpoint verticale", tempo: "20-40 min", mood: "grande panorama facile" },
-      whenToGo: { best: "tramonto", note: "Luce più morbida, atmosfera più bella." },
-      whenToAvoid: ["mezzogiorno", "momenti molto affollati"],
-      access: { difficolta: "facile", parcheggio: "diretto", walk: "1 min", strada: "asfaltata" },
-      crowd: { best: "tardo pomeriggio", worst: "fasce turistiche classiche" },
-      smartTips: [
-        "Perfetto come stop breve ma forte.",
-        "Meglio abbinarlo a Câmara de Lobos o Ponta do Sol.",
-        "Non dargli troppo tempo: è più wow rapido che esperienza lunga."
-      ],
-      image: "https://picsum.photos/seed/Cabo-Girao-Madeira/900/600"
-    },
-    {
-      id: "core-8",
-      name: "Bica da Cana",
-      zone: "ovest",
-      light: "alba",
-      activity: "view",
-      difficulty: "facile",
-      level: "core",
-      lat: 32.7781,
-      lon: -17.1128,
-      desc: "Uno dei migliori sunrise facili dell’isola, spesso sopra le nuvole.",
-      tip: "Tra i punti alba più furbi se vuoi grande resa senza trekking pesante.",
-      longDescription: "È uno spot intelligentissimo: fatica bassa, resa alta. Se trovi nuvole sotto quota e cielo pulito sopra, diventa davvero uno dei sunrise più forti di Madeira.",
-      photoTips: "Arriva con anticipo e resta un po’ dopo il primo momento. Spesso la luce migliore arriva subito dopo.",
-      experience: { wow: 9, tipo: "sunrise viewpoint", tempo: "20-40 min", mood: "wow facile" },
-      whenToGo: { best: "alba", note: "Top con nuvole basse sotto quota." },
-      whenToAvoid: ["vento forte", "copertura alta uniforme"],
-      access: { difficolta: "facile", parcheggio: "vicino", walk: "5 min", strada: "asfaltata" },
-      crowd: { best: "molto presto", worst: "spot alba popolari" },
-      smartTips: [
-        "Resta anche dopo il primo momento.",
-        "Ottimo piano B se Arieiro è scomodo o troppo affollato.",
-        "Guarda la quota delle nuvole: lì si gioca tutto."
-      ],
-      image: "https://picsum.photos/seed/Bica-da-Cana-Madeira/900/600"
-    },
-    {
-      id: "core-9",
-      name: "Ponta do Pargo Lighthouse",
-      zone: "ovest",
-      light: "tramonto",
-      activity: "view",
-      difficulty: "facile",
-      level: "core",
-      lat: 32.812,
-      lon: -17.2623,
-      desc: "Uno dei tramonti più affidabili, puliti e forti di Madeira.",
-      tip: "Se vuoi un tramonto serio, questo è uno dei posti migliori.",
-      longDescription: "È uno dei sunset spot più forti dell’isola: pulito, leggibile, minimale ma molto efficace. Se sei già a ovest e vuoi chiudere bene, qui è difficile sbagliare.",
-      photoTips: "Arriva un po’ prima, lavora con composizioni semplici e non andare via troppo presto.",
-      experience: { wow: 9, tipo: "sunset point", tempo: "30-50 min", mood: "pulito e forte" },
-      whenToGo: { best: "tramonto", note: "Meglio essere già sul posto con un po’ di anticipo." },
-      whenToAvoid: ["copertura totale verso ovest"],
-      access: { difficolta: "facile", parcheggio: "vicino", walk: "1 min", strada: "asfaltata" },
-      crowd: { best: "arrivo anticipato", worst: "tramonti perfetti popolari" },
-      smartTips: [
-        "Uno dei migliori posti per chiudere forte.",
-        "Funziona bene anche con composizioni molto semplici.",
-        "Resta fino alla fine vera della luce."
-      ],
-      image: "https://picsum.photos/seed/Ponta-do-Pargo-Madeira/900/600"
-    },
-    {
-      id: "core-10",
-      name: "Seixal Beach",
-      zone: "nord",
-      light: "alba",
-      activity: "view",
-      difficulty: "facile",
-      level: "core",
-      lat: 32.8246,
-      lon: -17.1082,
-      desc: "Spiaggia nera con montagne verdi dietro, tra i contrasti più forti dell’isola.",
-      tip: "Molto bella al mattino presto.",
-      longDescription: "È una delle immagini più forti del lato nord: sabbia scura, verde intenso e mare. Non è solo fotogenica, è proprio bella da vivere dal vivo.",
-      photoTips: "Mattina presto o cielo drammatico. Composizioni larghe e linee della spiaggia rendono molto bene.",
-      experience: { wow: 8, tipo: "spiaggia vulcanica", tempo: "30-60 min", mood: "forte contrasto" },
-      whenToGo: { best: "alba", note: "Molto valida anche poco dopo." },
-      whenToAvoid: ["mezzogiorno piatto", "giornate spente"],
-      access: { difficolta: "facile", parcheggio: "vicino", walk: "2 min", strada: "asfaltata" },
-      crowd: { best: "presto", worst: "fasce comode" },
-      smartTips: [
-        "Ottima in combo con Ribeira da Janela e Porto Moniz.",
-        "Rende più dal vivo di quanto sembri.",
-        "Funziona bene anche come stop breve ma forte."
-      ],
-      image: "https://picsum.photos/seed/Seixal-Beach-Madeira/900/600"
-    },
-    {
-      id: "core-11",
-      name: "Eira do Serrado",
-      zone: "montagna",
-      light: "tramonto",
-      activity: "view",
-      difficulty: "facile",
-      level: "core",
-      lat: 32.704,
-      lon: -16.9697,
-      desc: "Belvedere forte sulla valle di Curral das Freiras.",
-      tip: "Molto bene nel tardo pomeriggio.",
-      longDescription: "È uno dei punti più semplici e forti per leggere l’interno di Madeira. Non richiede fatica vera ma dà comunque una sensazione di profondità e montagna molto bella.",
-      photoTips: "Luce radente, ombre sulla valle, forme interne ben leggibili.",
-      experience: { wow: 8, tipo: "view sulla valle", tempo: "20-40 min", mood: "panorama interno" },
-      whenToGo: { best: "tramonto", note: "La luce radente migliora molto la resa." },
-      whenToAvoid: ["meteo chiuso in quota", "visibilità molto scarsa"],
-      access: { difficolta: "facile", parcheggio: "vicino", walk: "2 min", strada: "asfaltata" },
-      crowd: { best: "tardo pomeriggio", worst: "orari turistici" },
-      smartTips: [
-        "Perfetto se vuoi montagna senza fatica.",
-        "Ottimo insieme a Boca dos Namorados.",
-        "Funziona molto meglio con luce laterale che piatta."
-      ],
-      image: "https://picsum.photos/seed/Eira-do-Serrado-Madeira/900/600"
-    },
-    {
-      id: "core-12",
-      name: "Levada do Caldeirão Verde",
-      zone: "nord",
+      name: "Busatte Tempesta",
+      zone: "est",
       light: "giorno",
       activity: "trekking",
       difficulty: "medio",
       level: "core",
-      lat: 32.8072,
-      lon: -16.905,
-      desc: "Uno dei trekking più famosi di Madeira, verde e immersivo.",
-      tip: "Porta una luce per i tunnel più bui.",
-      longDescription: "È una classica esperienza Madeira: vegetazione intensa, percorso bello da vivere e senso di immersione totale nel verde. Non va pensato come spot veloce, ma come giornata di cammino valida.",
-      photoTips: "Lavora sulle texture del verde, sui tunnel e sulle prospettive del sentiero, non solo sul finale.",
-      experience: { wow: 8, tipo: "levada trekking", tempo: "3-4h", mood: "immersivo" },
-      whenToGo: { best: "giorno", note: "Molto meglio partire presto." },
-      whenToAvoid: ["ore tarde", "giorni molto affollati"],
-      access: { difficolta: "medio", parcheggio: "facile in zona partenza", walk: "0 min", strada: "asfaltata" },
-      crowd: { best: "presto", worst: "metà mattina" },
-      smartTips: [
-        "Non puntare tutto solo sulla cascata finale.",
-        "Meglio farlo quando hai energie vere.",
-        "Buon giorno verde da dedicargli davvero."
+      lat: 45.8823,
+      lon: 10.8926,
+      desc: "Percorso spettacolare sopra il lago, con scale, balconi e passaggi molto scenici.",
+      tip: "Molto valido se vuoi panorama continuo e cammino appagante.",
+      experience: {
+        wow: 9,
+        tipo: "trekking panoramico",
+        tempo: "2-4h",
+        mood: "scenografico"
+      },
+      whenToGo: {
+        best: "giorno",
+        note: "meglio con visibilità ampia e temperature accettabili"
+      },
+      whenToAvoid: [
+        "ore troppo calde",
+        "temporali",
+        "terreno scivoloso"
       ],
-      image: "https://picsum.photos/seed/Caldeirao-Verde-Madeira/900/600"
+      access: {
+        difficolta: "medio",
+        parcheggio: "comodo lato Torbole",
+        walk: "0 min",
+        strada: "asfaltata"
+      },
+      crowd: {
+        best: "presto",
+        worst: "fasce più comode di metà giornata"
+      },
+      smartTips: [
+        "Ottimo da proporre a chi vuole wow senza fare una cima vera",
+        "Molto fotogenico",
+        "Meglio non farlo in pieno forno"
+      ],
+      image: "https://picsum.photos/seed/Busatte-Tempesta-Riva/900/600"
     },
+
     {
-      id: "core-13",
-      name: "Achadas da Cruz View",
+      id: "core-7",
+      name: "Lago di Ledro",
       zone: "nord",
+      light: "giorno",
+      activity: "relax",
+      difficulty: "facile",
+      level: "core",
+      lat: 45.8788,
+      lon: 10.7388,
+      desc: "Uno dei laghi più belli e facili da godere della zona, perfetto per rallentare bene.",
+      tip: "Molto utile nelle giornate di equilibrio.",
+      experience: {
+        wow: 8,
+        tipo: "lago e passeggiata",
+        tempo: "1-3h",
+        mood: "rilassato"
+      },
+      whenToGo: {
+        best: "giorno",
+        note: "bello quasi sempre, soprattutto in momenti tranquilli"
+      },
+      whenToAvoid: [
+        "giorni super pieni"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "comodo",
+        walk: "breve",
+        strada: "asfaltata"
+      },
+      crowd: {
+        best: "mattina o tardo pomeriggio",
+        worst: "metà giornata"
+      },
+      smartTips: [
+        "Molto buono come reset della giornata",
+        "Più esperienza piacevole che spot estremo",
+        "Funziona bene anche con meteo non perfetto"
+      ],
+      image: "https://picsum.photos/seed/Ledro-Riva/900/600"
+    },
+
+    {
+      id: "core-8",
+      name: "Tremalzo Panorama",
+      zone: "ovest",
+      light: "giorno",
+      activity: "mtb",
+      difficulty: "impegnativo",
+      level: "core",
+      lat: 45.8442,
+      lon: 10.7179,
+      desc: "Zona iconica per MTB seria, panorami enormi e sensazione outdoor vera.",
+      tip: "Quando vuoi bike forte, qui il livello sale.",
+      experience: {
+        wow: 9,
+        tipo: "mtb iconica",
+        tempo: "4-7h",
+        mood: "adrenalinico"
+      },
+      whenToGo: {
+        best: "giorno",
+        note: "da usare con gamba buona e meteo stabile"
+      },
+      whenToAvoid: [
+        "temporali",
+        "stanchezza alta",
+        "giornate troppo corte"
+      ],
+      access: {
+        difficolta: "impegnativo",
+        parcheggio: "variabile",
+        walk: "0 min",
+        strada: "mista"
+      },
+      crowd: {
+        best: "giorni feriali",
+        worst: "alta stagione bike"
+      },
+      smartTips: [
+        "Un must per chi ama la MTB",
+        "Non da inserire a caso in una giornata piena",
+        "Più esperienza che spot singolo"
+      ],
+      image: "https://picsum.photos/seed/Tremalzo-Riva/900/600"
+    },
+
+    {
+      id: "core-9",
+      name: "Belvedere di Pregasina",
+      zone: "ovest",
       light: "tramonto",
       activity: "view",
+      difficulty: "facile",
+      level: "core",
+      lat: 45.8726,
+      lon: 10.8232,
+      desc: "Balcone incredibile sul lago, facilissimo da usare e molto forte nel finale di giornata.",
+      tip: "Ottimo se vuoi wow rapido.",
+      experience: {
+        wow: 8,
+        tipo: "viewpoint rapido",
+        tempo: "20-40 min",
+        mood: "forte e semplice"
+      },
+      whenToGo: {
+        best: "tramonto",
+        note: "top come pre-sunset o sunset easy"
+      },
+      whenToAvoid: [
+        "meteo spento",
+        "luce dura"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "comodo",
+        walk: "minimo",
+        strada: "asfaltata"
+      },
+      crowd: {
+        best: "un po' prima del tramonto",
+        worst: "fasce più famose"
+      },
+      smartTips: [
+        "Molto utile come spot furbo",
+        "Grande resa con poco sforzo",
+        "Perfetto da inserire in una giornata piena"
+      ],
+      image: "https://picsum.photos/seed/Pregasina-Riva/900/600"
+    },
+
+    {
+      id: "core-10",
+      name: "Monte Baldo",
+      zone: "montagna",
+      light: "giorno",
+      activity: "trekking",
       difficulty: "medio",
       level: "core",
-      lat: 32.8648,
-      lon: -17.2176,
-      desc: "Una delle scogliere più spettacolari dell’isola.",
-      tip: "Bellissima anche restando solo in alto.",
-      longDescription: "Qui la sensazione forte è la verticalità. È una tappa molto potente visivamente e molto diversa da altri spot più facili o più turistici. Da tenere alta nella classifica personale.",
-      photoTips: "Luce bassa e aria pulita. Anche il punto alto da solo regge molto bene.",
-      experience: { wow: 9, tipo: "cliff viewpoint", tempo: "30-60 min", mood: "drammatico" },
-      whenToGo: { best: "tramonto", note: "Molto forte con aria pulita." },
-      whenToAvoid: ["meteo chiuso", "vento troppo forte"],
-      access: { difficolta: "medio", parcheggio: "facile", walk: "5 min", strada: "asfaltata" },
-      crowd: { best: "tardo pomeriggio", worst: "meno critico di altri spot celebri" },
-      smartTips: [
-        "Anche senza scendere, il punto alto vale davvero.",
-        "Ottimo con Porto Moniz o il lato ovest estremo.",
-        "Da considerare come spot serio, non solo bonus."
+      lat: 45.7588,
+      lon: 10.8104,
+      desc: "Fuori dal cuore di Riva ma fortissimo per trekking e panorami di grande scala sul Garda.",
+      tip: "Se vuoi ampliare il raggio dell'app con una montagna davvero valida, qui ci sta benissimo.",
+      experience: {
+        wow: 9,
+        tipo: "montagna panoramica",
+        tempo: "3-6h",
+        mood: "grande respiro"
+      },
+      whenToGo: {
+        best: "giorno",
+        note: "molto bene con cielo aperto e visibilità ampia"
+      },
+      whenToAvoid: [
+        "giorni chiusi",
+        "partenze troppo tardive"
       ],
-      image: "https://picsum.photos/seed/Achadas-da-Cruz-View-Madeira/900/600"
+      access: {
+        difficolta: "medio",
+        parcheggio: "variabile",
+        walk: "variabile",
+        strada: "asfaltata fino agli accessi"
+      },
+      crowd: {
+        best: "feriali o partenze presto",
+        worst: "giorni top di stagione"
+      },
+      smartTips: [
+        "Non è Riva stretta, ma è coerentissimo nel raggio Garda",
+        "Da usare come modulo premium più ampio",
+        "Alza tantissimo il valore dell'app"
+      ],
+      image: "https://picsum.photos/seed/Monte-Baldo-Riva/900/600"
     },
+
     {
-      id: "core-14",
-      name: "Câmara de Lobos",
-      zone: "sud",
+      id: "core-11",
+      name: "Lungolago Riva",
+      zone: "lago",
       light: "tramonto",
       activity: "relax",
       difficulty: "facile",
       level: "core",
-      lat: 32.6488,
-      lon: -16.9777,
-      desc: "Villaggio di pescatori scenografico, piacevole e perfetto da vivere sul serio.",
-      tip: "Perfetto per tramonto, passeggiata e chiusura giornata.",
-      longDescription: "Non è il classico wow naturale, ma ha atmosfera vera. È uno di quei posti che funzionano bene perché uniscono bellezza, semplicità e piacere della serata.",
-      photoTips: "Luce calda sulle barche, scene semplici, dettagli del porto e del paese.",
-      experience: { wow: 7, tipo: "villaggio costiero", tempo: "1-2h", mood: "rilassato" },
-      whenToGo: { best: "tramonto", note: "Top come chiusura semplice ma di qualità." },
-      whenToAvoid: ["ore centrali se cerchi atmosfera", "parcheggio scomodo in momenti pieni"],
-      access: { difficolta: "facile", parcheggio: "medio", walk: "5-10 min", strada: "asfaltata" },
-      crowd: { best: "tardo pomeriggio", worst: "cena e weekend" },
-      smartTips: [
-        "Perfetto per abbassare il ritmo senza perdere qualità.",
-        "Ottimo da combinare con Cabo Girão.",
-        "Più da vivere che da spuntare e andare via."
+      lat: 45.8836,
+      lon: 10.8416,
+      desc: "Passeggiata lago super semplice ma fortissima nel mood, soprattutto per chiudere il giorno bene.",
+      tip: "Ottimo finale senza sbatti.",
+      experience: {
+        wow: 7,
+        tipo: "lungolago",
+        tempo: "30-90 min",
+        mood: "soft"
+      },
+      whenToGo: {
+        best: "tramonto / sera",
+        note: "perfetto quando vuoi bellezza facile"
+      },
+      whenToAvoid: [
+        "solo se cerchi sport duro"
       ],
-      image: "https://picsum.photos/seed/Camara-de-Lobos-Madeira/900/600"
+      access: {
+        difficolta: "facile",
+        parcheggio: "comodo in città",
+        walk: "0 min",
+        strada: "asfaltata"
+      },
+      crowd: {
+        best: "quasi sempre",
+        worst: "momenti centrali turistici"
+      },
+      smartTips: [
+        "Molto utile per equilibrio giornata",
+        "Semplice ma da non sottovalutare",
+        "Funziona anche come spot demo"
+      ],
+      image: "https://picsum.photos/seed/Lungolago-Riva/900/600"
+    },
+
+    {
+      id: "core-12",
+      name: "Torbole Waterfront",
+      zone: "est",
+      light: "tramonto",
+      activity: "relax",
+      difficulty: "facile",
+      level: "core",
+      lat: 45.8718,
+      lon: 10.8751,
+      desc: "Lungolago di Torbole, semplice ma molto piacevole per chiudere la giornata con vista e aria buona.",
+      tip: "Perfetto se sei già lato Torbole.",
+      experience: {
+        wow: 7,
+        tipo: "waterfront relax",
+        tempo: "30-75 min",
+        mood: "rilassato"
+      },
+      whenToGo: {
+        best: "tramonto / sera",
+        note: "bello soprattutto come chiusura semplice"
+      },
+      whenToAvoid: [
+        "solo se cerchi spot più forti"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "medio",
+        walk: "0 min",
+        strada: "asfaltata"
+      },
+      crowd: {
+        best: "feriali",
+        worst: "weekend e momenti top"
+      },
+      smartTips: [
+        "Utile più che estremo",
+        "Buon equilibrio nell'app",
+        "Perfetto come piano leggero"
+      ],
+      image: "https://picsum.photos/seed/Torbole-Waterfront-Riva/900/600"
+    },
+
+    {
+      id: "core-13",
+      name: "Canoa Garda Nord",
+      zone: "lago",
+      light: "alba",
+      activity: "water",
+      difficulty: "facile",
+      level: "core",
+      lat: 45.8852,
+      lon: 10.8431,
+      desc: "Esperienza molto bella e semplice in canoa sul lago, perfetta in acqua calma.",
+      tip: "Mattina presto o momenti tranquilli sono il top.",
+      experience: {
+        wow: 8,
+        tipo: "canoa / kayak",
+        tempo: "1-2h",
+        mood: "pulito e leggero"
+      },
+      whenToGo: {
+        best: "alba / mattina",
+        note: "molto meglio con acqua calma e vento basso"
+      },
+      whenToAvoid: [
+        "vento forte",
+        "acqua molto disturbata"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "comodo in zona lago",
+        walk: "minimo",
+        strada: "asfaltata"
+      },
+      crowd: {
+        best: "presto",
+        worst: "momenti più caotici"
+      },
+      smartTips: [
+        "Una delle migliori micro-esperienze acqua",
+        "Aggiunge varietà vera all'app",
+        "Molto bella da far vedere"
+      ],
+      image: "https://picsum.photos/seed/Canoa-Garda-Riva/900/600"
+    },
+
+    {
+      id: "core-14",
+      name: "SUP Riva Morning",
+      zone: "lago",
+      light: "alba",
+      activity: "water",
+      difficulty: "facile",
+      level: "core",
+      lat: 45.8847,
+      lon: 10.8424,
+      desc: "SUP semplice e molto scenico sul lago, ottimo se vuoi una partenza diversa.",
+      tip: "Alba o mattina presto rendono tutto più bello.",
+      experience: {
+        wow: 7,
+        tipo: "sup lago",
+        tempo: "1h",
+        mood: "calmo"
+      },
+      whenToGo: {
+        best: "alba / mattina",
+        note: "top con acqua più liscia"
+      },
+      whenToAvoid: [
+        "vento forte",
+        "lago troppo mosso"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "facile",
+        walk: "minimo",
+        strada: "asfaltata"
+      },
+      crowd: {
+        best: "prestissimo",
+        worst: "momenti popolari"
+      },
+      smartTips: [
+        "Perfetto come experience piccola ma bella",
+        "Molto instagrammabile senza essere pesante",
+        "Da usare come extra sportivo facile"
+      ],
+      image: "https://picsum.photos/seed/SUP-Riva-Riva/900/600"
+    },
+
+    {
+      id: "core-15",
+      name: "Rafting Sarca",
+      zone: "nord",
+      light: "giorno",
+      activity: "water",
+      difficulty: "medio",
+      level: "core",
+      lat: 45.9118,
+      lon: 10.8828,
+      desc: "Esperienza acqua più dinamica sul Sarca, diversa dal classico lago.",
+      tip: "Molto valida se vuoi varietà vera nel viaggio.",
+      experience: {
+        wow: 7,
+        tipo: "rafting guidato",
+        tempo: "2-3h",
+        mood: "adrenalinico soft"
+      },
+      whenToGo: {
+        best: "giorno",
+        note: "sempre meglio come esperienza organizzata"
+      },
+      whenToAvoid: [
+        "stanchezza alta",
+        "giornata già troppo piena"
+      ],
+      access: {
+        difficolta: "medio",
+        parcheggio: "dipende dal centro attività",
+        walk: "minimo",
+        strada: "asfaltata"
+      },
+      crowd: {
+        best: "prenotato bene",
+        worst: "alta stagione improvvisata"
+      },
+      smartTips: [
+        "Non è il cuore dell'app, ma come micro-modulo è forte",
+        "Molto meglio se trattato come attività guidata",
+        "Perfetto per cambiare ritmo"
+      ],
+      image: "https://picsum.photos/seed/Rafting-Sarca-Riva/900/600"
+    },
+
+    {
+      id: "core-16",
+      name: "Canyoning Base",
+      zone: "nord",
+      light: "giorno",
+      activity: "water",
+      difficulty: "medio",
+      level: "core",
+      lat: 45.9234,
+      lon: 10.8594,
+      desc: "Modulo canyoning base per chi vuole un’attività acqua più avventura ma non dominante.",
+      tip: "Sempre meglio guidato.",
+      experience: {
+        wow: 7,
+        tipo: "canyoning leggero",
+        tempo: "2-4h",
+        mood: "avventura"
+      },
+      whenToGo: {
+        best: "giorno",
+        note: "come esperienza dedicata, non infilata male"
+      },
+      whenToAvoid: [
+        "giornata già pesante",
+        "meteo incerto forte"
+      ],
+      access: {
+        difficolta: "medio",
+        parcheggio: "variabile",
+        walk: "variabile",
+        strada: "mista"
+      },
+      crowd: {
+        best: "con prenotazione ben gestita",
+        worst: "improvvisazione"
+      },
+      smartTips: [
+        "Lo terrei piccolo ma presente",
+        "Ottimo come esperienza diversa",
+        "Da non mettere al centro dell'app"
+      ],
+      image: "https://picsum.photos/seed/Canyoning-Riva/900/600"
+    },
+
+    {
+      id: "core-17",
+      name: "Arco Castle View",
+      zone: "nord",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "facile",
+      level: "core",
+      lat: 45.9188,
+      lon: 10.8854,
+      desc: "Vista molto bella in area Arco, utile per dare varietà rispetto al lago puro.",
+      tip: "Bella nel tardo pomeriggio.",
+      experience: {
+        wow: 8,
+        tipo: "view storico-panoramico",
+        tempo: "45-90 min",
+        mood: "forte ma semplice"
+      },
+      whenToGo: {
+        best: "tramonto",
+        note: "ottimo con luce laterale"
+      },
+      whenToAvoid: [
+        "ore centrali forti"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "comodo in Arco",
+        walk: "breve salita",
+        strada: "asfaltata"
+      },
+      crowd: {
+        best: "feriali",
+        worst: "momenti turistici classici"
+      },
+      smartTips: [
+        "Molto valido per ampliare l'app oltre Riva stretta",
+        "Piace molto anche a chi non è super sportivo",
+        "Grande resa senza grossa fatica"
+      ],
+      image: "https://picsum.photos/seed/Arco-Castle-Riva/900/600"
+    },
+
+    {
+      id: "core-18",
+      name: "Canale di Tenno",
+      zone: "nord",
+      light: "giorno",
+      activity: "relax",
+      difficulty: "facile",
+      level: "core",
+      lat: 45.9391,
+      lon: 10.8207,
+      desc: "Borgo molto bello da inserire vicino al Lago di Tenno, perfetto per aggiungere varietà vera.",
+      tip: "Funziona bene come tappa complementare.",
+      experience: {
+        wow: 7,
+        tipo: "borgo storico",
+        tempo: "30-75 min",
+        mood: "curato"
+      },
+      whenToGo: {
+        best: "giorno",
+        note: "ottimo in abbinata a Tenno"
+      },
+      whenToAvoid: [
+        "solo se vuoi una giornata solo sport"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "comodo",
+        walk: "breve",
+        strada: "asfaltata"
+      },
+      crowd: {
+        best: "quasi sempre",
+        worst: "fasce più turistiche"
+      },
+      smartTips: [
+        "Aggiunge qualità travel all'app",
+        "Molto utile per bilanciare le giornate",
+        "Non è sport, ma è ottimo"
+      ],
+      image: "https://picsum.photos/seed/Canale-Tenno-Riva/900/600"
+    },
+
+    {
+      id: "core-19",
+      name: "Belvedere di Nago",
+      zone: "est",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "facile",
+      level: "core",
+      lat: 45.8794,
+      lon: 10.8889,
+      desc: "Viewpoint molto valido sopra Torbole, facile da usare e utile come stop intelligente.",
+      tip: "Molto bello con luce serale.",
+      experience: {
+        wow: 7,
+        tipo: "viewpoint rapido",
+        tempo: "20-40 min",
+        mood: "facile"
+      },
+      whenToGo: {
+        best: "tramonto",
+        note: "molto meglio nella fascia serale"
+      },
+      whenToAvoid: [
+        "luce dura",
+        "meteo spento"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "comodo",
+        walk: "minimo",
+        strada: "asfaltata"
+      },
+      crowd: {
+        best: "feriali",
+        worst: "tramonti migliori"
+      },
+      smartTips: [
+        "Ottimo spot semplice ma utile",
+        "Perfetto per una chiusura veloce",
+        "Molto coerente nel raggio Riva-Torbole"
+      ],
+      image: "https://picsum.photos/seed/Nago-Riva/900/600"
     },
 
     {
       id: "secondary-0",
-      name: "Ponta do Sol",
-      zone: "sud",
+      name: "San Pietro Viewpoint",
+      zone: "lago",
       light: "tramonto",
-      activity: "relax",
-      difficulty: "facile",
+      activity: "view",
+      difficulty: "medio",
       level: "secondary",
-      lat: 32.679,
-      lon: -17.1012,
-      desc: "Paese molto piacevole sul sud, perfetto per una fine giornata semplice.",
-      tip: "Ideale come chiusura senza stress.",
-      image: "https://picsum.photos/seed/Ponta-do-Sol-Madeira/900/600"
+      lat: 45.8891,
+      lon: 10.8478,
+      desc: "Viewpoint classico sopra Riva, ottimo compromesso tra accesso e resa.",
+      tip: "Molto valido in fascia serale.",
+      image: "https://picsum.photos/seed/San-Pietro-Riva/900/600"
     },
     {
       id: "secondary-1",
-      name: "25 Fontes",
-      zone: "ovest",
+      name: "Monte Brione Trail",
+      zone: "lago",
       light: "giorno",
       activity: "trekking",
-      difficulty: "medio",
+      difficulty: "facile",
       level: "secondary",
-      lat: 32.7524,
-      lon: -17.1318,
-      desc: "Trekking celebre con cascata finale, bello ma sensibile all’affollamento.",
-      tip: "Parti presto se vuoi godertelo davvero.",
-      image: "https://picsum.photos/seed/25-Fontes-Madeira/900/600"
+      lat: 45.8907,
+      lon: 10.8581,
+      desc: "Versione più camminata del Brione, ottima per muoversi senza esagerare.",
+      tip: "Molto valida per mezza giornata.",
+      image: "https://picsum.photos/seed/Monte-Brione-Trail-Riva/900/600"
     },
     {
       id: "secondary-2",
-      name: "Levada do Rei",
-      zone: "montagna",
-      light: "giorno",
-      activity: "trekking",
-      difficulty: "medio",
+      name: "Porto San Nicolò View",
+      zone: "lago",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "facile",
       level: "secondary",
-      lat: 32.8068,
-      lon: -16.9075,
-      desc: "Levada molto solida, verde e appagante.",
-      tip: "Ottima se vuoi trekking classico Madeira ben bilanciato.",
-      image: "https://picsum.photos/seed/Levada-do-Rei-Madeira/900/600"
+      lat: 45.8789,
+      lon: 10.8544,
+      desc: "Punto vista facile lato Riva, utile come bonus serale.",
+      tip: "Più pratico che estremo.",
+      image: "https://picsum.photos/seed/Porto-San-Nicolo-Riva/900/600"
     },
     {
       id: "secondary-3",
-      name: "Balcões",
-      zone: "montagna",
-      light: "giorno",
-      activity: "view",
+      name: "Lido di Riva",
+      zone: "lago",
+      light: "tramonto",
+      activity: "relax",
       difficulty: "facile",
       level: "secondary",
-      lat: 32.7368,
-      lon: -16.897,
-      desc: "Belvedere accessibile con rapporto resa-sforzo molto alto.",
-      tip: "Perfetto se vuoi una mattina facile ma bella.",
-      image: "https://picsum.photos/seed/Balcoes-Madeira/900/600"
+      lat: 45.8818,
+      lon: 10.8467,
+      desc: "Spot lago facile e piacevole per abbassare il ritmo.",
+      tip: "Molto valido come chiusura soft.",
+      image: "https://picsum.photos/seed/Lido-Riva-Riva/900/600"
     },
     {
       id: "secondary-4",
-      name: "Calheta Beach",
-      zone: "ovest",
-      light: "tramonto",
+      name: "Old Town Riva",
+      zone: "lago",
+      light: "sera",
       activity: "relax",
       difficulty: "facile",
       level: "secondary",
-      lat: 32.7182,
-      lon: -17.176,
-      desc: "Spiaggia e marina comode, più utile come fine giornata che come wow assoluto.",
-      tip: "Molto valida come stop finale senza stress.",
-      image: "https://picsum.photos/seed/Calheta-Beach-Madeira/900/600"
+      lat: 45.8862,
+      lon: 10.8413,
+      desc: "Passeggiata nel centro di Riva, utile per equilibrio e chiusura giornata.",
+      tip: "Più atmosfera che sport, ma molto utile.",
+      image: "https://picsum.photos/seed/Old-Town-Riva/900/600"
     },
     {
       id: "secondary-5",
-      name: "Porto da Cruz Waterfront",
+      name: "Busatte Park Area",
       zone: "est",
       light: "giorno",
       activity: "relax",
       difficulty: "facile",
       level: "secondary",
-      lat: 32.7661,
-      lon: -16.8299,
-      desc: "Waterfront piacevole e ottimo come pausa strategica nel nord-est.",
-      tip: "Buono come tappa intermedia.",
-      image: "https://picsum.photos/seed/Porto-da-Cruz-Waterfront-Madeira/900/600"
+      lat: 45.8787,
+      lon: 10.8859,
+      desc: "Zona verde sopra Torbole, utile come tappa easy o partenza verso sentieri.",
+      tip: "Buona base semplice.",
+      image: "https://picsum.photos/seed/Busatte-Park-Riva/900/600"
     },
     {
       id: "secondary-6",
-      name: "Miradouro do Guindaste",
+      name: "Tempesta Lago",
       zone: "est",
-      light: "alba",
-      activity: "view",
+      light: "tramonto",
+      activity: "relax",
       difficulty: "facile",
       level: "secondary",
-      lat: 32.8217,
-      lon: -16.8606,
-      desc: "Uno dei viewpoint più puliti e facili del lato est.",
-      tip: "Ottimo sunrise facile.",
-      image: "https://picsum.photos/seed/Guindaste-Madeira/900/600"
+      lat: 45.8608,
+      lon: 10.8928,
+      desc: "Zona più tranquilla del Garda estremo nord-est, piacevole come sosta.",
+      tip: "Bella se vuoi aria diversa.",
+      image: "https://picsum.photos/seed/Tempesta-Riva/900/600"
     },
     {
       id: "secondary-7",
-      name: "Santana Houses",
+      name: "Arco Olive Trail",
       zone: "nord",
       light: "giorno",
-      activity: "relax",
+      activity: "trekking",
       difficulty: "facile",
       level: "secondary",
-      lat: 32.8046,
-      lon: -16.8821,
-      desc: "Casette tradizionali, tappa iconica più culturale che paesaggistica.",
-      tip: "Meglio lontano dai momenti più pieni.",
-      image: "https://picsum.photos/seed/Santana-Houses-Madeira/900/600"
+      lat: 45.9181,
+      lon: 10.8882,
+      desc: "Cammino facile e piacevole nell'area di Arco.",
+      tip: "Buona scelta easy.",
+      image: "https://picsum.photos/seed/Arco-Olive-Riva/900/600"
     },
     {
       id: "secondary-8",
-      name: "Ribeiro Frio",
-      zone: "montagna",
+      name: "Ceniga Riverside",
+      zone: "nord",
       light: "giorno",
-      activity: "trekking",
+      activity: "relax",
       difficulty: "facile",
       level: "secondary",
-      lat: 32.7403,
-      lon: -16.8906,
-      desc: "Area verde e fresca, buona per combinare natura e cammino leggero.",
-      tip: "Funziona bene anche con nuvole.",
-      image: "https://picsum.photos/seed/Ribeiro-Frio-Madeira/900/600"
+      lat: 45.9362,
+      lon: 10.9161,
+      desc: "Zona fiume molto tranquilla e piacevole, utile come stop diverso dal lago.",
+      tip: "Molto soft.",
+      image: "https://picsum.photos/seed/Ceniga-Riva/900/600"
     },
     {
       id: "secondary-9",
-      name: "Curral das Freiras View",
-      zone: "montagna",
+      name: "Varone Area",
+      zone: "nord",
       light: "giorno",
-      activity: "view",
+      activity: "relax",
       difficulty: "facile",
       level: "secondary",
-      lat: 32.7119,
-      lon: -16.9702,
-      desc: "Valle chiusa e scenografica, molto rappresentativa dell’interno.",
-      tip: "Funziona bene anche con meteo non perfetto.",
-      image: "https://picsum.photos/seed/Curral-das-Freiras-Madeira/900/600"
+      lat: 45.9018,
+      lon: 10.8516,
+      desc: "Area utile e piacevole, buona come tappa intermedia.",
+      tip: "Più utile che clamorosa.",
+      image: "https://picsum.photos/seed/Varone-Riva/900/600"
     },
     {
       id: "secondary-10",
-      name: "Prainha do Caniçal",
-      zone: "est",
-      light: "alba",
+      name: "Walking Lago di Ledro",
+      zone: "nord",
+      light: "giorno",
       activity: "relax",
       difficulty: "facile",
       level: "secondary",
-      lat: 32.7397,
-      lon: -16.7167,
-      desc: "Piccola spiaggia vulcanica, molto buona per un inizio giornata tranquillo.",
-      tip: "Meglio presto e con poca folla.",
-      image: "https://picsum.photos/seed/Prainha-do-Canical-Madeira/900/600"
+      lat: 45.8793,
+      lon: 10.7441,
+      desc: "Passeggiata lago molto semplice ma molto godibile.",
+      tip: "Ottima se vuoi abbassare il ritmo.",
+      image: "https://picsum.photos/seed/Walking-Ledro-Riva/900/600"
     },
     {
       id: "secondary-11",
-      name: "Paul da Serra",
-      zone: "ovest",
-      light: "tramonto",
+      name: "Ledro Bike Tour",
+      zone: "nord",
+      light: "giorno",
       activity: "mtb",
-      difficulty: "medio",
+      difficulty: "facile",
       level: "secondary",
-      lat: 32.763,
-      lon: -17.133,
-      desc: "Altipiano aperto, più atmosfera e spazio che spot singolo.",
-      tip: "Bellissimo con luce lunga e orizzonte largo.",
-      image: "https://picsum.photos/seed/Paul-da-Serra-Madeira/900/600"
+      lat: 45.8761,
+      lon: 10.7479,
+      desc: "Tour bike facile e molto piacevole attorno al Ledro.",
+      tip: "Perfetto per giornata più morbida.",
+      image: "https://picsum.photos/seed/Ledro-Bike-Riva/900/600"
     },
     {
       id: "secondary-12",
-      name: "Funchal Old Town",
-      zone: "sud",
+      name: "Bocca di Trat",
+      zone: "montagna",
       light: "giorno",
-      activity: "relax",
-      difficulty: "facile",
+      activity: "trekking",
+      difficulty: "medio",
       level: "secondary",
-      lat: 32.6482,
-      lon: -16.9036,
-      desc: "Centro storico utile per passeggiare, mangiare e respirare atmosfera urbana.",
-      tip: "Buono tra tardo pomeriggio e sera.",
-      image: "https://picsum.photos/seed/Funchal-Old-Town-Madeira/900/600"
+      lat: 45.8677,
+      lon: 10.7501,
+      desc: "Area di quota molto forte per cammino, pascoli e grande sensazione di spazio.",
+      tip: "Molto buona come alternativa meno mainstream.",
+      image: "https://picsum.photos/seed/Bocca-di-Trat-Riva/900/600"
     },
     {
       id: "secondary-13",
-      name: "Botanical Garden",
-      zone: "sud",
-      light: "giorno",
-      activity: "relax",
-      difficulty: "facile",
+      name: "Belvedere di Dromaé",
+      zone: "nord",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "medio",
       level: "secondary",
-      lat: 32.6652,
-      lon: -16.8905,
-      desc: "Giardino ordinato e piacevole, utile per una giornata più soft.",
-      tip: "Perfetto quando vuoi rallentare.",
-      image: "https://picsum.photos/seed/Botanical-Garden-Madeira/900/600"
+      lat: 45.8872,
+      lon: 10.7368,
+      desc: "Belvedere molto forte sopra il Ledro, ampio e pulito.",
+      tip: "Molto bello nel tardo pomeriggio.",
+      image: "https://picsum.photos/seed/Dromae-Riva/900/600"
     },
     {
       id: "secondary-14",
-      name: "Monte Palace Area",
-      zone: "sud",
-      light: "giorno",
-      activity: "relax",
-      difficulty: "facile",
+      name: "Madonnina di Besta",
+      zone: "nord",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "medio",
       level: "secondary",
-      lat: 32.6765,
-      lon: -16.9008,
-      desc: "Giardini e scorci ricchi, bella tappa tranquilla.",
-      tip: "Ideale se vuoi rallentare ma vedere comunque cose belle.",
-      image: "https://picsum.photos/seed/Monte-Palace-Madeira/900/600"
+      lat: 45.8878,
+      lon: 10.7268,
+      desc: "Viewpoint sulla valle di Ledro molto valido e intelligente.",
+      tip: "Ottimo se vuoi un punto meno scontato.",
+      image: "https://picsum.photos/seed/Besta-Riva/900/600"
     },
     {
       id: "secondary-15",
-      name: "Garajau Cristo Rei",
-      zone: "sud",
-      light: "tramonto",
-      activity: "view",
-      difficulty: "facile",
+      name: "Monte Corno Ledro",
+      zone: "montagna",
+      light: "giorno",
+      activity: "trekking",
+      difficulty: "impegnativo",
       level: "secondary",
-      lat: 32.6372,
-      lon: -16.8501,
-      desc: "Scogliera e statua sul mare, molto valida verso sera e vicina a Funchal.",
-      tip: "Bel tramonto semplice senza grossi spostamenti.",
-      image: "https://picsum.photos/seed/Garajau-Cristo-Rei-Madeira/900/600"
+      lat: 45.9051,
+      lon: 10.7246,
+      desc: "Cima forte sopra il Ledro, molto bella se vuoi una montagna vera fuori dal mainstream più noto.",
+      tip: "Più da giornata seria.",
+      image: "https://picsum.photos/seed/Monte-Corno-Ledro-Riva/900/600"
     },
     {
       id: "secondary-16",
-      name: "Praia Formosa",
-      zone: "sud",
-      light: "tramonto",
-      activity: "relax",
+      name: "Kayak Easy Session",
+      zone: "lago",
+      light: "mattina",
+      activity: "water",
       difficulty: "facile",
       level: "secondary",
-      lat: 32.6359,
-      lon: -16.9492,
-      desc: "Spiaggia urbana comoda, più utile che memorabile.",
-      tip: "Perfetta se vuoi poco sbatti.",
-      image: "https://picsum.photos/seed/Praia-Formosa-Madeira/900/600"
+      lat: 45.8849,
+      lon: 10.8444,
+      desc: "Versione facile acqua per chi vuole provare kayak senza complicarsi.",
+      tip: "Molto meglio con poco vento.",
+      image: "https://picsum.photos/seed/Kayak-Riva/900/600"
     },
     {
       id: "secondary-17",
-      name: "Pico dos Barcelos",
-      zone: "sud",
+      name: "SUP Sunset Session",
+      zone: "lago",
       light: "tramonto",
-      activity: "view",
+      activity: "water",
       difficulty: "facile",
       level: "secondary",
-      lat: 32.6656,
-      lon: -16.9372,
-      desc: "Belvedere accessibile con vista ampia su Funchal.",
-      tip: "Soluzione easy ma forte vicino alla città.",
-      image: "https://picsum.photos/seed/Pico-dos-Barcelos-Madeira/900/600"
+      lat: 45.8839,
+      lon: 10.8435,
+      desc: "SUP semplice e bello come esperienza serale.",
+      tip: "Bella se l'acqua è calma.",
+      image: "https://picsum.photos/seed/SUP-Sunset-Riva/900/600"
     },
     {
       id: "secondary-18",
-      name: "Miradouro do Pináculo",
-      zone: "sud",
-      light: "tramonto",
+      name: "Tremalzo Access View",
+      zone: "ovest",
+      light: "giorno",
       activity: "view",
-      difficulty: "facile",
+      difficulty: "medio",
       level: "secondary",
-      lat: 32.6555,
-      lon: -16.8794,
-      desc: "Vista alta sulla città e sul lato est di Funchal.",
-      tip: "Molto valido in luce serale.",
-      image: "https://picsum.photos/seed/Pinaculo-Madeira/900/600"
+      lat: 45.8461,
+      lon: 10.7232,
+      desc: "Punto panoramico in area Tremalzo, utile se vuoi il wow bike senza fare tutto il mega giro.",
+      tip: "Molto buono come modulo più leggero.",
+      image: "https://picsum.photos/seed/Tremalzo-Access-Riva/900/600"
     },
     {
       id: "secondary-19",
-      name: "Miradouro da Portela",
+      name: "Monte Baldo Easy View",
       zone: "montagna",
       light: "giorno",
       activity: "view",
       difficulty: "facile",
       level: "secondary",
-      lat: 32.7399,
-      lon: -16.8297,
-      desc: "Belvedere molto leggibile su costa e rilievi del nord-est.",
-      tip: "Ottima tappa di passaggio ben spesa.",
-      image: "https://picsum.photos/seed/Portela-Madeira/900/600"
-    },
-    {
-      id: "secondary-20",
-      name: "Machico Bay",
-      zone: "est",
-      light: "giorno",
-      activity: "relax",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 32.7167,
-      lon: -16.7667,
-      desc: "Baia ordinata e piacevole, utile come stop soft o pausa logistica.",
-      tip: "Buona se vuoi respirare tra due spot forti.",
-      image: "https://picsum.photos/seed/Machico-Bay-Madeira/900/600"
-    },
-    {
-      id: "secondary-21",
-      name: "Rocha do Navio",
-      zone: "nord",
-      light: "giorno",
-      activity: "view",
-      difficulty: "medio",
-      level: "secondary",
-      lat: 32.8164,
-      lon: -16.885,
-      desc: "Scogliera e teleferica, molto scenica e distintiva.",
-      tip: "Molto valida come tappa nord se vuoi qualcosa di diverso.",
-      image: "https://picsum.photos/seed/Rocha-do-Navio-Madeira/900/600"
-    },
-    {
-      id: "secondary-22",
-      name: "Paul do Mar",
-      zone: "sud",
-      light: "tramonto",
-      activity: "relax",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 32.7605,
-      lon: -17.2291,
-      desc: "Costa ruvida e piacevole, molto buona per una chiusura semplice ma con carattere.",
-      tip: "Atmosfera molto buona a fine giornata.",
-      image: "https://picsum.photos/seed/Paul-do-Mar-Madeira/900/600"
-    },
-    {
-      id: "secondary-23",
-      name: "Jardim do Mar View",
-      zone: "sud",
-      light: "tramonto",
-      activity: "view",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 32.739,
-      lon: -17.212,
-      desc: "Paesino e costa molto piacevoli verso sera.",
-      tip: "Molto valido per una chiusura semplice.",
-      image: "https://picsum.photos/seed/Jardim-do-Mar-View-Madeira/900/600"
-    },
-    {
-      id: "secondary-24",
-      name: "Levada do Risco",
-      zone: "ovest",
-      light: "giorno",
-      activity: "trekking",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 32.7528,
-      lon: -17.1321,
-      desc: "Percorso relativamente breve verso una cascata scenica.",
-      tip: "Molto facile da infilare in giornata.",
-      image: "https://picsum.photos/seed/Risco-Madeira/900/600"
+      lat: 45.7568,
+      lon: 10.8088,
+      desc: "Versione più semplice del modulo Baldo, per chi vuole la quota senza fare il trekking grande.",
+      tip: "Ottima variante smart.",
+      image: "https://picsum.photos/seed/Baldo-Easy-Riva/900/600"
     },
 
     {
       id: "extra-0",
-      name: "Miradouro do Véu da Noiva",
-      zone: "nord",
-      light: "giorno",
-      activity: "view",
-      difficulty: "facile",
-      level: "extra",
-      lat: 32.8335,
-      lon: -17.1258,
-      desc: "Vista iconica sulla cascata costiera, rapidissima ma molto efficace.",
-      tip: "Perfetto come bonus forte senza rubare troppo tempo.",
-      image: "https://picsum.photos/seed/Veu-da-Noiva-Madeira/900/600"
-    },
-    {
-      id: "extra-1",
-      name: "Cais do Sardinha",
-      zone: "est",
-      light: "alba",
-      activity: "trekking",
-      difficulty: "medio",
-      level: "extra",
-      lat: 32.7457,
-      lon: -16.6889,
-      desc: "Il finale davvero appagante del trekking di São Lourenço.",
-      tip: "Usalo come extra serio solo se fai davvero il percorso.",
-      image: "https://picsum.photos/seed/Cais-do-Sardinha-Madeira/900/600"
-    },
-    {
-      id: "extra-2",
-      name: "Palheiro Gardens",
-      zone: "sud",
+      name: "Spiaggia Sabbioni",
+      zone: "lago",
       light: "giorno",
       activity: "relax",
       difficulty: "facile",
       level: "extra",
-      lat: 32.6684,
-      lon: -16.8515,
-      desc: "Giardini tranquilli e curati, perfetti per cambiare ritmo.",
-      tip: "Ottimo extra quando vuoi una Madeira più morbida e ordinata.",
-      image: "https://picsum.photos/seed/Palheiro-Gardens-Madeira/900/600"
+      lat: 45.8802,
+      lon: 10.8493,
+      desc: "Stop facile sul lago.",
+      tip: "Buono per rallentare.",
+      image: "https://picsum.photos/seed/Sabbioni-Riva/900/600"
     },
     {
-      id: "extra-3",
-      name: "Pico dos Barcelos Bonus",
-      zone: "sud",
-      light: "tramonto",
-      activity: "view",
+      id: "extra-1",
+      name: "Marina Riva Pause",
+      zone: "lago",
+      light: "sera",
+      activity: "relax",
       difficulty: "facile",
       level: "extra",
-      lat: 32.6659,
-      lon: -16.9375,
-      desc: "Vista ampia su Funchal, utile come bonus rapido se sei già in zona.",
-      tip: "Extra furbo da città, senza perdere troppo tempo.",
-      image: "https://picsum.photos/seed/Pico-dos-Barcelos-Bonus-Madeira/900/600"
+      lat: 45.8857,
+      lon: 10.8408,
+      desc: "Pausa semplice in zona marina.",
+      tip: "Chiude bene una giornata easy.",
+      image: "https://picsum.photos/seed/Marina-Riva/900/600"
     },
     {
-      id: "extra-4",
-      name: "Penha d'Águia",
+      id: "extra-2",
+      name: "Nago Short View",
       zone: "est",
       light: "giorno",
       activity: "view",
-      difficulty: "medio",
+      difficulty: "facile",
       level: "extra",
-      lat: 32.7633,
-      lon: -16.8244,
-      desc: "Roccia iconica del nord-est, molto distintiva e meno scontata.",
-      tip: "Extra interessante se vuoi qualcosa di diverso dai classici.",
-      image: "https://picsum.photos/seed/Penha-dAguia-Madeira/900/600"
+      lat: 45.8791,
+      lon: 10.8894,
+      desc: "Vista rapida ma valida sopra Torbole.",
+      tip: "Da infilare se passi di lì.",
+      image: "https://picsum.photos/seed/Nago-Short-Riva/900/600"
+    },
+    {
+      id: "extra-3",
+      name: "Mezzolago Stop",
+      zone: "nord",
+      light: "giorno",
+      activity: "relax",
+      difficulty: "facile",
+      level: "extra",
+      lat: 45.8886,
+      lon: 10.7338,
+      desc: "Pausa tranquilla in area Ledro.",
+      tip: "Piccolo stop piacevole.",
+      image: "https://picsum.photos/seed/Mezzolago-Riva/900/600"
+    },
+    {
+      id: "extra-4",
+      name: "Gelato vista lago",
+      zone: "lago",
+      light: "sera",
+      activity: "relax",
+      difficulty: "facile",
+      level: "extra",
+      lat: 45.8834,
+      lon: 10.8412,
+      desc: "Stop finale facile sul lago.",
+      tip: "Perfetto come chiusura leggera.",
+      image: "https://picsum.photos/seed/Gelato-Lago-Riva/900/600"
     }
   ]
 };
