@@ -16,7 +16,7 @@
 
   const APP = {
     mode: loadJson(STORAGE_KEYS.mode, "travel"),
-    level: "core",
+    level: "all",
     light: "all",
     zone: "all",
     activity: "all",
@@ -178,21 +178,6 @@
     return s.image || `https://picsum.photos/seed/${encodeURIComponent(s.name)}/900/600`;
   }
 
-  function getBaseSpots() {
-    if (APP.mode === "sail") {
-      return APP_SPOTS.spots;
-    }
-    return APP_SPOTS.spots.filter(s => s.level === "core");
-  }
-
-  function getBaseSpotById(id) {
-    return getBaseSpots().find(s => s.id === id) || null;
-  }
-
-  function getSpotById(id) {
-    return APP_SPOTS.spots.find(s => s.id === id) || null;
-  }
-
   function weatherSuitability(spot) {
     const w = APP.weatherData;
     if (!w) return { score: 0, label: "meteo neutro", cls: "gold" };
@@ -233,7 +218,7 @@
   }
 
   function getAllSpotsWithMeta() {
-    return getBaseSpots().map(s => ({
+    return APP_SPOTS.spots.map(s => ({
       ...s,
       distance: APP.userPos ? distKm(APP.userPos.lat, APP.userPos.lon, s.lat, s.lon) : null,
       weatherFit: weatherSuitability(s),
@@ -243,7 +228,7 @@
 
   function getFilteredSpots() {
     let items = getAllSpotsWithMeta().filter(s =>
-      (APP.mode === "sail" ? (APP.level === "all" || s.level === APP.level) : true) &&
+      (APP.level === "all" || s.level === APP.level) &&
       (APP.light === "all" || s.light === APP.light) &&
       (APP.zone === "all" || s.zone === APP.zone) &&
       (APP.activity === "all" || s.activity === APP.activity) &&
@@ -318,6 +303,10 @@
     )[0] || null;
   }
 
+  // getClosestSpot migliorata:
+  // Preferisce lo spot più vicino che non sia "meno ideale" (cls === "pink").
+  // Accetta fino a 15 km in più rispetto al nearest per trovarne uno decente.
+  // Ricade sul più vicino assoluto solo se non trova alternative valide.
   function getClosestSpot() {
     if (!APP.userPos) return null;
 
@@ -343,6 +332,8 @@
     return decent || nearest;
   }
 
+  // explainGoNow: genera una stringa breve con i motivi della scelta "Vai ora".
+  // Combina al massimo 3 ragioni separate da " · ".
   function explainGoNow(spot) {
     if (!spot) return "";
 
@@ -350,6 +341,7 @@
     const period = currentPeriod();
     const w = APP.weatherData;
 
+    // Motivo 1: meteo
     if (spot.weatherFit?.cls === "green") {
       reasons.push("meteo favorevole");
     } else if (w && w.cloud <= 35 && w.rain < 25) {
@@ -358,6 +350,7 @@
       reasons.push("riparato dalla pioggia");
     }
 
+    // Motivo 2: luce / orario
     if (spot.light === period) {
       if (period === "alba") reasons.push("luce perfetta per l'alba");
       else if (period === "tramonto") reasons.push("luce perfetta per il tramonto");
@@ -366,12 +359,14 @@
       reasons.push("tramonto imminente");
     }
 
+    // Motivo 3: distanza
     if (spot.distance != null) {
       if (spot.distance <= 8) reasons.push("vicinissimo a te");
       else if (spot.distance <= 18) reasons.push("raggiungibile facilmente");
       else if (spot.distance <= 30) reasons.push("a portata di mano");
     }
 
+    // Fallback se abbiamo meno di 2 ragioni
     if (reasons.length < 2) {
       if (spot.level === "core") reasons.push("spot di prima fascia");
       else if (spot.activity === "view" && period !== "giorno") reasons.push("viewpoint ideale");
@@ -399,7 +394,7 @@
       pool = pool.filter(s => s.zone === APP.zone);
     }
 
-    if (APP.mode === "sail" && APP.level !== "all") {
+    if (APP.level !== "all") {
       pool = pool.filter(s => s.level === APP.level);
     }
 
@@ -793,7 +788,7 @@
   }
 
   function centerSpot(id) {
-    const spot = getBaseSpotById(id);
+    const spot = APP_SPOTS.spots.find(s => s.id === id);
     if (!spot || !APP.map) return;
 
     switchPage("map");
@@ -852,13 +847,6 @@
 
   function toggleMode(forceMode) {
     APP.mode = forceMode || (APP.mode === "travel" ? "sail" : "travel");
-
-    if (APP.mode === "travel") {
-      APP.level = "core";
-    } else if (APP.level === "core") {
-      APP.level = "all";
-    }
-
     saveJson(STORAGE_KEYS.mode, APP.mode);
     updateModeUI();
     renderAll();
@@ -875,7 +863,7 @@
     APP.search = q;
     renderAll();
 
-    const found = getBaseSpots().find(s =>
+    const found = APP_SPOTS.spots.find(s =>
       normalizeText(s.name).includes(normalizeText(q))
     );
 
@@ -973,7 +961,7 @@
     }
 
     $("searchBtn")?.addEventListener("click", searchSpot);
-    $("goNowBtn")?.addEventListener("click", runGoNow);
+    $("spotNowBtn")?.addEventListener("click", runGoNow);   // ← corretto da goNowBtn
     $("autofillPlannerBtn")?.addEventListener("click", buildDayPlanner);
     $("plannerOpenBtn")?.addEventListener("click", () => switchPage("home"));
     $("clearPlannerBtn")?.addEventListener("click", clearPlannerAll);
@@ -1021,10 +1009,6 @@
   }
 
   function initApp() {
-    if (APP.mode === "travel") {
-      APP.level = "core";
-    }
-
     updateModeUI();
     bindEvents();
     initMap();
@@ -1078,9 +1062,7 @@
     centerSpot,
     renderPlannerBox,
     toggleMode,
-    renderAll,
-    getBaseSpots,
-    getSpotById
+    renderAll
   };
 
   document.addEventListener("DOMContentLoaded", initApp);
