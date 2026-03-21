@@ -91,6 +91,39 @@
     return "giorno";
   }
 
+  function getCurrentHour() {
+    return new Date().getHours();
+  }
+
+  function normalizeLight(value) {
+    const v = normalizeText(value);
+
+    if (v === "alba" || v === "sunrise") return "alba";
+    if (v === "tramonto" || v === "sunset") return "tramonto";
+    if (v === "giorno" || v === "day") return "giorno";
+
+    if (v === "mattina" || v === "morning") return "giorno";
+    if (v === "sera" || v === "evening") return "tramonto";
+    if (v === "notte" || v === "night") return "tramonto";
+
+    return v || "giorno";
+  }
+
+  function lightMatchesFilter(spotLight, filterLight) {
+    if (filterLight === "all") return true;
+    return normalizeLight(spotLight) === normalizeLight(filterLight);
+  }
+
+  function isMorningLike(spotLight) {
+    const v = normalizeLight(spotLight);
+    return v === "alba" || normalizeText(spotLight) === "mattina";
+  }
+
+  function isEveningLike(spotLight) {
+    const v = normalizeLight(spotLight);
+    return v === "tramonto" || normalizeText(spotLight) === "sera";
+  }
+
   function parseSunTime(raw) {
     if (!raw) return null;
     const d = new Date(raw);
@@ -130,8 +163,32 @@
     return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
   }
 
+  function getRegionCenter() {
+    return {
+      lat: APP_SPOTS.center?.[0] ?? 32.75,
+      lon: APP_SPOTS.center?.[1] ?? -16.95
+    };
+  }
+
+  function getDistanceFromRegionCenter() {
+    if (!APP.userPos) return null;
+    const center = getRegionCenter();
+    return distKm(APP.userPos.lat, APP.userPos.lon, center.lat, center.lon);
+  }
+
+  function isUserNearRegion() {
+    const d = getDistanceFromRegionCenter();
+    if (d == null) return false;
+    return d <= 180;
+  }
+
+  function shouldUseLiveDistance() {
+    return isUserNearRegion();
+  }
+
   function displayDistance(d) {
     if (d == null) return "distanza non disponibile";
+    if (!shouldUseLiveDistance()) return "distanza locale non attiva";
     return `${d.toFixed(1)} km da te`;
   }
 
@@ -190,43 +247,82 @@
     return APP_SPOTS.spots.find(s => s.id === id) || null;
   }
 
+  function getWeatherWindowFit(spot) {
+    const h = getCurrentHour();
+    const light = normalizeLight(spot.light);
+
+    if (light === "alba") {
+      if (h < 6) return 2;
+      if (h < 9) return 4;
+      if (h < 11) return 1;
+      return -2;
+    }
+
+    if (light === "tramonto") {
+      if (h < 14) return -1;
+      if (h < 17) return 1;
+      if (h < 20) return 4;
+      return 1;
+    }
+
+    if (light === "giorno") {
+      if (h < 8) return 0;
+      if (h < 17) return 3;
+      if (h < 19) return 1;
+      return -1;
+    }
+
+    return 0;
+  }
+
   function weatherSuitability(spot) {
     const w = APP.weatherData;
     if (!w) return { score: 0, label: "meteo neutro", cls: "gold" };
 
     let score = 0;
+    const name = normalizeText(spot.name);
+    const zone = normalizeText(spot.zone);
+    const activity = normalizeText(spot.activity);
+    const difficulty = normalizeText(spot.difficulty);
+    const light = normalizeLight(spot.light);
 
     if (w.rain >= 55) {
-      if (spot.activity === "relax") score += 3;
-      if (normalizeText(spot.name).includes("forest") || normalizeText(spot.name).includes("fanal")) score += 4;
-      if (spot.activity === "view" && (spot.zone === "montagna" || spot.zone === "ovest")) score -= 3;
+      if (activity === "relax") score += 3;
+      if (name.includes("forest") || name.includes("fanal")) score += 5;
+      if (activity === "view" && (zone === "montagna" || zone === "ovest")) score -= 3;
+      if (light === "tramonto" || light === "alba") score -= 2;
+    } else if (w.rain >= 30) {
+      if (activity === "trekking") score -= 2;
+      if (activity === "relax") score += 1;
     }
 
-    if (w.wind >= 32) {
-      if (spot.zone === "montagna") score -= 4;
-      if (normalizeText(spot.name).includes("pico")) score -= 4;
-      if (spot.activity === "view") score -= 2;
-      if (spot.activity === "relax") score += 2;
-      if (spot.activity === "trekking" && spot.difficulty === "facile") score += 1;
+    if (w.wind >= 38) {
+      if (zone === "montagna") score -= 5;
+      if (name.includes("pico") || name.includes("arieiro") || name.includes("ruivo")) score -= 5;
+      if (activity === "view") score -= 2;
+      if (activity === "relax") score += 1;
+    } else if (w.wind >= 28) {
+      if (zone === "montagna") score -= 3;
+      if (activity === "trekking" && difficulty === "impegnativo") score -= 2;
+    } else if (w.wind <= 18 && activity === "view") {
+      score += 1;
     }
 
-    if (w.cloud >= 65) {
-      if (normalizeText(spot.name).includes("forest") || spot.activity === "trekking") score += 2;
-      if (spot.light === "tramonto") score -= 1;
+    if (w.cloud >= 75) {
+      if (name.includes("forest") || activity === "trekking") score += 2;
+      if (light === "tramonto" || light === "alba") score -= 2;
+    } else if (w.cloud <= 35 && w.rain < 25) {
+      if (light === "alba" || light === "tramonto") score += 3;
+      if (activity === "view") score += 2;
+      if (zone === "montagna") score += 1;
     }
 
-    if (w.cloud <= 35 && w.rain < 25) {
-      if (spot.light === "alba" || spot.light === "tramonto") score += 3;
-      if (spot.activity === "view") score += 2;
-    }
+    score += getWeatherWindowFit(spot);
 
-    if (w.period === "alba" && spot.light === "alba") score += 2;
-    if (w.period === "tramonto" && spot.light === "tramonto") score += 2;
-    if (w.period === "giorno" && spot.light === "giorno") score += 1;
-
-    if (score >= 4) return { score, label: "ottimo oggi", cls: "green" };
-    if (score <= -2) return { score, label: "meno ideale", cls: "pink" };
-    return { score, label: "molto valido", cls: "gold" };
+    if (score >= 7) return { score, label: "ottimo oggi", cls: "green" };
+    if (score >= 3) return { score, label: "molto valido", cls: "gold" };
+    if (score <= -3) return { score, label: "meno ideale", cls: "pink" };
+    return { score, label: "così così", cls: "blue" };
   }
 
   function getAllSpotsWithMeta() {
@@ -241,7 +337,7 @@
   function getFilteredSpots() {
     let items = getAllSpotsWithMeta().filter(s =>
       (APP.level === "all" || s.level === APP.level) &&
-      (APP.light === "all" || s.light === APP.light) &&
+      lightMatchesFilter(s.light, APP.light) &&
       (APP.zone === "all" || s.zone === APP.zone) &&
       (APP.activity === "all" || s.activity === APP.activity) &&
       (APP.favoritesFilter === "all" || isFavorite(s.id)) &&
@@ -259,12 +355,18 @@
       }
 
       const levelOrder = { core: 0, secondary: 1, extra: 2 };
+
       if (b.weatherFit.score !== a.weatherFit.score) return b.weatherFit.score - a.weatherFit.score;
-      if (levelOrder[a.level] !== levelOrder[b.level]) return levelOrder[a.level] - levelOrder[b.level];
-      if (a.distance == null && b.distance == null) return a.name.localeCompare(b.name, "it");
-      if (a.distance == null) return 1;
-      if (b.distance == null) return -1;
-      return a.distance - b.distance;
+      if ((levelOrder[a.level] ?? 9) !== (levelOrder[b.level] ?? 9)) return (levelOrder[a.level] ?? 9) - (levelOrder[b.level] ?? 9);
+
+      if (shouldUseLiveDistance()) {
+        if (a.distance == null && b.distance == null) return a.name.localeCompare(b.name, "it");
+        if (a.distance == null) return 1;
+        if (b.distance == null) return -1;
+        if (a.distance !== b.distance) return a.distance - b.distance;
+      }
+
+      return a.name.localeCompare(b.name, "it");
     });
   }
 
@@ -280,8 +382,8 @@
     }
 
     if (APP.mapQuickFilter === "wow") return items.filter(s => (APP_SPOTS.topWowNames || []).includes(s.name));
-    if (APP.mapQuickFilter === "sunset") return items.filter(s => s.light === "tramonto");
-    if (APP.mapQuickFilter === "alba") return items.filter(s => s.light === "alba");
+    if (APP.mapQuickFilter === "sunset") return items.filter(s => isEveningLike(s.light));
+    if (APP.mapQuickFilter === "alba") return items.filter(s => isMorningLike(s.light));
     if (APP.mapQuickFilter === "favorites") return items.filter(s => isFavorite(s.id));
 
     return items;
@@ -299,12 +401,23 @@
       pool = pool.filter(s => s.level === APP.level);
     }
 
-    let periodPool = pool.filter(s => s.light === desired);
+    let periodPool = pool.filter(s => normalizeLight(s.light) === desired);
+
+    if (!periodPool.length && desired === "giorno") {
+      periodPool = pool.filter(s => normalizeText(s.light) === "mattina" || normalizeLight(s.light) === "giorno");
+    }
+
+    if (!periodPool.length && desired === "tramonto") {
+      periodPool = pool.filter(s => isEveningLike(s.light));
+    }
+
+    if (!periodPool.length && desired === "alba") {
+      periodPool = pool.filter(s => isMorningLike(s.light));
+    }
+
     if (!periodPool.length) periodPool = pool;
 
-    return periodPool.sort((a, b) =>
-      b.weatherFit.score - a.weatherFit.score || ((a.distance ?? 9999) - (b.distance ?? 9999))
-    )[0] || null;
+    return sortBestPool(periodPool)[0] || null;
   }
 
   function getBestWowSpot() {
@@ -314,9 +427,7 @@
       pool = pool.filter(s => s.level === APP.level);
     }
 
-    return pool.sort((a, b) =>
-      b.weatherFit.score - a.weatherFit.score || ((a.distance ?? 9999) - (b.distance ?? 9999))
-    )[0] || null;
+    return sortBestPool(pool)[0] || null;
   }
 
   function getBestSunsetSpot() {
@@ -324,19 +435,17 @@
       return window.SAIL.getBestSailSunsetSpot(APP);
     }
 
-    let pool = getAllSpotsWithMeta().filter(s => s.light === "tramonto");
+    let pool = getAllSpotsWithMeta().filter(s => isEveningLike(s.light));
 
     if (APP.level !== "all") {
       pool = pool.filter(s => s.level === APP.level);
     }
 
-    return pool.sort((a, b) =>
-      b.weatherFit.score - a.weatherFit.score || ((a.distance ?? 9999) - (b.distance ?? 9999))
-    )[0] || null;
+    return sortBestPool(pool)[0] || null;
   }
 
   function getClosestSpot() {
-    if (!APP.userPos) return null;
+    if (!APP.userPos || !shouldUseLiveDistance()) return null;
 
     let pool = getAllSpotsWithMeta().filter(s => s.distance != null);
 
@@ -353,15 +462,17 @@
     pool.sort((a, b) => a.distance - b.distance);
 
     const nearest = pool[0];
+    if (!nearest) return null;
 
     if (nearest.weatherFit.cls !== "pink") return nearest;
 
-    const EXTRA_KM_TOLERANCE = 15;
-    const decent = pool.find(
-      s => s.weatherFit.cls !== "pink" && s.distance <= nearest.distance + EXTRA_KM_TOLERANCE
+    const tolerance = 12;
+    const better = pool.find(s =>
+      s.weatherFit.cls !== "pink" &&
+      s.distance <= nearest.distance + tolerance
     );
 
-    return decent || nearest;
+    return better || nearest;
   }
 
   function explainGoNow(spot) {
@@ -370,42 +481,72 @@
     const reasons = [];
     const period = currentPeriod();
     const w = APP.weatherData;
+    const light = normalizeLight(spot.light);
 
     if (spot.weatherFit?.cls === "green") {
-      reasons.push("meteo favorevole");
-    } else if (w && w.cloud <= 35 && w.rain < 25) {
-      reasons.push("cielo aperto");
-    } else if (w && w.rain >= 55) {
-      reasons.push("riparato dalla pioggia");
+      reasons.push("condizioni molto buone");
+    } else if (spot.weatherFit?.cls === "gold") {
+      reasons.push("momento favorevole");
     }
 
-    if (spot.light === period) {
-      if (period === "alba") reasons.push("luce perfetta per l'alba");
-      else if (period === "tramonto") reasons.push("luce perfetta per il tramonto");
-      else reasons.push("orario ideale");
-    } else if (period === "tramonto" && spot.light === "tramonto") {
-      reasons.push("tramonto imminente");
+    if (period === "alba" && isMorningLike(light || spot.light)) {
+      reasons.push("luce giusta per partire presto");
+    } else if (period === "tramonto" && isEveningLike(light || spot.light)) {
+      reasons.push("fascia luce ideale");
+    } else if (period === "giorno" && light === "giorno") {
+      reasons.push("orario giusto per questo spot");
     }
 
-    if (spot.distance != null) {
+    if (w) {
+      if (w.cloud <= 30 && w.rain < 20 && (light === "alba" || light === "tramonto" || spot.activity === "view")) {
+        reasons.push("cielo abbastanza pulito");
+      } else if (w.rain >= 50 && (normalizeText(spot.name).includes("fanal") || normalizeText(spot.activity) === "relax")) {
+        reasons.push("regge meglio con meteo incerto");
+      } else if (w.wind <= 18 && normalizeText(spot.activity) === "view") {
+        reasons.push("vento abbastanza tranquillo");
+      }
+    }
+
+    if (shouldUseLiveDistance() && spot.distance != null) {
       if (spot.distance <= 8) reasons.push("vicinissimo a te");
-      else if (spot.distance <= 18) reasons.push("raggiungibile facilmente");
-      else if (spot.distance <= 30) reasons.push("a portata di mano");
+      else if (spot.distance <= 18) reasons.push("facile da raggiungere");
+      else if (spot.distance <= 30) reasons.push("raggiungibile senza sbatti");
+    } else {
+      if (spot.level === "core") reasons.push("spot di prima fascia");
+      else if (spot.level === "secondary") reasons.push("ottima alternativa intelligente");
     }
 
     if (reasons.length < 2) {
-      if (spot.level === "core") reasons.push("spot di prima fascia");
-      else if (spot.activity === "view" && period !== "giorno") reasons.push("viewpoint ideale");
+      if (spot.activity === "trekking") reasons.push("buona scelta come esperienza centrale");
+      else if (spot.activity === "view") reasons.push("resa alta con poco sforzo");
+      else if (spot.activity === "relax") reasons.push("chiusura facile e piacevole");
     }
 
     return reasons.slice(0, 3).join(" · ");
+  }
+
+  function sortBestPool(pool) {
+    return [...pool].sort((a, b) => {
+      if (b.weatherFit.score !== a.weatherFit.score) return b.weatherFit.score - a.weatherFit.score;
+
+      const levelOrder = { core: 0, secondary: 1, extra: 2 };
+      if ((levelOrder[a.level] ?? 9) !== (levelOrder[b.level] ?? 9)) return (levelOrder[a.level] ?? 9) - (levelOrder[b.level] ?? 9);
+
+      if (shouldUseLiveDistance()) {
+        const ad = a.distance ?? 999999;
+        const bd = b.distance ?? 999999;
+        if (ad !== bd) return ad - bd;
+      }
+
+      return a.name.localeCompare(b.name, "it");
+    });
   }
 
   function bestSpot(options) {
     let pool = getAllSpotsWithMeta();
 
     if (options.light) {
-      pool = pool.filter(s => s.light === options.light);
+      pool = pool.filter(s => lightMatchesFilter(s.light, options.light));
     }
 
     if (options.activity) {
@@ -426,35 +567,80 @@
 
     if (!pool.length) return null;
 
-    return pool.sort((a, b) =>
-      b.weatherFit.score - a.weatherFit.score || ((a.distance ?? 9999) - (b.distance ?? 9999))
-    )[0];
+    return sortBestPool(pool)[0] || null;
+  }
+
+  function scoreDistanceForGoNow(spot) {
+    if (!shouldUseLiveDistance() || spot.distance == null) return 0;
+
+    if (spot.distance <= 5) return 22;
+    if (spot.distance <= 12) return 16;
+    if (spot.distance <= 20) return 11;
+    if (spot.distance <= 35) return 5;
+    return -Math.min(14, Math.round(spot.distance / 12));
+  }
+
+  function scoreTimeForGoNow(spot) {
+    const h = getCurrentHour();
+    const lightRaw = normalizeText(spot.light);
+    const light = normalizeLight(spot.light);
+
+    if (light === "alba") {
+      if (h < 6) return 14;
+      if (h < 9) return 24;
+      if (h < 11) return 8;
+      return -8;
+    }
+
+    if (lightRaw === "mattina") {
+      if (h < 8) return 8;
+      if (h < 12) return 18;
+      if (h < 14) return 8;
+      return -4;
+    }
+
+    if (light === "giorno") {
+      if (h < 8) return 2;
+      if (h < 16) return 18;
+      if (h < 18) return 7;
+      return -3;
+    }
+
+    if (light === "tramonto") {
+      if (h < 14) return -4;
+      if (h < 17) return 10;
+      if (h < 20) return 24;
+      return 6;
+    }
+
+    if (lightRaw === "sera") {
+      if (h < 16) return -2;
+      if (h < 21) return 18;
+      return 7;
+    }
+
+    return 0;
   }
 
   function rankSpotForGoNow(spot) {
     let score = 0;
 
-    score += (spot.weatherFit?.score || 0) * 12;
+    score += (spot.weatherFit?.score || 0) * 10;
+    score += scoreTimeForGoNow(spot);
+    score += scoreDistanceForGoNow(spot);
 
-    const period = currentPeriod();
-    if (spot.light === period) score += 22;
-    else if (period === "giorno" && spot.light === "giorno") score += 10;
-    else score -= 3;
-
-    const levelBoost = { core: 18, secondary: 10, extra: 4 };
+    const levelBoost = { core: 16, secondary: 9, extra: 4 };
     score += levelBoost[spot.level] || 0;
 
-    if (spot.distance != null) {
-      if (spot.distance <= 8) score += 22;
-      else if (spot.distance <= 18) score += 16;
-      else if (spot.distance <= 30) score += 10;
-      else if (spot.distance <= 50) score += 4;
-      else score -= Math.min(18, Math.round(spot.distance / 10));
-    }
+    if (spot.activity === "view") score += 3;
+    if (spot.activity === "trekking" && currentPeriod() === "giorno") score += 4;
+    if (spot.activity === "relax" && currentPeriod() === "tramonto") score += 4;
 
-    if (period === "alba" && (spot.activity === "view" || spot.activity === "relax")) score += 7;
-    if (period === "giorno" && (spot.activity === "trekking" || spot.activity === "view")) score += 6;
-    if (period === "tramonto" && (spot.activity === "view" || spot.activity === "relax")) score += 8;
+    if (APP.weatherData) {
+      if (APP.weatherData.rain >= 50 && normalizeText(spot.name).includes("fanal")) score += 8;
+      if (APP.weatherData.wind >= 35 && normalizeText(spot.zone) === "montagna") score -= 8;
+      if (APP.weatherData.cloud <= 30 && (normalizeLight(spot.light) === "alba" || normalizeLight(spot.light) === "tramonto")) score += 5;
+    }
 
     return score;
   }
@@ -497,26 +683,42 @@
   }
 
   function buildDayPlanner() {
-    const albaCandidate = bestSpot({ light: "alba", activity: ["view", "trekking", "relax"] });
+    const hour = getCurrentHour();
+
+    const albaCandidate = bestSpot({
+      light: "alba",
+      activity: ["view", "trekking", "relax"]
+    }) || bestSpot({
+      light: "mattina",
+      activity: ["view", "trekking", "relax"]
+    });
+
     const mainCandidate = bestSpot({
+      light: "giorno",
+      activity: ["trekking", "view", "relax", "mtb"],
+      exclude: [albaCandidate?.id]
+    }) || bestSpot({
       activity: ["trekking", "view", "relax", "mtb"],
       exclude: [albaCandidate?.id]
     });
+
     const sunsetCandidate = bestSpot({
       light: "tramonto",
       activity: ["view", "relax"],
       exclude: [albaCandidate?.id, mainCandidate?.id]
+    }) || bestSpot({
+      light: "sera",
+      activity: ["view", "relax"],
+      exclude: [albaCandidate?.id, mainCandidate?.id]
     });
 
-    const period = currentPeriod();
-
-    if (period === "tramonto") {
+    if (hour >= 17) {
       APP.planner = {
         alba: null,
         main: mainCandidate?.id || null,
         tramonto: sunsetCandidate?.id || mainCandidate?.id || null
       };
-    } else if (period === "giorno") {
+    } else if (hour >= 10) {
       APP.planner = {
         alba: null,
         main: mainCandidate?.id || null,
@@ -732,7 +934,7 @@
       return window.SAIL.getMarkerColor(spot, APP);
     }
     if ((APP_SPOTS.topWowNames || []).includes(spot.name)) return "#f5c451";
-    if (spot.light === "tramonto") return "#ff9fbc";
+    if (isEveningLike(spot.light)) return "#ff9fbc";
     return "#59b6ff";
   }
 
@@ -939,9 +1141,15 @@
           APP.gpsMarker.setLatLng([lat, lon]);
         }
 
+        if (!APP.userPos || shouldUseLiveDistance()) {
+          APP.userPos = { lat, lon };
+        }
+
         if (window.UI?.renderGpsBox) {
           window.UI.renderGpsBox(APP, { speedMs, heading });
         }
+
+        renderAll();
       },
       () => toast("Permesso GPS negato o posizione non disponibile"),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
@@ -1011,7 +1219,7 @@
             lon: pos.coords.longitude
           };
           renderAll();
-          toast("Posizione aggiornata");
+          toast(isUserNearRegion() ? "Posizione aggiornata" : "Posizione aggiornata fuori area viaggio");
         },
         () => toast("Permesso GPS negato"),
         { enableHighAccuracy: true, timeout: 8000 }
