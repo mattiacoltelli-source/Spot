@@ -1,6 +1,7 @@
-const CACHE_NAME = "madeira-spot-planner-v6";
+const APP_CACHE = "travel-sail-app";
+const STATIC_CACHE = "travel-sail-static";
 
-const APP_SHELL = [
+const APP_FILES = [
   "./",
   "./index.html",
   "./styles.css",
@@ -10,31 +11,33 @@ const APP_SHELL = [
   "./sail.js",
   "./manifest.json",
   "./icon-192.png",
-  "./icon-512.png",
+  "./icon-512.png"
+];
+
+const STATIC_FILES = [
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
+    caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_FILES)).catch(() => {})
   );
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      )
-    )
-  );
-  self.clients.claim();
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys.map((key) => {
+        if (key !== APP_CACHE && key !== STATIC_CACHE) {
+          return caches.delete(key);
+        }
+      })
+    );
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener("fetch", (event) => {
@@ -44,7 +47,15 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
 
+  const isWeatherApi =
+    url.hostname.includes("api.open-meteo.com") ||
+    url.hostname.includes("marine-api.open-meteo.com");
+
+  const isExternalStatic =
+    url.hostname.includes("unpkg.com");
+
   const isAppFile =
+    url.pathname.endsWith("/") ||
     url.pathname.endsWith("/index.html") ||
     url.pathname.endsWith("/styles.css") ||
     url.pathname.endsWith("/spots.js") ||
@@ -53,65 +64,70 @@ self.addEventListener("fetch", (event) => {
     url.pathname.endsWith("/sail.js") ||
     url.pathname.endsWith("/manifest.json") ||
     url.pathname.endsWith("/icon-192.png") ||
-    url.pathname.endsWith("/icon-512.png") ||
-    url.pathname === "/" ||
-    url.pathname.endsWith("/");
+    url.pathname.endsWith("/icon-512.png");
 
-  const isExternalStatic = request.url.includes("unpkg.com");
-
-  const isNoCacheApi =
-    request.url.includes("api.open-meteo.com") ||
-    request.url.includes("marine-api.open-meteo.com") ||
-    request.url.includes("google.com/maps");
-
-  if (isNoCacheApi) {
+  if (isWeatherApi) {
     event.respondWith(fetch(request));
     return;
   }
 
   if (isAppFile) {
-    event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
-          return networkResponse;
-        })
-        .catch(() =>
-          caches.match(request).then((cached) => cached || caches.match("./index.html"))
-        )
-    );
+    event.respondWith(networkFirstApp(request));
     return;
   }
 
   if (isExternalStatic) {
-    event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        if (cachedResponse) return cachedResponse;
-
-        return fetch(request).then((networkResponse) => {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
-          return networkResponse;
-        });
-      })
-    );
+    event.respondWith(cacheFirstStatic(request));
     return;
   }
 
-  event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
-
-      return fetch(request).catch(() => {
-        if (request.mode === "navigate") {
-          return caches.match("./index.html");
-        }
-      });
-    })
-  );
+  event.respondWith(genericFallback(request));
 });
+
+async function networkFirstApp(request) {
+  const cache = await caches.open(APP_CACHE);
+
+  try {
+    const networkResponse = await fetch(request, { cache: "no-store" });
+    if (networkResponse && networkResponse.ok) {
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    const cached = await cache.match(request);
+    if (cached) return cached;
+
+    const fallbackIndex = await cache.match("./index.html");
+    if (fallbackIndex) return fallbackIndex;
+
+    throw error;
+  }
+}
+
+async function cacheFirstStatic(request) {
+  const cache = await caches.open(STATIC_CACHE);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+
+  const networkResponse = await fetch(request);
+  if (networkResponse && networkResponse.ok) {
+    cache.put(request, networkResponse.clone());
+  }
+  return networkResponse;
+}
+
+async function genericFallback(request) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+
+  try {
+    return await fetch(request);
+  } catch (error) {
+    if (request.mode === "navigate") {
+      const appCache = await caches.open(APP_CACHE);
+      const fallbackIndex = await appCache.match("./index.html");
+      if (fallbackIndex) return fallbackIndex;
+    }
+    throw error;
+  }
+}
