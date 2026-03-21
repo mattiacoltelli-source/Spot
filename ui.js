@@ -40,7 +40,12 @@
       mtb: "MTB",
       facile: "Facile",
       medio: "Medio",
-      impegnativo: "Impegnativo"
+      impegnativo: "Impegnativo",
+      epico: "Epico",
+      iconico: "Iconico",
+      mistico: "Mistico",
+      avventura: "Avventura",
+      "grande panorama": "Grande panorama"
     };
     return map[value] || value || "—";
   }
@@ -60,6 +65,59 @@
     };
   }
 
+  function chipClassFromFit(fit) {
+    if (!fit) return "blue";
+    if (fit.cls === "green") return "green";
+    if (fit.cls === "gold") return "gold";
+    if (fit.cls === "pink") return "pink";
+    return "blue";
+  }
+
+  function getDistanceLabel(spot) {
+    if (!spot) return "GPS non attivo";
+    if (spot.distance == null) return "distanza n/d";
+    return window.APP_UTILS.displayDistance(spot.distance);
+  }
+
+  function getSpotMicroSummary(spot) {
+    if (!spot) return "—";
+
+    if (spot.tip) return spot.tip;
+    if (spot.experience?.tipo && spot.experience?.tempo) {
+      return `${spot.experience.tipo} · ${spot.experience.tempo}`;
+    }
+    if (spot.desc) return spot.desc;
+    return "Spot disponibile.";
+  }
+
+  function getBestPracticalLine(spot) {
+    if (!spot) return "Sto leggendo lo spot migliore del momento.";
+
+    const parts = [];
+
+    if (spot.experience?.tipo) parts.push(spot.experience.tipo);
+    if (spot.experience?.tempo) parts.push(spot.experience.tempo);
+    if (spot.experience?.mood) parts.push(pretty(spot.experience.mood));
+
+    if (!parts.length && spot.whenToGo?.note) parts.push(spot.whenToGo.note);
+    if (!parts.length && spot.tip) parts.push(spot.tip);
+
+    return parts.slice(0, 2).join(" · ") || "Spot consigliato adesso.";
+  }
+
+  function getClosestPracticalLine(spot) {
+    if (!spot) return "Attiva il GPS per leggere lo spot più vicino in modo intelligente.";
+
+    const parts = [];
+
+    if (spot.zone) parts.push(pretty(spot.zone));
+    if (spot.activity) parts.push(pretty(spot.activity));
+    if (spot.experience?.tempo) parts.push(spot.experience.tempo);
+
+    if (parts.length) return parts.join(" · ");
+    return spot.tip || spot.desc || "Spot vicino disponibile.";
+  }
+
   function buildTravelQuickCards(app) {
     const goNow = window.APP_UTILS.getGoNowSuggestions();
     const bestNow = goNow?.best || null;
@@ -73,7 +131,7 @@
       : "";
 
     const closestFit = closestSpot?.weatherFit || null;
-    const closestQualityChipCls = closestFit?.cls || "blue";
+    const closestQualityChipCls = chipClassFromFit(closestFit);
     const closestQualityLabel = closestFit ? closestFit.label : "stato n/d";
 
     return `
@@ -82,16 +140,17 @@
         <div class="quick-title">${bestNow ? esc(bestNow.name) : "—"}</div>
 
         ${goNowExplanation ? `
-          <div class="quick-desc" style="font-size:13px;opacity:.90;font-style:italic;margin-bottom:8px;margin-top:2px">${esc(goNowExplanation)}</div>
+          <div class="quick-desc" style="font-size:13px;opacity:.92;font-style:italic;margin-bottom:8px;margin-top:2px">${esc(goNowExplanation)}</div>
         ` : ``}
 
-        <div class="quick-desc">${bestNow ? esc(bestNow.desc || bestNow.tip || "") : "Sto leggendo il miglior spot del momento."}</div>
+        <div class="quick-desc">${bestNow ? esc(getBestPracticalLine(bestNow)) : "Sto leggendo il miglior spot del momento."}</div>
 
         <div class="sunset-chip-row">
-          <div class="mini-chip blue">${bestNow?.distance != null ? esc(window.APP_UTILS.displayDistance(bestNow.distance)) : "distanza n/d"}</div>
-          <div class="mini-chip ${bestNow?.weatherFit?.cls === "green" ? "gold" : "blue"}">
+          <div class="mini-chip blue">${bestNow ? esc(getDistanceLabel(bestNow)) : "distanza n/d"}</div>
+          <div class="mini-chip ${chipClassFromFit(bestNow?.weatherFit)}">
             ${bestNow?.weatherFit?.label || "lettura in corso"}
           </div>
+          ${bestNow?.experience?.wow ? `<div class="mini-chip gold">Wow ${esc(String(bestNow.experience.wow))}/10</div>` : ``}
         </div>
 
         ${(alt1 || alt2) ? `
@@ -104,10 +163,10 @@
       <div class="quick-card glass tap" data-quick-id="${closestSpot ? esc(closestSpot.id) : ""}">
         <div class="quick-label">Spot vicino a te</div>
         <div class="quick-title">${closestSpot ? esc(closestSpot.name) : "—"}</div>
-        <div class="quick-desc">${closestSpot ? esc(closestSpot.tip || closestSpot.desc || "") : "Attiva il GPS per vedere lo spot più vicino."}</div>
+        <div class="quick-desc">${closestSpot ? esc(getClosestPracticalLine(closestSpot)) : "Attiva il GPS per vedere lo spot più vicino."}</div>
 
         <div class="sunset-chip-row">
-          <div class="mini-chip blue">${closestSpot?.distance != null ? esc(window.APP_UTILS.displayDistance(closestSpot.distance)) : "GPS non attivo"}</div>
+          <div class="mini-chip blue">${closestSpot ? esc(getDistanceLabel(closestSpot)) : "GPS non attivo"}</div>
           <div class="mini-chip gold">${closestSpot ? esc(pretty(closestSpot.zone)) : "zona n/d"}</div>
           ${closestSpot ? `<div class="mini-chip ${esc(closestQualityChipCls)}">${esc(closestQualityLabel)}</div>` : ``}
         </div>
@@ -116,11 +175,12 @@
       <div class="quick-card glass sunset-card tap" data-quick-id="${bestSunset ? esc(bestSunset.id) : ""}">
         <div class="quick-label">Tramonto premium</div>
         <div class="quick-title">${bestSunset ? esc(bestSunset.name) : "—"}</div>
-        <div class="quick-desc">${bestSunset ? esc(bestSunset.tip || bestSunset.desc || "") : "In attesa della lettura luce."}</div>
+        <div class="quick-desc">${bestSunset ? esc(bestSunset.tip || bestSunset.whenToGo?.note || bestSunset.desc || "") : "In attesa della lettura luce."}</div>
 
         <div class="sunset-chip-row" style="margin-top:12px">
           <div class="mini-chip gold" id="sunsetClockChip">Tramonto —</div>
           <div class="mini-chip blue" id="sunPhaseChip">Luce da leggere</div>
+          ${bestSunset?.experience?.wow ? `<div class="mini-chip gold">Wow ${esc(String(bestSunset.experience.wow))}/10</div>` : ``}
         </div>
 
         <div class="sunset-countdown" style="margin-top:12px">
@@ -496,8 +556,8 @@
         <div class="featured-rank">${i + 1}</div>
         <div>
           <div class="featured-name">${esc(s.name)}</div>
-          <div class="featured-desc">${esc(s.desc)}</div>
-          <div class="featured-badge">${app.mode === "sail" ? "spot bello" : "wow spot"}</div>
+          <div class="featured-desc">${esc(s.tip || s.desc)}</div>
+          <div class="featured-badge">${s.experience?.wow ? `wow ${esc(String(s.experience.wow))}/10` : (app.mode === "sail" ? "spot bello" : "wow spot")}</div>
         </div>
       </div>
     `).join("");
@@ -507,8 +567,8 @@
         <div class="featured-rank">${i + 1}</div>
         <div>
           <div class="featured-name">${esc(s.name)}</div>
-          <div class="featured-desc">${esc(s.desc)}</div>
-          <div class="featured-badge">tramonto top</div>
+          <div class="featured-desc">${esc(s.tip || s.desc)}</div>
+          <div class="featured-badge">${s.whenToGo?.best ? `meglio ${esc(pretty(s.whenToGo.best))}` : "tramonto top"}</div>
         </div>
       </div>
     `).join("");
@@ -565,12 +625,14 @@
           <span class="tag">${esc(pretty(s.activity))}</span>
           <span class="tag">${esc(pretty(s.difficulty))}</span>
           <span class="tag pink">${esc(pretty(s.light))}</span>
+          ${s.experience?.wow ? `<span class="tag gold">Wow ${esc(String(s.experience.wow))}/10</span>` : ``}
+          ${s.experience?.tempo ? `<span class="tag blue">${esc(s.experience.tempo)}</span>` : ``}
           ${app.mode === "sail" && s.sailMeta?.enabled ? `<span class="tag blue">vela</span>` : ``}
           ${app.mode === "sail" && s.sailMeta?.nightShelter ? `<span class="tag green">riparo notte</span>` : ``}
           ${app.mode === "sail" && s.sailMeta?.enabled ? `<span class="tag gold">${esc(s.sailMeta.label)}</span>` : ``}
         </div>
 
-        <div class="spot-desc">${esc(s.desc)}</div>
+        <div class="spot-desc">${esc(s.tip || s.desc)}</div>
       </div>
     `).join("");
 
@@ -591,6 +653,89 @@
         window.APP_UTILS.toggleFavorite(btn.dataset.favId);
       });
     });
+  }
+
+  function renderArrayAsList(title, arr) {
+    if (!Array.isArray(arr) || !arr.length) return "";
+    return `
+      <div class="detail-section">
+        <h3>${esc(title)}</h3>
+        <p>${arr.map(x => `• ${esc(x)}`).join("<br>")}</p>
+      </div>
+    `;
+  }
+
+  function renderExperienceSection(spot) {
+    if (!spot.experience) return "";
+
+    const bits = [];
+    if (spot.experience.tipo) bits.push(`Tipo: ${spot.experience.tipo}`);
+    if (spot.experience.tempo) bits.push(`Tempo: ${spot.experience.tempo}`);
+    if (spot.experience.mood) bits.push(`Mood: ${pretty(spot.experience.mood)}`);
+    if (spot.experience.wow != null) bits.push(`Wow: ${spot.experience.wow}/10`);
+
+    if (!bits.length) return "";
+
+    return `
+      <div class="detail-section">
+        <h3>Esperienza</h3>
+        <p>${bits.map(esc).join("<br>")}</p>
+      </div>
+    `;
+  }
+
+  function renderWhenSection(spot) {
+    const rows = [];
+
+    if (spot.whenToGo?.best) rows.push(`Meglio: ${pretty(spot.whenToGo.best)}`);
+    if (spot.whenToGo?.note) rows.push(spot.whenToGo.note);
+
+    if (!rows.length) return "";
+
+    return `
+      <div class="detail-section">
+        <h3>Quando andare</h3>
+        <p>${rows.map(esc).join("<br>")}</p>
+      </div>
+    `;
+  }
+
+  function renderAccessSection(spot) {
+    const a = spot.access;
+    if (!a) return "";
+
+    const rows = [];
+    if (a.difficolta) rows.push(`Accesso: ${a.difficolta}`);
+    if (a.parcheggio) rows.push(`Parcheggio: ${a.parcheggio}`);
+    if (a.walk) rows.push(`Cammino iniziale: ${a.walk}`);
+    if (a.strada) rows.push(`Strada: ${a.strada}`);
+
+    if (!rows.length) return "";
+
+    return `
+      <div class="detail-section">
+        <h3>Accesso</h3>
+        <p>${rows.map(esc).join("<br>")}</p>
+      </div>
+    `;
+  }
+
+  function renderCrowdSection(spot) {
+    const c = spot.crowd;
+    if (!c) return "";
+
+    const rows = [];
+    if (c.best) rows.push(`Momento migliore: ${c.best}`);
+    if (c.worst) rows.push(`Momento peggiore: ${c.worst}`);
+
+    if (!rows.length) return "";
+
+    return `
+      <div class="detail-section">
+        <h3>Affluenza</h3>
+        <p>${rows.map(esc).join("<br>")}</p>
+      </div>
+    `;
   }
 
   UI.renderSpotDetail = function (app, rawSpot) {
@@ -628,6 +773,8 @@
         <div class="detail-box"><div class="k">Difficoltà</div><div class="v">${esc(pretty(spot.difficulty))}</div></div>
         <div class="detail-box"><div class="k">Valutazione oggi</div><div class="v">${esc(spot.weatherFit?.label || "n/d")}</div></div>
         <div class="detail-box"><div class="k">Distanza</div><div class="v">${esc(window.APP_UTILS.displayDistance(spot.distance))}</div></div>
+        ${spot.experience?.wow != null ? `<div class="detail-box"><div class="k">Wow</div><div class="v">${esc(String(spot.experience.wow))}/10</div></div>` : ``}
+        ${spot.experience?.tempo ? `<div class="detail-box"><div class="k">Tempo</div><div class="v">${esc(spot.experience.tempo)}</div></div>` : ``}
         ${app.mode === "sail" ? `<div class="detail-box"><div class="k">Vela oggi</div><div class="v">${esc(sail?.label || "n/d")}</div></div>` : ``}
         ${app.mode === "sail" ? `<div class="detail-box"><div class="k">Onde</div><div class="v">${app.marineData ? Number(app.marineData.waveHeight || 0).toFixed(1) + " m" : "—"}</div></div>` : ``}
       </div>
@@ -637,6 +784,12 @@
         <p>${esc(spot.tip || "Nessun consiglio aggiuntivo disponibile.")}</p>
       </div>
 
+      ${renderExperienceSection(spot)}
+      ${renderWhenSection(spot)}
+      ${renderAccessSection(spot)}
+      ${renderCrowdSection(spot)}
+      ${renderArrayAsList("Quando evitare", spot.whenToAvoid)}
+      ${renderArrayAsList("Smart tips", spot.smartTips)}
       ${spot.longDescription ? `<div class="detail-section"><h3>Dettaglio extra</h3><p>${esc(spot.longDescription)}</p></div>` : ``}
       ${spot.photoTips ? `<div class="detail-section"><h3>Consiglio foto</h3><p>${esc(spot.photoTips)}</p></div>` : ``}
       ${app.mode === "sail" && sail?.enabled ? `<div class="detail-section"><h3>Sezione vela</h3><p>${esc(sail.detailText || "Spot compatibile con modalità vela.")}</p></div>` : ``}
@@ -692,7 +845,7 @@
             <button class="btn btn-secondary tap" data-clear-slot="${slot.key}" type="button" style="width:auto;padding:8px 12px">Rimuovi</button>
           </div>
           <div class="planner-slot-name">${esc(spot.name)}</div>
-          <div class="planner-slot-sub">${esc(spot.desc)}</div>
+          <div class="planner-slot-sub">${esc(spot.tip || spot.desc)}</div>
         </div>
       `;
     }).join("");
