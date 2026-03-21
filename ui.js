@@ -19,6 +19,47 @@
     return isFavorite(id) ? "❤️" : "🤍";
   }
 
+  function pretty(value) {
+    const map = {
+      core: "Top",
+      secondary: "Belli",
+      extra: "Extra",
+      est: "Est",
+      ovest: "Ovest",
+      nord: "Nord",
+      sud: "Sud",
+      montagna: "Montagna",
+      alba: "Alba",
+      giorno: "Giorno",
+      tramonto: "Tramonto",
+      mattina: "Mattina",
+      sera: "Sera",
+      trekking: "Trekking",
+      view: "View",
+      relax: "Relax",
+      mtb: "MTB",
+      facile: "Facile",
+      medio: "Medio",
+      impegnativo: "Impegnativo"
+    };
+    return map[value] || value || "—";
+  }
+
+  function getSpotCounts() {
+    const spots = Array.isArray(APP_SPOTS?.spots) ? APP_SPOTS.spots : [];
+    const core = spots.filter(s => s.level === "core").length;
+    const secondary = spots.filter(s => s.level === "secondary").length;
+    const extra = spots.filter(s => s.level === "extra").length;
+
+    return {
+      core,
+      secondary,
+      extra,
+      main: core + secondary,
+      total: spots.length
+    };
+  }
+
   function buildTravelQuickCards(app) {
     const goNow = window.APP_UTILS.getGoNowSuggestions();
     const bestNow = goNow?.best || null;
@@ -27,12 +68,10 @@
     const bestSunset = window.APP_UTILS.getBestSunsetSpot();
     const closestSpot = window.APP_UTILS.getClosestSpot();
 
-    // Spiegazione "Vai ora" — generata da explainGoNow
     const goNowExplanation = bestNow
       ? window.APP_UTILS.explainGoNow(bestNow)
       : "";
 
-    // Stato qualità "Spot vicino a te": usa direttamente cls dal weatherFit
     const closestFit = closestSpot?.weatherFit || null;
     const closestQualityChipCls = closestFit?.cls || "blue";
     const closestQualityLabel = closestFit ? closestFit.label : "stato n/d";
@@ -69,7 +108,7 @@
 
         <div class="sunset-chip-row">
           <div class="mini-chip blue">${closestSpot?.distance != null ? esc(window.APP_UTILS.displayDistance(closestSpot.distance)) : "GPS non attivo"}</div>
-          <div class="mini-chip gold">${closestSpot ? esc(closestSpot.zone) : "zona n/d"}</div>
+          <div class="mini-chip gold">${closestSpot ? esc(pretty(closestSpot.zone)) : "zona n/d"}</div>
           ${closestSpot ? `<div class="mini-chip ${esc(closestQualityChipCls)}">${esc(closestQualityLabel)}</div>` : ``}
         </div>
       </div>
@@ -502,7 +541,7 @@
     if (!box) return;
 
     if (resultNote) {
-      resultNote.textContent = `${items.length} spot · ${app.mode === "sail" ? "Sail Mode" : "Travel Mode"}`;
+      resultNote.textContent = `${items.length} risultati · ${app.mode === "sail" ? "Sail Mode" : "Travel Mode"}`;
     }
 
     if (!items.length) {
@@ -521,11 +560,11 @@
         </div>
 
         <div class="spot-meta">
-          <span class="tag gold">${esc(s.level)}</span>
-          <span class="tag blue">${esc(s.zone)}</span>
-          <span class="tag">${esc(s.activity)}</span>
-          <span class="tag">${esc(s.difficulty)}</span>
-          <span class="tag pink">${esc(s.light)}</span>
+          <span class="tag gold">${esc(pretty(s.level))}</span>
+          <span class="tag blue">${esc(pretty(s.zone))}</span>
+          <span class="tag">${esc(pretty(s.activity))}</span>
+          <span class="tag">${esc(pretty(s.difficulty))}</span>
+          <span class="tag pink">${esc(pretty(s.light))}</span>
           ${app.mode === "sail" && s.sailMeta?.enabled ? `<span class="tag blue">vela</span>` : ``}
           ${app.mode === "sail" && s.sailMeta?.nightShelter ? `<span class="tag green">riparo notte</span>` : ``}
           ${app.mode === "sail" && s.sailMeta?.enabled ? `<span class="tag gold">${esc(s.sailMeta.label)}</span>` : ``}
@@ -582,11 +621,11 @@
       ` : ``}
 
       <div class="detail-grid">
-        <div class="detail-box"><div class="k">Livello</div><div class="v">${esc(spot.level)}</div></div>
-        <div class="detail-box"><div class="k">Zona</div><div class="v">${esc(spot.zone)}</div></div>
-        <div class="detail-box"><div class="k">Luce ideale</div><div class="v">${esc(spot.light)}</div></div>
-        <div class="detail-box"><div class="k">Attività</div><div class="v">${esc(spot.activity)}</div></div>
-        <div class="detail-box"><div class="k">Difficoltà</div><div class="v">${esc(spot.difficulty)}</div></div>
+        <div class="detail-box"><div class="k">Livello</div><div class="v">${esc(pretty(spot.level))}</div></div>
+        <div class="detail-box"><div class="k">Zona</div><div class="v">${esc(pretty(spot.zone))}</div></div>
+        <div class="detail-box"><div class="k">Luce ideale</div><div class="v">${esc(pretty(spot.light))}</div></div>
+        <div class="detail-box"><div class="k">Attività</div><div class="v">${esc(pretty(spot.activity))}</div></div>
+        <div class="detail-box"><div class="k">Difficoltà</div><div class="v">${esc(pretty(spot.difficulty))}</div></div>
         <div class="detail-box"><div class="k">Valutazione oggi</div><div class="v">${esc(spot.weatherFit?.label || "n/d")}</div></div>
         <div class="detail-box"><div class="k">Distanza</div><div class="v">${esc(window.APP_UTILS.displayDistance(spot.distance))}</div></div>
         ${app.mode === "sail" ? `<div class="detail-box"><div class="k">Vela oggi</div><div class="v">${esc(sail?.label || "n/d")}</div></div>` : ``}
@@ -728,7 +767,10 @@
   };
 
   UI.renderAll = function (app) {
-    $("eyebrowRegion") && ($("eyebrowRegion").textContent = `Zona attiva: ${APP_SPOTS.region || "Area"} • ${APP_SPOTS.spots.length} spot`);
+    const counts = getSpotCounts();
+
+    $("eyebrowRegion") && ($("eyebrowRegion").textContent =
+      `Zona attiva: ${APP_SPOTS.region || "Area"} • ${counts.main} spot principali${counts.extra ? ` + ${counts.extra} extra` : ""}`);
 
     $("conditionsTitle") && ($("conditionsTitle").textContent = app.mode === "sail" ? "Condizioni vela" : "Meteo e mood del giorno");
     $("conditionsSub") && ($("conditionsSub").textContent = app.mode === "sail" ? "Sail" : "Travel");
