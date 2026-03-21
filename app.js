@@ -16,7 +16,7 @@
 
   const APP = {
     mode: loadJson(STORAGE_KEYS.mode, "travel"),
-    level: "all",
+    level: "core",
     light: "all",
     zone: "all",
     activity: "all",
@@ -178,6 +178,21 @@
     return s.image || `https://picsum.photos/seed/${encodeURIComponent(s.name)}/900/600`;
   }
 
+  function getBaseSpots() {
+    if (APP.mode === "sail") {
+      return APP_SPOTS.spots;
+    }
+    return APP_SPOTS.spots.filter(s => s.level === "core");
+  }
+
+  function getBaseSpotById(id) {
+    return getBaseSpots().find(s => s.id === id) || null;
+  }
+
+  function getSpotById(id) {
+    return APP_SPOTS.spots.find(s => s.id === id) || null;
+  }
+
   function weatherSuitability(spot) {
     const w = APP.weatherData;
     if (!w) return { score: 0, label: "meteo neutro", cls: "gold" };
@@ -218,7 +233,7 @@
   }
 
   function getAllSpotsWithMeta() {
-    return APP_SPOTS.spots.map(s => ({
+    return getBaseSpots().map(s => ({
       ...s,
       distance: APP.userPos ? distKm(APP.userPos.lat, APP.userPos.lon, s.lat, s.lon) : null,
       weatherFit: weatherSuitability(s),
@@ -228,7 +243,7 @@
 
   function getFilteredSpots() {
     let items = getAllSpotsWithMeta().filter(s =>
-      (APP.level === "all" || s.level === APP.level) &&
+      (APP.mode === "sail" ? (APP.level === "all" || s.level === APP.level) : true) &&
       (APP.light === "all" || s.light === APP.light) &&
       (APP.zone === "all" || s.zone === APP.zone) &&
       (APP.activity === "all" || s.activity === APP.activity) &&
@@ -384,7 +399,7 @@
       pool = pool.filter(s => s.zone === APP.zone);
     }
 
-    if (APP.level !== "all") {
+    if (APP.mode === "sail" && APP.level !== "all") {
       pool = pool.filter(s => s.level === APP.level);
     }
 
@@ -778,7 +793,7 @@
   }
 
   function centerSpot(id) {
-    const spot = APP_SPOTS.spots.find(s => s.id === id);
+    const spot = getBaseSpotById(id);
     if (!spot || !APP.map) return;
 
     switchPage("map");
@@ -837,6 +852,13 @@
 
   function toggleMode(forceMode) {
     APP.mode = forceMode || (APP.mode === "travel" ? "sail" : "travel");
+
+    if (APP.mode === "travel") {
+      APP.level = "core";
+    } else if (APP.level === "core") {
+      APP.level = "all";
+    }
+
     saveJson(STORAGE_KEYS.mode, APP.mode);
     updateModeUI();
     renderAll();
@@ -853,7 +875,7 @@
     APP.search = q;
     renderAll();
 
-    const found = APP_SPOTS.spots.find(s =>
+    const found = getBaseSpots().find(s =>
       normalizeText(s.name).includes(normalizeText(q))
     );
 
@@ -999,6 +1021,10 @@
   }
 
   function initApp() {
+    if (APP.mode === "travel") {
+      APP.level = "core";
+    }
+
     updateModeUI();
     bindEvents();
     initMap();
@@ -1052,7 +1078,9 @@
     centerSpot,
     renderPlannerBox,
     toggleMode,
-    renderAll
+    renderAll,
+    getBaseSpots,
+    getSpotById
   };
 
   document.addEventListener("DOMContentLoaded", initApp);
