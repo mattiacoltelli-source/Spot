@@ -1,1069 +1,1373 @@
-(function () {
-  "use strict";
-
-  if (!window.APP_SPOTS || !Array.isArray(window.APP_SPOTS.spots)) {
-    document.body.innerHTML = '<div style="padding:24px;color:white;background:#0b0f14;min-height:100vh;font-family:system-ui,sans-serif"><h1 style="margin-top:0">Errore dati</h1><p>Il file spots.js manca o contiene un errore.</p></div>';
-    throw new Error("APP_SPOTS non disponibile");
-  }
-
-  const STORAGE_KEYS = {
-    favorites: APP_SPOTS.storageKeys?.favorites || "travel_sail_favorites_v1",
-    planner: APP_SPOTS.storageKeys?.planner || "travel_sail_planner_v1",
-    mode: "travel_sail_mode_v1"
-  };
-
-  const DEFAULT_PLANNER = { alba: null, main: null, tramonto: null };
-
-  const APP = {
-    mode: loadJson(STORAGE_KEYS.mode, "travel"),
-    level: "all",
-    light: "all",
-    zone: "all",
-    activity: "all",
-    favoritesFilter: "all",
-    sailFilter: "all",
-    mapQuickFilter: "all",
-    search: "",
-    userPos: null,
-    currentSpot: null,
-    weatherData: null,
-    marineData: null,
-    hourlyData: [],
-    sunTimes: null,
-    sunsetTimer: null,
-    favorites: loadJson(STORAGE_KEYS.favorites, []),
-    planner: loadJson(STORAGE_KEYS.planner, DEFAULT_PLANNER),
-    activePage: "home",
-    map: null,
-    markers: [],
-    markerBySpotId: new Map(),
-    gpsWatchId: null,
-    gpsPath: [],
-    gpsLine: null,
-    gpsMarker: null
-  };
-
-  window.APP = APP;
-
-  function $(id) {
-    return document.getElementById(id);
-  }
-
-  function clone(value) {
-    return JSON.parse(JSON.stringify(value));
-  }
-
-  function loadJson(key, fallback) {
-    try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return clone(fallback);
-      return JSON.parse(raw);
-    } catch {
-      return clone(fallback);
-    }
-  }
-
-  function saveJson(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
-
-  function escapeHtml(str) {
-    return String(str ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
-
-  function normalizeText(value) {
-    return String(value || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .trim();
-  }
-
-  function currentPeriod() {
-    const h = new Date().getHours();
-    if (h < 9) return "alba";
-    if (h >= 17) return "tramonto";
-    return "giorno";
-  }
-
-  function parseSunTime(raw) {
-    if (!raw) return null;
-    const d = new Date(raw);
-    return isNaN(d.getTime()) ? null : d;
-  }
-
-  function formatTime(dateObj) {
-    if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) return "—";
-    return dateObj.toLocaleTimeString("it-IT", {
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  }
-
-  function getMinutesDiff(from, to) {
-    return Math.floor((to.getTime() - from.getTime()) / 60000);
-  }
-
-  function formatCountdown(totalMinutes) {
-    if (!Number.isFinite(totalMinutes)) return "—";
-    if (totalMinutes <= 0) return "ora";
-    const h = Math.floor(totalMinutes / 60);
-    const m = totalMinutes % 60;
-    if (h <= 0) return `${m}m`;
-    return `${h}h ${String(m).padStart(2, "0")}m`;
-  }
-
-  function distKm(a, b, c, d) {
-    const R = 6371;
-    const dLat = (c - a) * Math.PI / 180;
-    const dLon = (d - b) * Math.PI / 180;
-    const x =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(a * Math.PI / 180) *
-      Math.cos(c * Math.PI / 180) *
-      Math.sin(dLon / 2) ** 2;
-    return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
-  }
-
-  function displayDistance(d) {
-    if (d == null) return "distanza non disponibile";
-    return `${d.toFixed(1)} km da te`;
-  }
-
-  function isFavorite(id) {
-    return APP.favorites.includes(id);
-  }
-
-  function toggleFavorite(id) {
-    if (isFavorite(id)) {
-      APP.favorites = APP.favorites.filter(x => x !== id);
-    } else {
-      APP.favorites = [...APP.favorites, id];
-    }
-
-    saveJson(STORAGE_KEYS.favorites, APP.favorites);
-    renderAll();
-
-    if (APP.currentSpot?.id === id) {
-      showSpotDetail(APP.currentSpot);
-    }
-  }
-
-  function setPlannerSlot(slot, spotId) {
-    APP.planner[slot] = spotId;
-    saveJson(STORAGE_KEYS.planner, APP.planner);
-    renderPlannerBox();
-    toast("Planner aggiornato");
-  }
-
-  function clearPlannerSlot(slot) {
-    APP.planner[slot] = null;
-    saveJson(STORAGE_KEYS.planner, APP.planner);
-    renderPlannerBox();
-  }
-
-  function clearPlannerAll() {
-    APP.planner = clone(DEFAULT_PLANNER);
-    saveJson(STORAGE_KEYS.planner, APP.planner);
-    renderPlannerBox();
-    toast("Planner svuotato");
-  }
-
-  function getSpotImage(s) {
-    return s.image || `https://picsum.photos/seed/${encodeURIComponent(s.name)}/900/600`;
-  }
-
-  function weatherSuitability(spot) {
-    const w = APP.weatherData;
-    if (!w) return { score: 0, label: "meteo neutro", cls: "gold" };
-
-    let score = 0;
-
-    if (w.rain >= 55) {
-      if (spot.activity === "relax") score += 3;
-      if (normalizeText(spot.name).includes("forest") || normalizeText(spot.name).includes("fanal")) score += 4;
-      if (spot.activity === "view" && (spot.zone === "montagna" || spot.zone === "ovest")) score -= 3;
-    }
-
-    if (w.wind >= 32) {
-      if (spot.zone === "montagna") score -= 4;
-      if (normalizeText(spot.name).includes("pico")) score -= 4;
-      if (spot.activity === "view") score -= 2;
-      if (spot.activity === "relax") score += 2;
-      if (spot.activity === "trekking" && spot.difficulty === "facile") score += 1;
-    }
-
-    if (w.cloud >= 65) {
-      if (normalizeText(spot.name).includes("forest") || spot.activity === "trekking") score += 2;
-      if (spot.light === "tramonto") score -= 1;
-    }
-
-    if (w.cloud <= 35 && w.rain < 25) {
-      if (spot.light === "alba" || spot.light === "tramonto") score += 3;
-      if (spot.activity === "view") score += 2;
-    }
-
-    if (w.period === "alba" && spot.light === "alba") score += 2;
-    if (w.period === "tramonto" && spot.light === "tramonto") score += 2;
-    if (w.period === "giorno" && spot.light === "giorno") score += 1;
-
-    if (score >= 4) return { score, label: "ottimo oggi", cls: "green" };
-    if (score <= -2) return { score, label: "meno ideale", cls: "pink" };
-    return { score, label: "molto valido", cls: "gold" };
-  }
-
-  function getAllSpotsWithMeta() {
-    return APP_SPOTS.spots.map(s => ({
-      ...s,
-      distance: APP.userPos ? distKm(APP.userPos.lat, APP.userPos.lon, s.lat, s.lon) : null,
-      weatherFit: weatherSuitability(s),
-      sailMeta: window.SAIL ? window.SAIL.getSpotSailMeta(s, APP) : null
-    }));
-  }
-
-  function getFilteredSpots() {
-    let items = getAllSpotsWithMeta().filter(s =>
-      (APP.level === "all" || s.level === APP.level) &&
-      (APP.light === "all" || s.light === APP.light) &&
-      (APP.zone === "all" || s.zone === APP.zone) &&
-      (APP.activity === "all" || s.activity === APP.activity) &&
-      (APP.favoritesFilter === "all" || isFavorite(s.id)) &&
-      (!APP.search || normalizeText(s.name).includes(normalizeText(APP.search)))
-    );
-
-    if (APP.mode === "sail" && window.SAIL) {
-      items = items.filter(s => window.SAIL.filterSpotForSailMode(s, APP));
-    }
-
-    return items.sort((a, b) => {
-      if (APP.mode === "sail") {
-        const sailDiff = (b.sailMeta?.score || 0) - (a.sailMeta?.score || 0);
-        if (sailDiff !== 0) return sailDiff;
-      }
-
-      const levelOrder = { core: 0, secondary: 1, extra: 2 };
-      if (b.weatherFit.score !== a.weatherFit.score) return b.weatherFit.score - a.weatherFit.score;
-      if (levelOrder[a.level] !== levelOrder[b.level]) return levelOrder[a.level] - levelOrder[b.level];
-      if (a.distance == null && b.distance == null) return a.name.localeCompare(b.name, "it");
-      if (a.distance == null) return 1;
-      if (b.distance == null) return -1;
-      return a.distance - b.distance;
-    });
-  }
-
-  function getMapFilteredSpots() {
-    let items = getAllSpotsWithMeta();
-
-    if (APP.mode === "sail" && window.SAIL) {
-      items = items.filter(s => window.SAIL.filterSpotForSailMode(s, APP));
-    }
-
-    if (APP.mapQuickFilter === "wow") return items.filter(s => (APP_SPOTS.topWowNames || []).includes(s.name));
-    if (APP.mapQuickFilter === "sunset") return items.filter(s => s.light === "tramonto");
-    if (APP.mapQuickFilter === "alba") return items.filter(s => s.light === "alba");
-    if (APP.mapQuickFilter === "favorites") return items.filter(s => isFavorite(s.id));
-
-    return items;
-  }
-
-  function getBestSpotToday() {
-    if (APP.mode === "sail" && window.SAIL) {
-      return window.SAIL.getBestSailSpot(APP);
-    }
-
-    const desired = currentPeriod();
-    let pool = getAllSpotsWithMeta().filter(s => s.light === desired);
-    if (!pool.length) pool = getAllSpotsWithMeta();
-
-    return pool.sort((a, b) =>
-      b.weatherFit.score - a.weatherFit.score || ((a.distance ?? 9999) - (b.distance ?? 9999))
-    )[0] || null;
-  }
-
-  function getBestWowSpot() {
-    const pool = getAllSpotsWithMeta().filter(s => (APP_SPOTS.topWowNames || []).includes(s.name));
-    return pool.sort((a, b) =>
-      b.weatherFit.score - a.weatherFit.score || ((a.distance ?? 9999) - (b.distance ?? 9999))
-    )[0] || null;
-  }
-
-  function getBestSunsetSpot() {
-    if (APP.mode === "sail" && window.SAIL) {
-      return window.SAIL.getBestSailSunsetSpot(APP);
-    }
-
-    const pool = getAllSpotsWithMeta().filter(s => s.light === "tramonto");
-    return pool.sort((a, b) =>
-      b.weatherFit.score - a.weatherFit.score || ((a.distance ?? 9999) - (b.distance ?? 9999))
-    )[0] || null;
-  }
-
-  // getClosestSpot migliorata:
-  // Preferisce lo spot più vicino che non sia "meno ideale" (cls === "pink").
-  // Accetta fino a 15 km in più rispetto al nearest per trovarne uno decente.
-  // Ricade sul più vicino assoluto solo se non trova alternative valide.
-  function getClosestSpot() {
-    if (!APP.userPos) return null;
-
-    let pool = getAllSpotsWithMeta().filter(s => s.distance != null);
-
-    if (APP.mode === "sail" && window.SAIL) {
-      pool = pool.filter(s => window.SAIL.filterSpotForSailMode(s, APP));
-    }
-
-    if (!pool.length) return null;
-
-    pool.sort((a, b) => a.distance - b.distance);
-
-    const nearest = pool[0];
-
-    if (nearest.weatherFit.cls !== "pink") return nearest;
-
-    const EXTRA_KM_TOLERANCE = 15;
-    const decent = pool.find(
-      s => s.weatherFit.cls !== "pink" && s.distance <= nearest.distance + EXTRA_KM_TOLERANCE
-    );
-
-    return decent || nearest;
-  }
-
-  // explainGoNow: genera una stringa breve con i motivi della scelta "Vai ora".
-  // Combina al massimo 3 ragioni separate da " · ".
-  function explainGoNow(spot) {
-    if (!spot) return "";
-
-    const reasons = [];
-    const period = currentPeriod();
-    const w = APP.weatherData;
-
-    // Motivo 1: meteo
-    if (spot.weatherFit?.cls === "green") {
-      reasons.push("meteo favorevole");
-    } else if (w && w.cloud <= 35 && w.rain < 25) {
-      reasons.push("cielo aperto");
-    } else if (w && w.rain >= 55) {
-      reasons.push("riparato dalla pioggia");
-    }
-
-    // Motivo 2: luce / orario
-    if (spot.light === period) {
-      if (period === "alba") reasons.push("luce perfetta per l'alba");
-      else if (period === "tramonto") reasons.push("luce perfetta per il tramonto");
-      else reasons.push("orario ideale");
-    } else if (period === "tramonto" && spot.light === "tramonto") {
-      reasons.push("tramonto imminente");
-    }
-
-    // Motivo 3: distanza
-    if (spot.distance != null) {
-      if (spot.distance <= 8) reasons.push("vicinissimo a te");
-      else if (spot.distance <= 18) reasons.push("raggiungibile facilmente");
-      else if (spot.distance <= 30) reasons.push("a portata di mano");
-    }
-
-    // Fallback se abbiamo meno di 2 ragioni
-    if (reasons.length < 2) {
-      if (spot.level === "core") reasons.push("spot di prima fascia");
-      else if (spot.activity === "view" && period !== "giorno") reasons.push("viewpoint ideale");
-    }
-
-    return reasons.slice(0, 3).join(" · ");
-  }
-
-  function bestSpot(options) {
-    let pool = getAllSpotsWithMeta();
-
-    if (options.light) {
-      pool = pool.filter(s => s.light === options.light);
-    }
-
-    if (options.activity) {
-      pool = pool.filter(s => options.activity.includes(s.activity));
-    }
-
-    if (options.exclude?.length) {
-      pool = pool.filter(s => !options.exclude.includes(s.id));
-    }
-
-    if (APP.zone !== "all") {
-      pool = pool.filter(s => s.zone === APP.zone);
-    }
-
-    if (APP.level !== "all") {
-      pool = pool.filter(s => s.level === APP.level);
-    }
-
-    if (!pool.length) return null;
-
-    return pool.sort((a, b) =>
-      b.weatherFit.score - a.weatherFit.score || ((a.distance ?? 9999) - (b.distance ?? 9999))
-    )[0];
-  }
-
-  function rankSpotForGoNow(spot) {
-    let score = 0;
-
-    score += (spot.weatherFit?.score || 0) * 12;
-
-    const period = currentPeriod();
-    if (spot.light === period) score += 22;
-    else if (period === "giorno" && spot.light === "giorno") score += 10;
-    else score -= 3;
-
-    const levelBoost = { core: 18, secondary: 10, extra: 4 };
-    score += levelBoost[spot.level] || 0;
-
-    if (spot.distance != null) {
-      if (spot.distance <= 8) score += 22;
-      else if (spot.distance <= 18) score += 16;
-      else if (spot.distance <= 30) score += 10;
-      else if (spot.distance <= 50) score += 4;
-      else score -= Math.min(18, Math.round(spot.distance / 10));
-    }
-
-    if (period === "alba" && (spot.activity === "view" || spot.activity === "relax")) score += 7;
-    if (period === "giorno" && (spot.activity === "trekking" || spot.activity === "view")) score += 6;
-    if (period === "tramonto" && (spot.activity === "view" || spot.activity === "relax")) score += 8;
-
-    return score;
-  }
-
-  function getGoNowSuggestions() {
-    if (APP.mode === "sail" && window.SAIL) {
-      const best = window.SAIL.getBestSailSpot(APP);
-      return { best: best || null, alternatives: [] };
-    }
-
-    let pool = getAllSpotsWithMeta().map(s => ({
-      ...s,
-      goNowScore: rankSpotForGoNow(s)
-    }));
-
-    pool.sort((a, b) => b.goNowScore - a.goNowScore);
-
-    const best = pool[0] || null;
-    const alternatives = pool.filter(s => !best || s.id !== best.id).slice(0, 2);
-
-    return { best, alternatives };
-  }
-
-  function runGoNow() {
-    const result = getGoNowSuggestions();
-    if (!result.best) {
-      toast("Nessuno spot disponibile");
-      return;
-    }
-
-    showSpotDetail(result.best);
-    switchPage("detail");
-    toast("Ti ho scelto lo spot migliore di adesso");
-  }
-
-  function buildDayPlanner() {
-    const albaCandidate = bestSpot({ light: "alba", activity: ["view", "trekking", "relax"] });
-    const mainCandidate = bestSpot({
-      activity: ["trekking", "view", "relax", "mtb"],
-      exclude: [albaCandidate?.id]
-    });
-    const sunsetCandidate = bestSpot({
+window.APP_SPOTS = {
+  region: "Madeira",
+  center: [32.75, -16.95],
+  zoom: 10,
+  storageKeys: {
+    favorites: "madeira_favorites_v5",
+    planner: "madeira_day_planner_v5"
+  },
+
+  topWowNames: [
+    "Ponta de São Lourenço",
+    "Pico do Arieiro",
+    "Pico Ruivo Summit",
+    "Fanal Forest",
+    "Ribeira da Janela",
+    "Porto Moniz Pools",
+    "Cabo Girão",
+    "Levada do Caldeirão Verde",
+    "Ponta do Pargo Lighthouse",
+    "Eira do Serrado"
+  ],
+
+  topSunsetNames: [
+    "Ponta do Pargo Lighthouse",
+    "Câmara de Lobos",
+    "Cabo Girão",
+    "Ponta do Sol",
+    "Calheta Beach",
+    "Pico dos Barcelos",
+    "Miradouro do Facho",
+    "Jardim do Mar View",
+    "Paul do Mar",
+    "Porto Moniz Pools"
+  ],
+
+  spots: [
+    {
+      id: "core-0",
+      name: "Ponta de São Lourenço",
+      zone: "est",
+      light: "alba",
+      activity: "trekking",
+      difficulty: "medio",
+      level: "core",
+      lat: 32.744,
+      lon: -16.704,
+      desc: "Il promontorio più scenografico dell'isola, perfetto per creste, mare e luce forte.",
+      tip: "Parti molto presto: rende davvero all'alba.",
+      longDescription: "È uno dei trekking simbolo di Madeira: paesaggio arido, tagli di costa fortissimi e una sensazione molto diversa dal resto dell’isola. È uno spot che funziona sia come esperienza completa sia come tappa wow anche solo parziale.",
+      photoTips: "Bellissimo con luce laterale bassa, soprattutto nelle prime ore. Le linee della costa e i contrasti terra-mare rendono molto meglio prima che la luce diventi dura.",
+      experience: {
+        wow: 10,
+        tipo: "trekking costiero iconico",
+        tempo: "3-5h",
+        mood: "epico e aperto"
+      },
+      whenToGo: {
+        best: "alba",
+        note: "Il meglio arriva con luce bassa e aria limpida. Se vuoi farlo bene, parti presto."
+      },
+      whenToAvoid: [
+        "mezzogiorno pieno con luce dura",
+        "vento forte in cresta",
+        "giornate troppo compresse"
+      ],
+      access: {
+        difficolta: "medio",
+        parcheggio: "medio",
+        walk: "il percorso vero è a piedi e richiede tempo",
+        strada: "comoda fino al parcheggio iniziale"
+      },
+      crowd: {
+        best: "prestissimo",
+        worst: "tarda mattina e centro giornata"
+      },
+      smartTips: [
+        "Se non vuoi fare tutto il trekking, anche il primo tratto dà già molto.",
+        "Tieni margine per il ritorno: il sole qui stanca più del previsto.",
+        "Molto forte come prima grande tappa del lato est."
+      ],
+      image: "https://picsum.photos/seed/Ponta-de-Sao-Lourenco-Madeira/900/600"
+    },
+    {
+      id: "core-1",
+      name: "Pico do Arieiro",
+      zone: "montagna",
+      light: "alba",
+      activity: "view",
+      difficulty: "facile",
+      level: "core",
+      lat: 32.7354,
+      lon: -16.9281,
+      desc: "Il classico sopra le nuvole, uno dei punti più iconici di Madeira.",
+      tip: "Meglio arrivare prima dell'alba: vento e freddo frequenti.",
+      longDescription: "È uno degli spot simbolo assoluti dell’isola. Quando funziona bene, regala l’immagine Madeira più riconoscibile: creste, nuvole sotto quota e luce che entra sulle montagne.",
+      photoTips: "Vai molto presto. Se trovi mare di nuvole, lavora su silhouette e livelli di profondità.",
+      experience: {
+        wow: 10,
+        tipo: "viewpoint d'alta quota",
+        tempo: "45m-2h",
+        mood: "drammatico e iconico"
+      },
+      whenToGo: {
+        best: "alba",
+        note: "Perfetto con cielo pulito sopra e nuvole basse sotto. Il momento giusto è prima del primo sole."
+      },
+      whenToAvoid: [
+        "vento molto forte",
+        "nebbia chiusa senza visibilità",
+        "orario tardi con folla"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "medio",
+        walk: "pochi minuti dalle aree principali",
+        strada: "di montagna ma semplice"
+      },
+      crowd: {
+        best: "prima dell'alba",
+        worst: "dopo l'alba nelle giornate famose"
+      },
+      smartTips: [
+        "Porta uno strato caldo anche se giù fa caldo.",
+        "Controlla il cielo verso est e sotto quota: cambia tutto.",
+        "Se è troppo chiuso, valuta un piano B più basso."
+      ],
+      image: "https://picsum.photos/seed/Pico-do-Arieiro-Madeira/900/600"
+    },
+    {
+      id: "core-2",
+      name: "Pico Ruivo Summit",
+      zone: "montagna",
+      light: "alba",
+      activity: "trekking",
+      difficulty: "impegnativo",
+      level: "core",
+      lat: 32.7591,
+      lon: -16.9431,
+      desc: "La cima più alta dell'isola, con vista ampissima se il cielo regge.",
+      tip: "In giornate limpide è uno dei top assoluti.",
+      longDescription: "È uno di quei punti che alzano il livello del viaggio. Se il meteo è dalla tua parte, la vista è enorme e molto appagante.",
+      photoTips: "Preferisci alba o prime ore. Con aria limpida puoi cercare immagini molto pulite e profonde.",
+      experience: {
+        wow: 10,
+        tipo: "cima principale di Madeira",
+        tempo: "3-5h",
+        mood: "grande e appagante"
+      },
+      whenToGo: {
+        best: "alba",
+        note: "Quando l’aria è pulita, qui fai davvero la differenza."
+      },
+      whenToAvoid: [
+        "visibilità scarsa",
+        "giornata già stanca",
+        "meteo instabile in quota"
+      ],
+      access: {
+        difficolta: "impegnativo",
+        parcheggio: "medio",
+        walk: "cammino vero, non spot mordi e fuggi",
+        strada: "dipende dal punto di accesso scelto"
+      },
+      crowd: {
+        best: "prestissimo",
+        worst: "giornate super popolari"
+      },
+      smartTips: [
+        "Non usarlo come tappa improvvisata: va costruito bene.",
+        "Se vuoi più controllo, valuta l’accesso da Achada do Teixeira.",
+        "Perfetto per il giorno forte del viaggio."
+      ],
+      image: "https://picsum.photos/seed/Pico-Ruivo-Madeira/900/600"
+    },
+    {
+      id: "core-3",
+      name: "Fanal Forest",
+      zone: "ovest",
+      light: "giorno",
+      activity: "trekking",
+      difficulty: "facile",
+      level: "core",
+      lat: 32.7603,
+      lon: -17.1476,
+      desc: "Foresta magica con alberi contorti e nebbia, unica per atmosfera.",
+      tip: "Se trovi foschia o nuvole basse, qui giochi in casa.",
+      longDescription: "È uno spot totalmente diverso dal resto di Madeira: meno panorama aperto e più atmosfera. Quando entra la nebbia, diventa uno dei luoghi più fotografici dell’isola.",
+      photoTips: "Le giornate grigie qui sono un vantaggio. Cerca inquadrature semplici, con alberi isolati e profondità morbida.",
+      experience: {
+        wow: 9,
+        tipo: "foresta atmosferica",
+        tempo: "1-3h",
+        mood: "mistico e sospeso"
+      },
+      whenToGo: {
+        best: "giorno",
+        note: "Rende meglio con nuvole basse, foschia o luce morbida."
+      },
+      whenToAvoid: [
+        "sole molto duro",
+        "fretta",
+        "orario in cui cerchi solo panorami aperti"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "medio",
+        walk: "puoi usarlo anche in modo leggero",
+        strada: "semplice ma a tratti umida"
+      },
+      crowd: {
+        best: "mattina presto o meteo incerto",
+        worst: "quando tutti vanno per la foto famosa"
+      },
+      smartTips: [
+        "Se è chiuso e umido, non è un difetto: è proprio il suo valore.",
+        "Funziona benissimo come cambio di atmosfera in una giornata piena.",
+        "Non cercare il sole: cerca l’aria giusta."
+      ],
+      image: "https://picsum.photos/seed/Fanal-Forest-Madeira/900/600"
+    },
+    {
+      id: "core-4",
+      name: "Ribeira da Janela",
+      zone: "nord",
+      light: "alba",
+      activity: "view",
+      difficulty: "facile",
+      level: "core",
+      lat: 32.8652,
+      lon: -17.1446,
+      desc: "Formazioni rocciose in mare iconiche, molto fotogeniche.",
+      tip: "Ottimo con onde e luce bassa.",
+      longDescription: "È uno dei punti più forti per un’immagine marina molto riconoscibile. Semplice da leggere ma forte come impatto.",
+      photoTips: "Le rocce in acqua rendono meglio con luce bassa, mare un po’ vivo e cielo con struttura.",
+      experience: {
+        wow: 9,
+        tipo: "viewpoint costiero fotografico",
+        tempo: "30m-1h",
+        mood: "pulito e forte"
+      },
+      whenToGo: {
+        best: "alba",
+        note: "Il meglio arriva con luce bassa e un minimo di moto del mare."
+      },
+      whenToAvoid: [
+        "luce piatta di centro giornata",
+        "fretta e cielo vuoto",
+        "nord completamente chiuso"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "medio",
+        walk: "molto breve",
+        strada: "comoda"
+      },
+      crowd: {
+        best: "presto",
+        worst: "orario turistico centrale"
+      },
+      smartTips: [
+        "Molto forte se combinato con Seixal o Porto Moniz.",
+        "Se il cielo è interessante, qui sale di livello.",
+        "È uno spot rapido ma serio."
+      ],
+      image: "https://picsum.photos/seed/Ribeira-da-Janela-Madeira/900/600"
+    },
+    {
+      id: "core-5",
+      name: "Porto Moniz Pools",
+      zone: "nord",
       light: "tramonto",
-      activity: ["view", "relax"],
-      exclude: [albaCandidate?.id, mainCandidate?.id]
-    });
-
-    const period = currentPeriod();
-
-    if (period === "tramonto") {
-      APP.planner = {
-        alba: null,
-        main: mainCandidate?.id || null,
-        tramonto: sunsetCandidate?.id || mainCandidate?.id || null
-      };
-    } else if (period === "giorno") {
-      APP.planner = {
-        alba: null,
-        main: mainCandidate?.id || null,
-        tramonto: sunsetCandidate?.id || null
-      };
-    } else {
-      APP.planner = {
-        alba: albaCandidate?.id || null,
-        main: mainCandidate?.id || null,
-        tramonto: sunsetCandidate?.id || null
-      };
-    }
-
-    saveJson(STORAGE_KEYS.planner, APP.planner);
-    renderPlannerBox();
-    toast("Giornata pianificata");
-  }
-
-  function getSunPhaseInfo() {
-    if (!APP.sunTimes?.sunset) {
-      return {
-        clockText: "Tramonto —",
-        phaseText: "Luce da leggere",
-        mainText: "Sto leggendo la luce di oggi",
-        subText: "Fra poco trovi countdown e stato tramonto.",
-        timeText: "—"
-      };
-    }
-
-    const now = new Date();
-    const sunrise = APP.sunTimes.sunrise;
-    const sunset = APP.sunTimes.sunset;
-    const goldenStart = new Date(sunset.getTime() - 60 * 60000);
-    const blueEnd = new Date(sunset.getTime() + 40 * 60000);
-
-    if (now < sunrise) {
-      return {
-        clockText: `Tramonto ${formatTime(sunset)}`,
-        phaseText: "Prima dell'alba",
-        mainText: "Luce ancora chiusa",
-        subText: "La giornata deve ancora aprirsi. Per spot alba, stai già guardando la finestra giusta.",
-        timeText: formatCountdown(getMinutesDiff(now, sunrise))
-      };
-    }
-
-    if (now < goldenStart) {
-      return {
-        clockText: `Tramonto ${formatTime(sunset)}`,
-        phaseText: "Prima della golden hour",
-        mainText: "La luce migliore arriva più tardi",
-        subText: "Hai ancora margine. Se vuoi un tramonto forte, inizia a muoverti quando la luce comincia a scaldarsi.",
-        timeText: formatCountdown(getMinutesDiff(now, goldenStart))
-      };
-    }
-
-    if (now >= goldenStart && now < sunset) {
-      return {
-        clockText: `Tramonto ${formatTime(sunset)}`,
-        phaseText: "Golden hour in corso",
-        mainText: "Se vuoi il tramonto, questo è il momento",
-        subText: "La luce è nella fascia giusta per viewpoint, costa o scogliere. Adesso conviene già essere sul posto.",
-        timeText: formatCountdown(getMinutesDiff(now, sunset))
-      };
-    }
-
-    if (now >= sunset && now < blueEnd) {
-      return {
-        clockText: `Tramonto ${formatTime(sunset)}`,
-        phaseText: "Blue hour",
-        mainText: "Il sole è appena sceso",
-        subText: "Hai ancora una finestra breve, morbida e molto bella per skyline, costa e luci artificiali leggere.",
-        timeText: formatCountdown(getMinutesDiff(now, blueEnd))
-      };
-    }
-
-    return {
-      clockText: `Tramonto ${formatTime(sunset)}`,
-      phaseText: "Dopo il tramonto",
-      mainText: "La finestra serale è finita",
-      subText: "Per una nuova lettura forte della luce, guarda già la giornata di domani o prepara una partenza all'alba.",
-      timeText: "chiuso"
-    };
-  }
-
-  function startSunsetCountdown() {
-    if (APP.sunsetTimer) clearInterval(APP.sunsetTimer);
-    if (window.UI?.renderSunPhase) {
-      window.UI.renderSunPhase(APP);
-    }
-    APP.sunsetTimer = setInterval(() => {
-      if (window.UI?.renderSunPhase) {
-        window.UI.renderSunPhase(APP);
-      }
-    }, 30000);
-  }
-
-  function getNext12Hours(hourly, marineHourly) {
-    if (!hourly?.time) return [];
-    const now = new Date();
-
-    const merged = hourly.time.map((time, i) => ({
-      date: new Date(time),
-      temp: hourly.temperature_2m?.[i] ?? 0,
-      wind: hourly.wind_speed_10m?.[i] ?? 0,
-      windDir: hourly.wind_direction_10m?.[i] ?? 0,
-      gust: hourly.wind_gusts_10m?.[i] ?? 0,
-      rain: hourly.precipitation_probability?.[i] ?? 0,
-      cloud: hourly.cloud_cover?.[i] ?? 0,
-      waveHeight: marineHourly?.wave_height?.[i] ?? 0,
-      waveDirection: marineHourly?.wave_direction?.[i] ?? 0,
-      wavePeriod: marineHourly?.wave_period?.[i] ?? 0
-    }));
-
-    return merged
-      .filter(item => item.date.getTime() >= now.getTime() - 30 * 60 * 1000)
-      .slice(0, 12);
-  }
-
-  async function loadWeather() {
-    try {
-      const lat = (APP_SPOTS.center && APP_SPOTS.center[0]) || 32.75;
-      const lon = (APP_SPOTS.center && APP_SPOTS.center[1]) || -16.95;
-
-      const forecastUrl =
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-        `&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover` +
-        `&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,precipitation_probability` +
-        `&daily=sunrise,sunset&forecast_days=2&timezone=auto`;
-
-      const marineUrl =
-        `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +
-        `&current=wave_height,wave_direction,wave_period` +
-        `&hourly=wave_height,wave_direction,wave_period&timezone=auto`;
-
-      const [forecastRes, marineRes] = await Promise.all([
-        fetch(forecastUrl),
-        fetch(marineUrl)
-      ]);
-
-      const forecast = await forecastRes.json();
-      const marine = await marineRes.json();
-
-      const temp = forecast?.current?.temperature_2m ?? 0;
-      const wind = forecast?.current?.wind_speed_10m ?? 0;
-      const windDir = forecast?.current?.wind_direction_10m ?? 0;
-      const gust = forecast?.current?.wind_gusts_10m ?? 0;
-      const cloud = forecast?.current?.cloud_cover ?? 0;
-      const waveHeight = marine?.current?.wave_height ?? 0;
-      const waveDirection = marine?.current?.wave_direction ?? 0;
-      const wavePeriod = marine?.current?.wave_period ?? 0;
-
-      const currentHourlyIndex = (forecast?.hourly?.time || []).findIndex(t => {
-        const d = new Date(t);
-        const now = new Date();
-        return d.getHours() === now.getHours() && d.toDateString() === now.toDateString();
-      });
-
-      const rain = currentHourlyIndex >= 0
-        ? (forecast?.hourly?.precipitation_probability?.[currentHourlyIndex] ?? 0)
-        : (forecast?.hourly?.precipitation_probability?.[0] ?? 0);
-
-      const sunrise = parseSunTime(forecast?.daily?.sunrise?.[0]);
-      const sunset = parseSunTime(forecast?.daily?.sunset?.[0]);
-
-      APP.sunTimes = { sunrise, sunset };
-
-      let headline = "Meteo aggiornato";
-      let advice = "Controlla rapidamente la situazione della giornata.";
-
-      if (rain >= 55) {
-        headline = "Pioggia probabile";
-        advice = "Meglio spot più riparati o giornate flessibili.";
-      } else if (wind >= 32) {
-        headline = "Vento forte";
-        advice = "Attenzione ai punti molto esposti.";
-      } else if (cloud <= 35 && rain < 25) {
-        headline = "Finestra interessante";
-        advice = "Buona giornata per spot aperti e luce più pulita.";
-      }
-
-      APP.weatherData = {
-        temp,
-        wind,
-        windDir,
-        gust,
-        cloud,
-        rain,
-        period: currentPeriod(),
-        headline,
-        advice
-      };
-
-      APP.marineData = {
-        waveHeight,
-        waveDirection,
-        wavePeriod
-      };
-
-      APP.hourlyData = getNext12Hours(forecast.hourly, marine.hourly);
-    } catch {
-      APP.weatherData = null;
-      APP.marineData = null;
-      APP.hourlyData = [];
-      APP.sunTimes = null;
-    }
-
-    renderAll();
-    startSunsetCountdown();
-  }
-
-  function markerColor(spot) {
-    if (APP.mode === "sail" && window.SAIL) {
-      return window.SAIL.getMarkerColor(spot, APP);
-    }
-    if ((APP_SPOTS.topWowNames || []).includes(spot.name)) return "#f5c451";
-    if (spot.light === "tramonto") return "#ff9fbc";
-    return "#59b6ff";
-  }
-
-  function createMarkerIcon(color) {
-    return L.divIcon({
-      className: "",
-      html: `
-        <div style="
-          width:18px;
-          height:18px;
-          border-radius:50%;
-          background:${color};
-          border:2px solid rgba(255,255,255,.9);
-          box-shadow:0 0 0 6px rgba(0,0,0,.14), 0 0 18px ${color}55;
-        "></div>
-      `,
-      iconSize: [18, 18],
-      iconAnchor: [9, 9],
-      popupAnchor: [0, -10]
-    });
-  }
-
-  function initMap() {
-    const mapEl = $("map");
-    if (!mapEl || typeof L === "undefined") return;
-
-    APP.map = L.map("map", { zoomControl: true }).setView(
-      APP_SPOTS.center || [32.75, -16.95],
-      APP_SPOTS.zoom || 10
-    );
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 18,
-      attribution: "&copy; OpenStreetMap"
-    }).addTo(APP.map);
-
-    APP.gpsLine = L.polyline([], {
-      color: "#7dc4ff",
-      weight: 4,
-      opacity: 0.9
-    }).addTo(APP.map);
-
-    renderMarkers();
-  }
-
-  function renderMarkers() {
-    if (!APP.map) return;
-
-    APP.markers.forEach(m => APP.map.removeLayer(m));
-    APP.markers = [];
-    APP.markerBySpotId.clear();
-
-    const items = getMapFilteredSpots();
-    const latlngs = [];
-
-    items.forEach(spot => {
-      const marker = L.marker([spot.lat, spot.lon], {
-        icon: createMarkerIcon(markerColor(spot))
-      }).addTo(APP.map);
-
-      marker.bindPopup(`
-        <div style="min-width:180px">
-          <div style="font-weight:800;font-size:15px;margin-bottom:6px">${escapeHtml(spot.name)}</div>
-          <div style="font-size:12px;color:#cfe0ef;margin-bottom:8px">${escapeHtml(spot.desc || "")}</div>
-        </div>
-      `);
-
-      marker.on("click", () => showSpotDetail(spot));
-
-      APP.markers.push(marker);
-      APP.markerBySpotId.set(spot.id, marker);
-      latlngs.push([spot.lat, spot.lon]);
-    });
-
-    if (latlngs.length) {
-      APP.map.fitBounds(L.latLngBounds(latlngs).pad(0.18));
-    }
-  }
-
-  function showSpotDetail(spot) {
-    APP.currentSpot = spot;
-    if (window.UI?.renderSpotDetail) {
-      window.UI.renderSpotDetail(APP, spot);
-    }
-  }
-
-  function centerSpot(id) {
-    const spot = APP_SPOTS.spots.find(s => s.id === id);
-    if (!spot || !APP.map) return;
-
-    switchPage("map");
-
-    setTimeout(() => {
-      APP.map.setView([spot.lat, spot.lon], 13, { animate: true });
-      const marker = APP.markerBySpotId.get(id);
-      if (marker) marker.openPopup();
-    }, 180);
-
-    showSpotDetail(spot);
-  }
-
-  function renderPlannerBox() {
-    if (window.UI?.renderPlannerBox) {
-      window.UI.renderPlannerBox(APP);
-    }
-  }
-
-  function switchPage(pageName) {
-    APP.activePage = pageName;
-
-    document.querySelectorAll(".page").forEach(page => {
-      page.classList.toggle("active", page.id === `page-${pageName}`);
-    });
-
-    document.querySelectorAll(".nav-btn").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.page === pageName);
-    });
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
-
-    if (pageName === "map" && APP.map) {
-      setTimeout(() => APP.map.invalidateSize(), 220);
-    }
-  }
-
-  function updateModeUI() {
-    const toggle = $("sailModeToggle");
-    const main = $("modeLabelMain");
-    const sub = $("modeLabelSub");
-    const hero = $("heroDescription");
-
-    if (toggle) toggle.checked = APP.mode === "sail";
-    if (main) main.textContent = APP.mode === "sail" ? "Sail Mode" : "Travel Mode";
-    if (sub) sub.textContent = APP.mode === "sail" ? "Sail mode ON" : "Sail mode OFF";
-
-    if (hero) {
-      hero.textContent = APP.mode === "sail"
-        ? "Modalità vela attiva: vento, onde, rotta live e spot compatibili quando presenti nei dati."
-        : "Guida travel e outdoor con mappa, spot wow, tramonti, vai ora intelligente, planner giornata e preferiti personali.";
-    }
-
-    document.body.classList.toggle("mode-sail", APP.mode === "sail");
-  }
-
-  function toggleMode(forceMode) {
-    APP.mode = forceMode || (APP.mode === "travel" ? "sail" : "travel");
-    saveJson(STORAGE_KEYS.mode, APP.mode);
-    updateModeUI();
-    renderAll();
-    toast(APP.mode === "sail" ? "Sail mode attivata" : "Travel mode attiva");
-  }
-
-  function searchSpot() {
-    const input = $("searchInput");
-    if (!input) return;
-
-    const q = input.value.trim();
-    if (!q) return;
-
-    APP.search = q;
-    renderAll();
-
-    const found = APP_SPOTS.spots.find(s =>
-      normalizeText(s.name).includes(normalizeText(q))
-    );
-
-    if (found) {
-      showSpotDetail(found);
-      switchPage("detail");
-      toast("Spot trovato");
-    } else {
-      toast("Nessuno spot trovato");
-    }
-  }
-
-  function startGPSRoute() {
-    if (!navigator.geolocation || !APP.map) {
-      toast("GPS non disponibile");
-      return;
-    }
-
-    if (APP.gpsWatchId) return;
-
-    APP.gpsWatchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
-        const speedMs = pos.coords.speed;
-        const heading = pos.coords.heading;
-
-        APP.gpsPath.push([lat, lon]);
-
-        if (APP.gpsLine) APP.gpsLine.setLatLngs(APP.gpsPath);
-
-        if (!APP.gpsMarker) {
-          APP.gpsMarker = L.circleMarker([lat, lon], {
-            radius: 8,
-            color: "#dff3ff",
-            weight: 2,
-            fillColor: "#59b6ff",
-            fillOpacity: 1
-          }).addTo(APP.map);
-        } else {
-          APP.gpsMarker.setLatLng([lat, lon]);
-        }
-
-        if (window.UI?.renderGpsBox) {
-          window.UI.renderGpsBox(APP, { speedMs, heading });
-        }
+      activity: "view",
+      difficulty: "facile",
+      level: "core",
+      lat: 32.8664,
+      lon: -17.1666,
+      desc: "Piscine vulcaniche e oceano aperto, classico intramontabile.",
+      tip: "Resta fino a luce bassa per il meglio.",
+      longDescription: "È una tappa molto forte e molto facile da leggere: roccia vulcanica, acqua, orizzonte e atmosfera di fine giornata. Perfetta da inserire in un road day sul nord-ovest.",
+      photoTips: "La parte più interessante spesso arriva a fine giornata, quando il contrasto si abbassa e le rocce prendono più carattere.",
+      experience: {
+        wow: 9,
+        tipo: "piscine naturali vulcaniche",
+        tempo: "45m-2h",
+        mood: "marino e scenografico"
       },
-      () => toast("Permesso GPS negato o posizione non disponibile"),
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
-    );
-  }
-
-  function stopGPSRoute() {
-    if (APP.gpsWatchId) {
-      navigator.geolocation.clearWatch(APP.gpsWatchId);
-      APP.gpsWatchId = null;
-    }
-  }
-
-  function resetGPSRoute() {
-    stopGPSRoute();
-    APP.gpsPath = [];
-    if (APP.gpsLine) APP.gpsLine.setLatLngs([]);
-    if (APP.gpsMarker && APP.map) {
-      APP.map.removeLayer(APP.gpsMarker);
-      APP.gpsMarker = null;
-    }
-    if (window.UI?.renderGpsBox) {
-      window.UI.renderGpsBox(APP, null);
-    }
-  }
-
-  function bindEvents() {
-    const modeToggle = $("sailModeToggle");
-    if (modeToggle) {
-      modeToggle.addEventListener("change", () => {
-        toggleMode(modeToggle.checked ? "sail" : "travel");
-      });
-    }
-
-    document.querySelectorAll(".nav-btn").forEach(btn => {
-      btn.addEventListener("click", () => switchPage(btn.dataset.page));
-    });
-
-    const searchInput = $("searchInput");
-    if (searchInput) {
-      searchInput.addEventListener("input", () => {
-        APP.search = searchInput.value.trim();
-        renderAll();
-      });
-
-      searchInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") searchSpot();
-      });
-    }
-
-    $("searchBtn")?.addEventListener("click", searchSpot);
-    $("spotNowBtn")?.addEventListener("click", runGoNow);   // ← corretto da goNowBtn
-    $("autofillPlannerBtn")?.addEventListener("click", buildDayPlanner);
-    $("plannerOpenBtn")?.addEventListener("click", () => switchPage("home"));
-    $("clearPlannerBtn")?.addEventListener("click", clearPlannerAll);
-
-    $("gpsBtn")?.addEventListener("click", () => {
-      if (!navigator.geolocation) {
-        toast("GPS non disponibile");
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          APP.userPos = {
-            lat: pos.coords.latitude,
-            lon: pos.coords.longitude
-          };
-          renderAll();
-          toast("Posizione aggiornata");
-        },
-        () => toast("Permesso GPS negato"),
-        { enableHighAccuracy: true, timeout: 8000 }
-      );
-    });
-
-    $("gpsStartBtn")?.addEventListener("click", startGPSRoute);
-    $("gpsStopBtn")?.addEventListener("click", stopGPSRoute);
-    $("gpsResetBtn")?.addEventListener("click", resetGPSRoute);
-
-    window.addEventListener("orientationchange", () => {
-      setTimeout(() => APP.map && APP.map.invalidateSize(), 300);
-    });
-  }
-
-  function renderAll() {
-    if (window.UI?.renderAll) {
-      window.UI.renderAll(APP);
-    }
-    renderMarkers();
-  }
-
-  function toast(message) {
-    if (window.UI?.toast) {
-      window.UI.toast(message);
-    }
-  }
-
-  function initApp() {
-    updateModeUI();
-    bindEvents();
-    initMap();
-    renderAll();
-    loadWeather();
-
-    navigator.geolocation?.getCurrentPosition(
-      pos => {
-        APP.userPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-        renderAll();
+      whenToGo: {
+        best: "tramonto",
+        note: "Molto più interessante a luce morbida che nel pieno del giorno."
       },
-      () => {},
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
+      whenToAvoid: [
+        "mezzogiorno duro",
+        "nord totalmente chiuso",
+        "sosta troppo rapida"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "medio",
+        walk: "facile e breve",
+        strada: "semplice"
+      },
+      crowd: {
+        best: "fine giornata non troppo presto",
+        worst: "fasce centrali affollate"
+      },
+      smartTips: [
+        "Ottimo finale di un giro nord-ovest.",
+        "Se il mare è vivo, l’atmosfera sale.",
+        "Usalo più come scena finale che come stop da mezzogiorno."
+      ],
+      image: "https://picsum.photos/seed/Porto-Moniz-Madeira/900/600"
+    },
+    {
+      id: "core-6",
+      name: "Cabo Girão",
+      zone: "sud",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "facile",
+      level: "core",
+      lat: 32.6558,
+      lon: -17.0048,
+      desc: "Grande falesia con panorama fortissimo sul sud.",
+      tip: "Perfetto verso sera, meno bello a luce dura.",
+      longDescription: "È uno spot immediato, molto forte e molto accessibile. Ideale se vuoi un grande panorama senza sforzo.",
+      photoTips: "La luce migliore è più morbida, non pieno mezzogiorno. Con visibilità pulita rende tantissimo.",
+      experience: {
+        wow: 9,
+        tipo: "falesia panoramica",
+        tempo: "30m-1h",
+        mood: "grande e facile"
+      },
+      whenToGo: {
+        best: "tramonto",
+        note: "Molto più bello quando la luce si abbassa e il sud prende profondità."
+      },
+      whenToAvoid: [
+        "luce dura",
+        "giornata velata sul sud",
+        "aspettative da trekking"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "facile",
+        walk: "brevissima",
+        strada: "molto semplice"
+      },
+      crowd: {
+        best: "tardo pomeriggio presto",
+        worst: "fasce più turistiche"
+      },
+      smartTips: [
+        "Ottimo se vuoi wow rapido senza fatica.",
+        "Funziona bene dentro una giornata sud-ovest.",
+        "Da usare quando vuoi massima resa e minima energia."
+      ],
+      image: "https://picsum.photos/seed/Cabo-Girao-Madeira/900/600"
+    },
+    {
+      id: "core-7",
+      name: "Levada do Caldeirão Verde",
+      zone: "nord",
+      light: "giorno",
+      activity: "trekking",
+      difficulty: "medio",
+      level: "core",
+      lat: 32.8072,
+      lon: -16.905,
+      desc: "Uno dei trekking più famosi di Madeira, verde e molto immersivo.",
+      tip: "Porta una luce se affronti tunnel bui.",
+      longDescription: "È una delle classiche esperienze Madeira: vegetazione intensa, percorso molto immersivo e un finale che ripaga bene.",
+      photoTips: "Lavora sulle texture del verde e sulle prospettive del sentiero, non solo sul punto finale.",
+      experience: {
+        wow: 9,
+        tipo: "levada classica immersiva",
+        tempo: "3-4h",
+        mood: "verde e coinvolgente"
+      },
+      whenToGo: {
+        best: "giorno",
+        note: "Rende bene con luce morbida e giornata senza fretta."
+      },
+      whenToAvoid: [
+        "partenza tardi",
+        "giorno troppo pieno",
+        "se vuoi solo uno spot rapido"
+      ],
+      access: {
+        difficolta: "medio",
+        parcheggio: "medio",
+        walk: "trekking vero ma regolare",
+        strada: "buona fino alla partenza"
+      },
+      crowd: {
+        best: "mattina presto",
+        worst: "orari popolari"
+      },
+      smartTips: [
+        "Vai presto se vuoi viverlo meglio e con meno gente.",
+        "Perfetto per il giorno verde di Madeira.",
+        "Non concentrarti solo sulla cascata finale."
+      ],
+      image: "https://picsum.photos/seed/Caldeirao-Verde-Madeira/900/600"
+    },
+    {
+      id: "core-8",
+      name: "Ponta do Pargo Lighthouse",
+      zone: "ovest",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "facile",
+      level: "core",
+      lat: 32.812,
+      lon: -17.2623,
+      desc: "Uno dei tramonti più seri e puliti di Madeira.",
+      tip: "Se vuoi il tramonto forte, qui vai bene.",
+      longDescription: "È una delle certezze del lato ovest. Minimal, pulito, molto leggibile e molto efficace.",
+      photoTips: "Arriva in anticipo e resta fino agli ultimi minuti utili. Funziona bene anche con composizioni molto semplici.",
+      experience: {
+        wow: 9,
+        tipo: "tramonto pulito sull'ovest",
+        tempo: "45m-1h30",
+        mood: "essenziale e forte"
+      },
+      whenToGo: {
+        best: "tramonto",
+        note: "È uno dei punti più affidabili per chiudere forte la giornata."
+      },
+      whenToAvoid: [
+        "arrivo all'ultimo secondo",
+        "giornata troppo compressa",
+        "se cerchi un posto urbano"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "facile",
+        walk: "brevissima",
+        strada: "semplice"
+      },
+      crowd: {
+        best: "arrivare con anticipo",
+        worst: "ultimi minuti se tutti puntano lì"
+      },
+      smartTips: [
+        "Se sei già a ovest, è quasi sempre una chiusura forte.",
+        "Pochi elementi, ma molto efficaci.",
+        "Resta anche dopo il sole basso."
+      ],
+      image: "https://picsum.photos/seed/Ponta-do-Pargo-Madeira/900/600"
+    },
+    {
+      id: "core-9",
+      name: "Eira do Serrado",
+      zone: "montagna",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "facile",
+      level: "core",
+      lat: 32.704,
+      lon: -16.9697,
+      desc: "Belvedere forte sulla valle di Curral das Freiras.",
+      tip: "Molto bene nel tardo pomeriggio.",
+      longDescription: "Uno dei punti migliori per leggere l’interno di Madeira in modo semplice ma forte.",
+      photoTips: "Tardo pomeriggio e luce radente funzionano molto bene sulla valle.",
+      experience: {
+        wow: 8,
+        tipo: "viewpoint interno iconico",
+        tempo: "30m-1h",
+        mood: "profondo e montano"
+      },
+      whenToGo: {
+        best: "tramonto",
+        note: "La luce di fine giornata dà volume alla valle."
+      },
+      whenToAvoid: [
+        "meteo completamente chiuso",
+        "fretta estrema",
+        "centro giornata piatto"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "medio",
+        walk: "molto breve",
+        strada: "montana ma semplice"
+      },
+      crowd: {
+        best: "tardo pomeriggio gestito bene",
+        worst: "momenti più famosi"
+      },
+      smartTips: [
+        "Ottimo se vuoi montagna senza trekking.",
+        "Funziona bene insieme a Câmara de Lobos o Funchal.",
+        "Molto più forte con luce laterale."
+      ],
+      image: "https://picsum.photos/seed/Eira-do-Serrado-Madeira/900/600"
+    },
+    {
+      id: "core-10",
+      name: "Câmara de Lobos",
+      zone: "sud",
+      light: "tramonto",
+      activity: "relax",
+      difficulty: "facile",
+      level: "core",
+      lat: 32.6488,
+      lon: -16.9777,
+      desc: "Villaggio di pescatori molto scenografico e piacevole da vivere.",
+      tip: "Perfetto per tramonto e cena leggera.",
+      longDescription: "È un posto che unisce estetica, atmosfera e facilità. Funziona bene come tappa finale di giornata, con meno pressione e più gusto.",
+      photoTips: "Cerca la luce calda sulle barche e sul paese. Anche le scene semplici qui possono funzionare molto bene.",
+      experience: {
+        wow: 8,
+        tipo: "villaggio scenografico",
+        tempo: "1-2h",
+        mood: "autentico e piacevole"
+      },
+      whenToGo: {
+        best: "tramonto",
+        note: "Perfetto per chiudere con atmosfera e non solo con panorama."
+      },
+      whenToAvoid: [
+        "passaggio troppo rapido",
+        "orari centrali anonimi",
+        "se cerchi montagna o trekking"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "medio",
+        walk: "semplice",
+        strada: "comoda"
+      },
+      crowd: {
+        best: "fine giornata",
+        worst: "fasce più turistiche"
+      },
+      smartTips: [
+        "Molto forte come finale morbido dopo spot più duri.",
+        "Usalo più da vivere che da spuntare.",
+        "Ottimo se vuoi anche mangiare bene in zona."
+      ],
+      image: "https://picsum.photos/seed/Camara-de-Lobos-Madeira/900/600"
+    },
+    {
+      id: "core-11",
+      name: "Seixal Beach",
+      zone: "nord",
+      light: "alba",
+      activity: "view",
+      difficulty: "facile",
+      level: "core",
+      lat: 32.8246,
+      lon: -17.1082,
+      desc: "Spiaggia nera con montagne verdi alle spalle, molto forte visivamente.",
+      tip: "Molto bella al mattino presto.",
+      longDescription: "Contrasto molto forte tra sabbia scura, mare e verde dietro. È una delle immagini più belle del lato nord.",
+      photoTips: "Mattina presto o cielo drammatico. Le linee della spiaggia funzionano bene anche con composizioni larghe.",
+      experience: {
+        wow: 9,
+        tipo: "spiaggia vulcanica scenica",
+        tempo: "30m-1h30",
+        mood: "potente e pulito"
+      },
+      whenToGo: {
+        best: "alba",
+        note: "Il meglio arriva presto, quando il contrasto è ancora elegante."
+      },
+      whenToAvoid: [
+        "luce dura",
+        "fretta",
+        "spiaggia affollata"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "medio",
+        walk: "breve",
+        strada: "semplice"
+      },
+      crowd: {
+        best: "presto",
+        worst: "orario comodo centrale"
+      },
+      smartTips: [
+        "Ottima in combo con Ribeira da Janela.",
+        "Funziona bene anche con meteo un po’ drammatico.",
+        "Qui la semplicità visiva aiuta."
+      ],
+      image: "https://picsum.photos/seed/Seixal-Beach-Madeira/900/600"
+    },
+    {
+      id: "core-12",
+      name: "25 Fontes",
+      zone: "ovest",
+      light: "giorno",
+      activity: "trekking",
+      difficulty: "medio",
+      level: "core",
+      lat: 32.7524,
+      lon: -17.1318,
+      desc: "Trekking molto celebre, con cascata finale e tanta vegetazione.",
+      tip: "Parti presto se vuoi evitare affollamento.",
+      longDescription: "È una tappa classica, molto nota, ma resta valida se la gestisci bene con orari furbi.",
+      photoTips: "Meglio presto. Se è affollato, punta di più sulle porzioni di percorso e sui dettagli naturali.",
+      experience: {
+        wow: 8,
+        tipo: "levada famosa con cascata",
+        tempo: "3-4h",
+        mood: "verde e classico"
+      },
+      whenToGo: {
+        best: "giorno",
+        note: "Da fare con partenza furba, non tardi."
+      },
+      whenToAvoid: [
+        "orario già pieno",
+        "giornata troppo compressa",
+        "se vuoi zero gente"
+      ],
+      access: {
+        difficolta: "medio",
+        parcheggio: "medio",
+        walk: "lunghezza discreta ma regolare",
+        strada: "semplice fino alla zona di partenza"
+      },
+      crowd: {
+        best: "prima possibile",
+        worst: "tarda mattina"
+      },
+      smartTips: [
+        "Molto meglio come partenza mattutina che come riempitivo.",
+        "Non aspettarti isolamento: qui conta la gestione oraria.",
+        "Buon classico, ma va preso con metodo."
+      ],
+      image: "https://picsum.photos/seed/25-Fontes-Madeira/900/600"
+    },
+    {
+      id: "core-13",
+      name: "Levada do Risco",
+      zone: "ovest",
+      light: "giorno",
+      activity: "trekking",
+      difficulty: "facile",
+      level: "core",
+      lat: 32.7528,
+      lon: -17.1321,
+      desc: "Percorso breve verso una cascata scenica, perfetto come mezza mattina.",
+      tip: "Ottimo se vuoi qualcosa di bello senza tirarti troppo.",
+      longDescription: "È uno di quei posti che entrano bene in una giornata piena senza mangiarsi troppe energie.",
+      photoTips: "Buono con cielo morbido. Può funzionare bene anche con taglio più stretto sulla cascata.",
+      experience: {
+        wow: 8,
+        tipo: "mini trekking con cascata",
+        tempo: "1-2h",
+        mood: "facile ma valido"
+      },
+      whenToGo: {
+        best: "giorno",
+        note: "Molto utile quando vuoi infilare qualcosa di bello senza stravolgere il piano."
+      },
+      whenToAvoid: [
+        "orario troppo affollato",
+        "quando vuoi un trek lungo",
+        "pioggia molto forte"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "medio",
+        walk: "semplice",
+        strada: "comoda"
+      },
+      crowd: {
+        best: "presto",
+        worst: "fasce centrali"
+      },
+      smartTips: [
+        "Molto furbo in combo con 25 Fontes o area Rabaçal.",
+        "Perfetto se hai energia media e vuoi resa alta.",
+        "Da usare come pezzo intelligente, non come giornata intera."
+      ],
+      image: "https://picsum.photos/seed/Risco-Madeira/900/600"
+    },
+    {
+      id: "core-14",
+      name: "Bica da Cana",
+      zone: "ovest",
+      light: "alba",
+      activity: "view",
+      difficulty: "facile",
+      level: "core",
+      lat: 32.7781,
+      lon: -17.1128,
+      desc: "Sunrise point molto forte sopra un mare di nuvole.",
+      tip: "Uno dei migliori punti alba facili dell'isola.",
+      longDescription: "È uno spot potentissimo per partire presto senza un grande sforzo fisico. Se trovi nuvole sotto e cielo pulito sopra, fa davvero il colpo grosso.",
+      photoTips: "Vai con anticipo e resta anche poco dopo l’alba: spesso la luce migliore arriva subito dopo il primo momento.",
+      experience: {
+        wow: 9,
+        tipo: "sunrise point facile",
+        tempo: "30m-1h",
+        mood: "alto e pulito"
+      },
+      whenToGo: {
+        best: "alba",
+        note: "Perfetto per alba seria senza trekking pesante."
+      },
+      whenToAvoid: [
+        "giornata totalmente chiusa",
+        "partenza tardiva",
+        "se vuoi un posto urbano"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "facile",
+        walk: "minima",
+        strada: "semplice"
+      },
+      crowd: {
+        best: "molto presto",
+        worst: "quando viene scoperto troppo"
+      },
+      smartTips: [
+        "Ottimo piano B o piano A all’alba.",
+        "Se il cielo promette bene, qui sei messo forte.",
+        "Molto alta resa per poco sforzo."
+      ],
+      image: "https://picsum.photos/seed/Bica-da-Cana-Madeira/900/600"
+    },
+    {
+      id: "core-15",
+      name: "Balcões",
+      zone: "montagna",
+      light: "alba",
+      activity: "view",
+      difficulty: "facile",
+      level: "core",
+      lat: 32.7368,
+      lon: -16.897,
+      desc: "Belvedere accessibile con panorama molto forte sulle vallate.",
+      tip: "Perfetto se vuoi una mattina facile ma bella.",
+      longDescription: "Molto furbo per chi cerca resa alta e sforzo basso.",
+      photoTips: "Cielo con struttura e luce mattutina aiutano moltissimo.",
+      experience: {
+        wow: 8,
+        tipo: "viewpoint facile",
+        tempo: "45m-1h30",
+        mood: "semplice e efficace"
+      },
+      whenToGo: {
+        best: "alba",
+        note: "Molto valido nelle prime ore, senza complicarti."
+      },
+      whenToAvoid: [
+        "giornata totalmente piatta",
+        "orari molto comodi",
+        "aspettative da esperienza epica"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "medio",
+        walk: "breve e semplice",
+        strada: "comoda"
+      },
+      crowd: {
+        best: "presto",
+        worst: "quando tutti vogliono il punto facile"
+      },
+      smartTips: [
+        "Ottimo quando vuoi conservare energie.",
+        "Molto buono nelle giornate incerte ma non chiuse.",
+        "Spot furbo, non sottovalutarlo."
+      ],
+      image: "https://picsum.photos/seed/Balcoes-Madeira/900/600"
+    },
+    {
+      id: "core-16",
+      name: "Achadas da Cruz View",
+      zone: "nord",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "medio",
+      level: "core",
+      lat: 32.8648,
+      lon: -17.2176,
+      desc: "Una delle scogliere più scenografiche dell'isola.",
+      tip: "Bellissima anche restando solo in alto.",
+      longDescription: "È una tappa molto forte per profondità, verticalità e sensazione di margine estremo.",
+      photoTips: "Molto forte con luce bassa e aria pulita. Anche senza scendere, il punto alto regge molto bene.",
+      experience: {
+        wow: 9,
+        tipo: "scogliera estrema",
+        tempo: "45m-2h",
+        mood: "verticale e memorabile"
+      },
+      whenToGo: {
+        best: "tramonto",
+        note: "A luce bassa la profondità qui sale tantissimo."
+      },
+      whenToAvoid: [
+        "visibilità pessima",
+        "se vuoi spot facile da vivere in fretta",
+        "troppo vento"
+      ],
+      access: {
+        difficolta: "medio",
+        parcheggio: "medio",
+        walk: "dipende da quanto vuoi esplorare",
+        strada: "ok"
+      },
+      crowd: {
+        best: "tardo pomeriggio pulito",
+        worst: "orari più battuti"
+      },
+      smartTips: [
+        "Anche solo il top viewpoint vale il viaggio.",
+        "Perfetto per un nord-ovest forte.",
+        "Sensazione di grande scala molto alta."
+      ],
+      image: "https://picsum.photos/seed/Achadas-da-Cruz-View-Madeira/900/600"
+    },
+    {
+      id: "core-17",
+      name: "Ponta do Sol",
+      zone: "sud",
+      light: "tramonto",
+      activity: "relax",
+      difficulty: "facile",
+      level: "core",
+      lat: 32.679,
+      lon: -17.1012,
+      desc: "Paese molto piacevole sul sud, con luce calda molto bella.",
+      tip: "Perfetto per fine giornata semplice.",
+      longDescription: "È una tappa molto facile da amare: comoda, calda, piacevole e senza sforzo.",
+      photoTips: "Luce dorata e scene quotidiane rendono molto bene. Non serve complicare.",
+      experience: {
+        wow: 8,
+        tipo: "paese costiero rilassato",
+        tempo: "1-2h",
+        mood: "caldo e semplice"
+      },
+      whenToGo: {
+        best: "tramonto",
+        note: "Ottimo se vuoi chiudere bene senza pressione."
+      },
+      whenToAvoid: [
+        "passaggio troppo rapido",
+        "centro giornata anonimo",
+        "aspettative da spot estremo"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "medio",
+        walk: "molto semplice",
+        strada: "comoda"
+      },
+      crowd: {
+        best: "fine giornata",
+        worst: "fasce più normali del giorno"
+      },
+      smartTips: [
+        "Molto buono per abbassare il ritmo senza abbassare il piacere.",
+        "Ottima chiusura sul lato sud.",
+        "Funziona più da atmosfera che da spot unico."
+      ],
+      image: "https://picsum.photos/seed/Ponta-do-Sol-Madeira/900/600"
+    },
+    {
+      id: "core-18",
+      name: "Calheta Beach",
+      zone: "ovest",
+      light: "tramonto",
+      activity: "relax",
+      difficulty: "facile",
+      level: "core",
+      lat: 32.7182,
+      lon: -17.176,
+      desc: "Spiaggia e marina comode per chiudere una giornata sportiva.",
+      tip: "Molto valida come stop finale senza stress.",
+      longDescription: "Più semplice e rilassata rispetto ad altri spot wow, ma molto utile come chiusura intelligente.",
+      photoTips: "Buona per una fine giornata morbida più che per la foto estrema.",
+      experience: {
+        wow: 7,
+        tipo: "chiusura easy sul mare",
+        tempo: "45m-2h",
+        mood: "facile e piacevole"
+      },
+      whenToGo: {
+        best: "tramonto",
+        note: "Ottima se vuoi concludere bene senza cercare l’effetto epico."
+      },
+      whenToAvoid: [
+        "se vuoi il tramonto più forte dell'isola",
+        "orario centrale senza senso",
+        "giornata già molto lenta"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "facile",
+        walk: "minima",
+        strada: "comodissima"
+      },
+      crowd: {
+        best: "fine giornata",
+        worst: "momenti più comodi"
+      },
+      smartTips: [
+        "Perfetta dopo trekking o trasferimenti lunghi.",
+        "Molto più utile che spettacolare, ma bene così.",
+        "Ottimo stop di decompressione."
+      ],
+      image: "https://picsum.photos/seed/Calheta-Beach-Madeira/900/600"
+    },
+    {
+      id: "core-19",
+      name: "Miradouro do Facho",
+      zone: "est",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "facile",
+      level: "core",
+      lat: 32.7175,
+      lon: -16.7635,
+      desc: "Belvedere sopra Machico, molto utile verso sera.",
+      tip: "Se sei già in zona est, è una chiusura furba.",
+      longDescription: "Non è il tramonto più celebrato di Madeira, ma è una scelta intelligente: accessibile, leggibile e ottima se ti trovi già sul lato est.",
+      photoTips: "Funziona bene con luce calda e città/mare leggibili. È più forte se non arrivi già tardi.",
+      experience: {
+        wow: 7,
+        tipo: "tramonto rapido e furbo",
+        tempo: "30m-1h",
+        mood: "pratico e pulito"
+      },
+      whenToGo: {
+        best: "tramonto",
+        note: "Molto utile quando non vuoi attraversare l’isola per chiudere la giornata."
+      },
+      whenToAvoid: [
+        "se cerchi il tramonto top assoluto",
+        "giornata troppo velata",
+        "attesa da spot iconico estremo"
+      ],
+      access: {
+        difficolta: "facile",
+        parcheggio: "facile",
+        walk: "breve",
+        strada: "semplice"
+      },
+      crowd: {
+        best: "arrivo con margine",
+        worst: "ultimissimi minuti"
+      },
+      smartTips: [
+        "Usalo quando la logistica conta.",
+        "Molto furbo per chi dorme o rientra a est.",
+        "Buon finale senza sbatti."
+      ],
+      image: "https://picsum.photos/seed/Facho-Machico-Madeira/900/600"
+    },
 
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+    {
+      id: "secondary-0",
+      name: "Miradouro da Ponta do Rosto",
+      zone: "est",
+      light: "alba",
+      activity: "view",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.7433,
+      lon: -16.7086,
+      desc: "Belvedere immediato e potentissimo sul lato est, con oceano da entrambi i lati.",
+      tip: "Ottimo se vuoi un wow rapido senza trekking lungo.",
+      experience: { wow: 8, tipo: "viewpoint rapido", tempo: "20-40m" },
+      whenToGo: { best: "alba", note: "Molto bene con partenza presto." },
+      access: { difficolta: "facile", parcheggio: "medio", walk: "brevissimo", strada: "semplice" },
+      image: "https://picsum.photos/seed/Ponta-do-Rosto-Madeira/900/600"
+    },
+    {
+      id: "secondary-1",
+      name: "Porto da Cruz Waterfront",
+      zone: "est",
+      light: "giorno",
+      activity: "relax",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.7661,
+      lon: -16.8299,
+      desc: "Waterfront piacevole e ottimo come pausa nel nord-est.",
+      tip: "Buono come stop tra spot più intensi.",
+      experience: { wow: 7, tipo: "pausa sul mare", tempo: "30-60m" },
+      whenToGo: { best: "giorno", note: "Molto utile come break." },
+      access: { difficolta: "facile", parcheggio: "facile", walk: "semplice", strada: "comoda" },
+      image: "https://picsum.photos/seed/Porto-da-Cruz-Waterfront-Madeira/900/600"
+    },
+    {
+      id: "secondary-2",
+      name: "Miradouro do Guindaste",
+      zone: "est",
+      light: "alba",
+      activity: "view",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.8217,
+      lon: -16.8606,
+      desc: "Uno dei viewpoint più puliti e scenici sul lato est.",
+      tip: "Ottimo sunrise facile.",
+      experience: { wow: 8, tipo: "belvedere costiero", tempo: "20-40m" },
+      whenToGo: { best: "alba", note: "Molto forte nelle prime ore." },
+      access: { difficolta: "facile", parcheggio: "facile", walk: "breve", strada: "semplice" },
+      image: "https://picsum.photos/seed/Guindaste-Madeira/900/600"
+    },
+    {
+      id: "secondary-3",
+      name: "Prainha do Caniçal",
+      zone: "est",
+      light: "alba",
+      activity: "relax",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.7397,
+      lon: -16.7167,
+      desc: "Piccola spiaggia vulcanica, bella per inizio giornata tranquillo.",
+      tip: "Meglio presto e con poca folla.",
+      experience: { wow: 7, tipo: "spiaggia vulcanica piccola", tempo: "30-60m" },
+      whenToGo: { best: "alba", note: "Molto buona a inizio giornata." },
+      access: { difficolta: "facile", parcheggio: "medio", walk: "breve", strada: "semplice" },
+      image: "https://picsum.photos/seed/Prainha-do-Canical-Madeira/900/600"
+    },
+    {
+      id: "secondary-4",
+      name: "Machico Bay",
+      zone: "est",
+      light: "giorno",
+      activity: "relax",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.7167,
+      lon: -16.7667,
+      desc: "Baia ordinata e piacevole per una tappa semplice.",
+      tip: "Buona come stop soft o pausa logistica.",
+      experience: { wow: 6, tipo: "pausa comoda", tempo: "30-60m" },
+      whenToGo: { best: "giorno", note: "Molto utile dentro una giornata piena." },
+      access: { difficolta: "facile", parcheggio: "facile", walk: "minima", strada: "comodissima" },
+      image: "https://picsum.photos/seed/Machico-Bay-Madeira/900/600"
+    },
+    {
+      id: "secondary-5",
+      name: "Rocha do Navio",
+      zone: "nord",
+      light: "giorno",
+      activity: "view",
+      difficulty: "medio",
+      level: "secondary",
+      lat: 32.8164,
+      lon: -16.885,
+      desc: "Scogliera e teleferica, molto scenica.",
+      tip: "Molto valida come tappa nord.",
+      experience: { wow: 8, tipo: "scogliera panoramica", tempo: "45-90m" },
+      whenToGo: { best: "giorno", note: "Buona in giornata di nord-est." },
+      access: { difficolta: "medio", parcheggio: "medio", walk: "dipende da quanto vuoi fare", strada: "ok" },
+      image: "https://picsum.photos/seed/Rocha-do-Navio-Madeira/900/600"
+    },
+    {
+      id: "secondary-6",
+      name: "São Jorge Coast View",
+      zone: "nord",
+      light: "giorno",
+      activity: "view",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.823,
+      lon: -16.909,
+      desc: "Costa verde e ripida, molto rappresentativa del nord.",
+      tip: "Buono come spot di passaggio.",
+      experience: { wow: 7, tipo: "vista costiera nord", tempo: "20-40m" },
+      whenToGo: { best: "giorno", note: "Buona tappa intermedia." },
+      access: { difficolta: "facile", parcheggio: "medio", walk: "breve", strada: "semplice" }
+    },
+    {
+      id: "secondary-7",
+      name: "Ponta Delgada Waterfront",
+      zone: "nord",
+      light: "giorno",
+      activity: "relax",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.8241,
+      lon: -16.9297,
+      desc: "Piccolo centro costiero buono per una pausa.",
+      tip: "Molto utile per spezzare la giornata.",
+      experience: { wow: 6, tipo: "waterfront tranquillo", tempo: "20-45m" },
+      whenToGo: { best: "giorno", note: "Più utile che iconico." },
+      access: { difficolta: "facile", parcheggio: "facile", walk: "minima", strada: "comodissima" }
+    },
+    {
+      id: "secondary-8",
+      name: "Seixal Natural Pools",
+      zone: "nord",
+      light: "giorno",
+      activity: "relax",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.8241,
+      lon: -17.1085,
+      desc: "Piscine naturali utili per stop tranquillo.",
+      tip: "Ottime se vuoi rallentare.",
+      experience: { wow: 7, tipo: "piscine naturali easy", tempo: "30-60m" },
+      whenToGo: { best: "giorno", note: "Molto buone come pausa." },
+      access: { difficolta: "facile", parcheggio: "medio", walk: "breve", strada: "semplice" }
+    },
+    {
+      id: "secondary-9",
+      name: "Teleférico Achadas da Cruz Top",
+      zone: "nord",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.8639,
+      lon: -17.2172,
+      desc: "Scogliera fortissima senza scendere in basso.",
+      tip: "Molto forte anche solo in alto.",
+      experience: { wow: 8, tipo: "belvedere verticale", tempo: "20-45m" },
+      whenToGo: { best: "tramonto", note: "Ottimo punto rapido in nord-ovest." },
+      access: { difficolta: "facile", parcheggio: "medio", walk: "minima", strada: "ok" }
+    },
+    {
+      id: "secondary-10",
+      name: "Levada do Alecrim",
+      zone: "ovest",
+      light: "giorno",
+      activity: "trekking",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.7601,
+      lon: -17.1327,
+      desc: "Trekking semplice e piacevole in zona Rabaçal.",
+      tip: "Buona scelta easy.",
+      experience: { wow: 7, tipo: "trekking verde facile", tempo: "1-2h" },
+      whenToGo: { best: "giorno", note: "Molto utile se vuoi stare morbido." },
+      access: { difficolta: "facile", parcheggio: "medio", walk: "regolare", strada: "semplice" }
+    },
+    {
+      id: "secondary-11",
+      name: "Encumeada Pass",
+      zone: "montagna",
+      light: "giorno",
+      activity: "view",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.7491,
+      lon: -17.032,
+      desc: "Passo centrale molto utile per leggere l'isola.",
+      tip: "Ottimo spot di transizione.",
+      experience: { wow: 7, tipo: "passo panoramico", tempo: "15-30m" },
+      whenToGo: { best: "giorno", note: "Molto buono da infilare." },
+      access: { difficolta: "facile", parcheggio: "facile", walk: "minima", strada: "comoda" }
+    },
+    {
+      id: "secondary-12",
+      name: "Achada do Teixeira",
+      zone: "montagna",
+      light: "alba",
+      activity: "view",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.7583,
+      lon: -16.9332,
+      desc: "Accesso più semplice verso il Pico Ruivo.",
+      tip: "Molto utile logisticamente.",
+      experience: { wow: 6, tipo: "accesso smart", tempo: "15-30m" },
+      whenToGo: { best: "alba", note: "Più furbo che iconico da solo." },
+      access: { difficolta: "facile", parcheggio: "medio", walk: "minima", strada: "ok" }
+    },
+    {
+      id: "secondary-13",
+      name: "Vereda do Larano",
+      zone: "est",
+      light: "giorno",
+      activity: "trekking",
+      difficulty: "medio",
+      level: "secondary",
+      lat: 32.7733,
+      lon: -16.8445,
+      desc: "Sentiero costiero con grande panorama.",
+      tip: "Molto buono se vuoi costa e cammino.",
+      experience: { wow: 8, tipo: "trekking costiero", tempo: "2-4h" },
+      whenToGo: { best: "giorno", note: "Da fare con margine e voglia di camminare." },
+      access: { difficolta: "medio", parcheggio: "medio", walk: "trek vero", strada: "ok" }
+    },
+    {
+      id: "secondary-14",
+      name: "Boca dos Namorados",
+      zone: "montagna",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.7057,
+      lon: -16.969,
+      desc: "Alternativa molto valida alla zona Eira do Serrado.",
+      tip: "Se vuoi una vista forte senza sbatti, funziona bene.",
+      experience: { wow: 7, tipo: "viewpoint montano", tempo: "20-40m" },
+      whenToGo: { best: "tramonto", note: "Molto buona nel tardo pomeriggio." },
+      access: { difficolta: "facile", parcheggio: "medio", walk: "breve", strada: "ok" },
+      image: "https://picsum.photos/seed/Boca-dos-Namorados-Madeira/900/600"
+    },
+    {
+      id: "secondary-15",
+      name: "Paul da Serra",
+      zone: "ovest",
+      light: "tramonto",
+      activity: "mtb",
+      difficulty: "medio",
+      level: "secondary",
+      lat: 32.763,
+      lon: -17.133,
+      desc: "Altipiano aperto perfetto per uscite outdoor e luce lunga.",
+      tip: "Bellissimo con orizzonte largo nel tardo pomeriggio.",
+      experience: { wow: 7, tipo: "altipiano outdoor", tempo: "1-2h" },
+      whenToGo: { best: "tramonto", note: "Più atmosfera e spazio che singolo spot." },
+      access: { difficolta: "medio", parcheggio: "facile", walk: "variabile", strada: "semplice" },
+      image: "https://picsum.photos/seed/Paul-da-Serra-Madeira/900/600"
+    },
+    {
+      id: "secondary-16",
+      name: "Levada do Rei",
+      zone: "montagna",
+      light: "giorno",
+      activity: "trekking",
+      difficulty: "medio",
+      level: "secondary",
+      lat: 32.8068,
+      lon: -16.9075,
+      desc: "Levada molto bella e appagante, con tanto verde.",
+      tip: "Ottima se vuoi trekking classico Madeira.",
+      experience: { wow: 8, tipo: "levada verde classica", tempo: "3-4h" },
+      whenToGo: { best: "giorno", note: "Molto solida come esperienza piena." },
+      access: { difficolta: "medio", parcheggio: "medio", walk: "regolare", strada: "ok" },
+      image: "https://picsum.photos/seed/Levada-do-Rei-Madeira/900/600"
+    },
+    {
+      id: "secondary-17",
+      name: "Funchal Old Town",
+      zone: "sud",
+      light: "giorno",
+      activity: "relax",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.6482,
+      lon: -16.9036,
+      desc: "Centro storico utile per passeggiare, mangiare e respirare l'atmosfera.",
+      tip: "Buono tra tardo pomeriggio e sera.",
+      experience: { wow: 7, tipo: "passeggiata urbana", tempo: "1-2h" },
+      whenToGo: { best: "giorno", note: "Ottimo per dare ritmo diverso al viaggio." },
+      access: { difficolta: "facile", parcheggio: "medio", walk: "semplice", strada: "urbana" },
+      image: "https://picsum.photos/seed/Funchal-Old-Town-Madeira/900/600"
+    },
+    {
+      id: "secondary-18",
+      name: "Jardim do Mar View",
+      zone: "sud",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.739,
+      lon: -17.212,
+      desc: "Paesino e costa molto piacevoli verso sera.",
+      tip: "Molto valido per una chiusura semplice.",
+      experience: { wow: 7, tipo: "tramonto costiero semplice", tempo: "30-60m" },
+      whenToGo: { best: "tramonto", note: "Buona chiusura rilassata." },
+      access: { difficolta: "facile", parcheggio: "medio", walk: "breve", strada: "comoda" }
+    },
+    {
+      id: "secondary-19",
+      name: "Paul do Mar",
+      zone: "sud",
+      light: "tramonto",
+      activity: "relax",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.7605,
+      lon: -17.2291,
+      desc: "Costa più ruvida e piacevole per una chiusura semplice.",
+      tip: "Atmosfera molto buona a fine giornata.",
+      experience: { wow: 7, tipo: "chiusura sud-ovest", tempo: "30-60m" },
+      whenToGo: { best: "tramonto", note: "Molto meglio verso sera." },
+      access: { difficolta: "facile", parcheggio: "medio", walk: "semplice", strada: "ok" }
+    },
+
+    {
+      id: "extra-0",
+      name: "Miradouro do Véu da Noiva",
+      zone: "nord",
+      light: "giorno",
+      activity: "view",
+      difficulty: "facile",
+      level: "extra",
+      lat: 32.8335,
+      lon: -17.1258,
+      desc: "Vista iconica sulla cascata costiera, rapidissima ma molto efficace.",
+      tip: "Perfetto come bonus forte senza rubare troppo tempo.",
+      experience: { wow: 8, tipo: "stop rapido iconico", tempo: "10-20m" },
+      whenToGo: { best: "giorno", note: "Spot bonus molto intelligente sul nord." },
+      access: { difficolta: "facile", parcheggio: "facile", walk: "minima", strada: "comodissima" }
+    },
+    {
+      id: "extra-1",
+      name: "Cais do Sardinha",
+      zone: "est",
+      light: "alba",
+      activity: "trekking",
+      difficulty: "medio",
+      level: "extra",
+      lat: 32.7457,
+      lon: -16.6889,
+      desc: "Il finale davvero appagante del trekking di São Lourenço.",
+      tip: "Usalo come extra serio solo se fai davvero il percorso.",
+      experience: { wow: 8, tipo: "finale trekking premio", tempo: "legato al percorso" },
+      whenToGo: { best: "alba", note: "Diventa grande se lo guadagni col cammino." },
+      access: { difficolta: "medio", parcheggio: "n.d.", walk: "si raggiunge dentro il trekking", strada: "n.d." }
+    },
+    {
+      id: "extra-2",
+      name: "Palheiro Gardens",
+      zone: "sud",
+      light: "giorno",
+      activity: "relax",
+      difficulty: "facile",
+      level: "extra",
+      lat: 32.6684,
+      lon: -16.8515,
+      desc: "Giardini tranquilli e curati, perfetti per cambiare ritmo.",
+      tip: "Ottimo extra quando vuoi una Madeira più morbida e ordinata.",
+      experience: { wow: 6, tipo: "giardino elegante", tempo: "1-2h" },
+      whenToGo: { best: "giorno", note: "Buon jolly per giornate soft o meteo così così." },
+      access: { difficolta: "facile", parcheggio: "facile", walk: "semplice", strada: "comoda" },
+      image: "https://picsum.photos/seed/Palheiro-Gardens-Madeira/900/600"
+    },
+    {
+      id: "extra-3",
+      name: "Pico dos Barcelos",
+      zone: "sud",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "facile",
+      level: "extra",
+      lat: 32.6656,
+      lon: -16.9372,
+      desc: "Belvedere accessibile con vista ampia su Funchal.",
+      tip: "Extra molto furbo se vuoi una vista città senza complicarti.",
+      experience: { wow: 7, tipo: "viewpoint urbano alto", tempo: "20-40m" },
+      whenToGo: { best: "tramonto", note: "Molto valido a luce serale." },
+      access: { difficolta: "facile", parcheggio: "facile", walk: "brevissima", strada: "comodissima" },
+      image: "https://picsum.photos/seed/Pico-dos-Barcelos-Madeira/900/600"
+    },
+    {
+      id: "extra-4",
+      name: "Penha d'Águia",
+      zone: "est",
+      light: "giorno",
+      activity: "view",
+      difficulty: "medio",
+      level: "extra",
+      lat: 32.7633,
+      lon: -16.8244,
+      desc: "Roccia iconica sul lato nord-est, molto distintiva visivamente.",
+      tip: "Extra interessante se vuoi qualcosa di diverso e meno standard.",
+      experience: { wow: 7, tipo: "roccia simbolica", tempo: "30-60m" },
+      whenToGo: { best: "giorno", note: "Molto buona come variante nel nord-est." },
+      access: { difficolta: "medio", parcheggio: "medio", walk: "variabile", strada: "ok" },
+      image: "https://picsum.photos/seed/Penha-dAguia-Madeira/900/600"
     }
-
-    window.addEventListener("load", () => {
-      setTimeout(() => $("splash")?.classList.add("hide"), 850);
-    });
-  }
-
-  window.APP_UTILS = {
-    $,
-    escapeHtml,
-    normalizeText,
-    formatTime,
-    formatCountdown,
-    currentPeriod,
-    displayDistance,
-    getSpotImage,
-    isFavorite,
-    toggleFavorite,
-    setPlannerSlot,
-    clearPlannerSlot,
-    clearPlannerAll,
-    getFilteredSpots,
-    getMapFilteredSpots,
-    getAllSpotsWithMeta,
-    getBestSpotToday,
-    getBestWowSpot,
-    getBestSunsetSpot,
-    getClosestSpot,
-    getGoNowSuggestions,
-    explainGoNow,
-    getSunPhaseInfo,
-    showSpotDetail,
-    switchPage,
-    centerSpot,
-    renderPlannerBox,
-    toggleMode,
-    renderAll
-  };
-
-  document.addEventListener("DOMContentLoaded", initApp);
-})();
+  ]
+};
