@@ -303,10 +303,6 @@
     )[0] || null;
   }
 
-  // getClosestSpot migliorata:
-  // Preferisce lo spot più vicino che non sia "meno ideale" (cls === "pink").
-  // Accetta fino a 15 km in più rispetto al nearest per trovarne uno decente.
-  // Ricade sul più vicino assoluto solo se non trova alternative valide.
   function getClosestSpot() {
     if (!APP.userPos) return null;
 
@@ -332,8 +328,6 @@
     return decent || nearest;
   }
 
-  // explainGoNow: genera una stringa breve con i motivi della scelta "Vai ora".
-  // Combina al massimo 3 ragioni separate da " · ".
   function explainGoNow(spot) {
     if (!spot) return "";
 
@@ -341,7 +335,6 @@
     const period = currentPeriod();
     const w = APP.weatherData;
 
-    // Motivo 1: meteo
     if (spot.weatherFit?.cls === "green") {
       reasons.push("meteo favorevole");
     } else if (w && w.cloud <= 35 && w.rain < 25) {
@@ -350,7 +343,6 @@
       reasons.push("riparato dalla pioggia");
     }
 
-    // Motivo 2: luce / orario
     if (spot.light === period) {
       if (period === "alba") reasons.push("luce perfetta per l'alba");
       else if (period === "tramonto") reasons.push("luce perfetta per il tramonto");
@@ -359,14 +351,12 @@
       reasons.push("tramonto imminente");
     }
 
-    // Motivo 3: distanza
     if (spot.distance != null) {
       if (spot.distance <= 8) reasons.push("vicinissimo a te");
       else if (spot.distance <= 18) reasons.push("raggiungibile facilmente");
       else if (spot.distance <= 30) reasons.push("a portata di mano");
     }
 
-    // Fallback se abbiamo meno di 2 ragioni
     if (reasons.length < 2) {
       if (spot.level === "core") reasons.push("spot di prima fascia");
       else if (spot.activity === "view" && period !== "giorno") reasons.push("viewpoint ideale");
@@ -961,7 +951,7 @@
     }
 
     $("searchBtn")?.addEventListener("click", searchSpot);
-    $("spotNowBtn")?.addEventListener("click", runGoNow);   // ← corretto da goNowBtn
+    $("goNowBtn")?.addEventListener("click", runGoNow);
     $("autofillPlannerBtn")?.addEventListener("click", buildDayPlanner);
     $("plannerOpenBtn")?.addEventListener("click", () => switchPage("home"));
     $("clearPlannerBtn")?.addEventListener("click", clearPlannerAll);

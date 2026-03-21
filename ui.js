@@ -19,6 +19,90 @@
     return isFavorite(id) ? "❤️" : "🤍";
   }
 
+  function safeArray(value) {
+    return Array.isArray(value) ? value : [];
+  }
+
+  function pretty(value) {
+    if (!value) return "—";
+
+    const map = {
+      est: "Est",
+      ovest: "Ovest",
+      nord: "Nord",
+      sud: "Sud",
+      montagna: "Montagna",
+      alba: "Alba",
+      mattina: "Mattina",
+      giorno: "Giorno",
+      tramonto: "Tramonto",
+      sera: "Sera",
+      trekking: "Trekking",
+      view: "View",
+      relax: "Relax",
+      mtb: "MTB",
+      facile: "Facile",
+      medio: "Medio",
+      impegnativo: "Impegnativo",
+      nebbia: "Nebbia",
+      core: "Top",
+      secondary: "Belli",
+      extra: "Extra"
+    };
+
+    const key = String(value).toLowerCase();
+    if (map[key]) return map[key];
+
+    return String(value)
+      .replace(/[_-]/g, " ")
+      .replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  function premiumScore(spot) {
+    let score = 50;
+
+    score += Number(spot.experience?.wow || 5) * 3;
+
+    if (spot.level === "core") score += 10;
+    if (spot.whenToGo?.best) score += 8;
+    if (safeArray(spot.whenToAvoid).length) score += 8;
+    if (spot.access?.parcheggio) score += 5;
+    if (spot.access?.walk) score += 4;
+    if (spot.access?.strada) score += 3;
+    if (spot.crowd?.best || spot.crowd?.worst) score += 4;
+    if (safeArray(spot.smartTips).length >= 2) score += 8;
+    if (spot.experience?.tipo) score += 4;
+    if (spot.experience?.tempo) score += 4;
+    if (spot.experience?.mood) score += 2;
+    if (spot.longDescription) score += 4;
+    if (spot.photoTips) score += 2;
+
+    return Math.max(0, Math.min(100, Math.round(score)));
+  }
+
+  function premiumLabel(score) {
+    if (score >= 90) return { text: "Premium forte", cls: "green" };
+    if (score >= 78) return { text: "Molto ricco", cls: "gold" };
+    if (score >= 64) return { text: "Buono", cls: "blue" };
+    return { text: "Base", cls: "pink" };
+  }
+
+  function weatherChip(s) {
+    const fit = s.weatherFit;
+    if (!fit) return `<span class="tag blue">meteo n/d</span>`;
+    return `<span class="tag ${esc(fit.cls || "blue")}">${esc(fit.label || "meteo")}</span>`;
+  }
+
+  function buildSpotMetaLine(spot) {
+    const parts = [
+      spot.experience?.tipo ? pretty(spot.experience.tipo) : null,
+      spot.experience?.tempo || null,
+      spot.access?.difficolta ? pretty(spot.access.difficolta) : (spot.difficulty ? pretty(spot.difficulty) : null)
+    ].filter(Boolean);
+
+    return parts.join(" • ") || "Spot selezionato";
+  }
+
   function buildTravelQuickCards(app) {
     const goNow = window.APP_UTILS.getGoNowSuggestions();
     const bestNow = goNow?.best || null;
@@ -27,12 +111,7 @@
     const bestSunset = window.APP_UTILS.getBestSunsetSpot();
     const closestSpot = window.APP_UTILS.getClosestSpot();
 
-    // Spiegazione "Vai ora" — generata da explainGoNow
-    const goNowExplanation = bestNow
-      ? window.APP_UTILS.explainGoNow(bestNow)
-      : "";
-
-    // Stato qualità "Spot vicino a te": usa direttamente cls dal weatherFit
+    const goNowExplanation = bestNow ? window.APP_UTILS.explainGoNow(bestNow) : "";
     const closestFit = closestSpot?.weatherFit || null;
     const closestQualityChipCls = closestFit?.cls || "blue";
     const closestQualityLabel = closestFit ? closestFit.label : "stato n/d";
@@ -43,13 +122,14 @@
         <div class="quick-title">${bestNow ? esc(bestNow.name) : "—"}</div>
 
         ${goNowExplanation ? `
-          <div class="quick-desc" style="font-size:13px;opacity:.90;font-style:italic;margin-bottom:8px;margin-top:2px">${esc(goNowExplanation)}</div>
+          <div class="quick-desc" style="font-size:13px;opacity:.92;font-style:italic;margin-bottom:8px;margin-top:2px">${esc(goNowExplanation)}</div>
         ` : ``}
 
         <div class="quick-desc">${bestNow ? esc(bestNow.desc || bestNow.tip || "") : "Sto leggendo il miglior spot del momento."}</div>
 
         <div class="sunset-chip-row">
           <div class="mini-chip blue">${bestNow?.distance != null ? esc(window.APP_UTILS.displayDistance(bestNow.distance)) : "distanza n/d"}</div>
+          <div class="mini-chip gold">${bestNow?.experience?.tempo ? esc(bestNow.experience.tempo) : "tempo n/d"}</div>
           <div class="mini-chip ${bestNow?.weatherFit?.cls === "green" ? "gold" : "blue"}">
             ${bestNow?.weatherFit?.label || "lettura in corso"}
           </div>
@@ -69,7 +149,7 @@
 
         <div class="sunset-chip-row">
           <div class="mini-chip blue">${closestSpot?.distance != null ? esc(window.APP_UTILS.displayDistance(closestSpot.distance)) : "GPS non attivo"}</div>
-          <div class="mini-chip gold">${closestSpot ? esc(closestSpot.zone) : "zona n/d"}</div>
+          <div class="mini-chip gold">${closestSpot ? esc(pretty(closestSpot.zone)) : "zona n/d"}</div>
           ${closestSpot ? `<div class="mini-chip ${esc(closestQualityChipCls)}">${esc(closestQualityLabel)}</div>` : ``}
         </div>
       </div>
@@ -439,6 +519,27 @@
       `;
   }
 
+  function topCardHTML(s, i, type) {
+    const score = premiumScore(s);
+    const label = premiumLabel(score);
+    const wow = s.experience?.wow != null ? `⭐ ${s.experience.wow}/10` : "⭐ n/d";
+
+    return `
+      <div class="featured-card ${type} tap" data-top-id="${esc(s.id)}">
+        <div class="featured-rank">${i + 1}</div>
+        <div style="min-width:0;flex:1 1 auto">
+          <div class="featured-name">${esc(s.name)}</div>
+          <div class="featured-desc">${esc(s.desc || "")}</div>
+          <div class="sunset-chip-row" style="margin-top:10px">
+            <div class="mini-chip gold">${wow}</div>
+            <div class="mini-chip blue">${esc(s.experience?.tempo || "tempo n/d")}</div>
+            <div class="mini-chip ${esc(label.cls)}">${esc(label.text)}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function renderTopLists(app) {
     const wowBox = $("topWowList");
     const sunsetBox = $("topSunsetList");
@@ -452,27 +553,8 @@
       .map(name => APP_SPOTS.spots.find(s => s.name === name))
       .filter(Boolean);
 
-    wowBox.innerHTML = wow.map((s, i) => `
-      <div class="featured-card wow tap" data-top-id="${esc(s.id)}">
-        <div class="featured-rank">${i + 1}</div>
-        <div>
-          <div class="featured-name">${esc(s.name)}</div>
-          <div class="featured-desc">${esc(s.desc)}</div>
-          <div class="featured-badge">${app.mode === "sail" ? "spot bello" : "wow spot"}</div>
-        </div>
-      </div>
-    `).join("");
-
-    sunsetBox.innerHTML = sunset.map((s, i) => `
-      <div class="featured-card sunset tap" data-sunset-id="${esc(s.id)}">
-        <div class="featured-rank">${i + 1}</div>
-        <div>
-          <div class="featured-name">${esc(s.name)}</div>
-          <div class="featured-desc">${esc(s.desc)}</div>
-          <div class="featured-badge">tramonto top</div>
-        </div>
-      </div>
-    `).join("");
+    wowBox.innerHTML = wow.map((s, i) => topCardHTML(s, i, "wow")).join("");
+    sunsetBox.innerHTML = sunset.map((s, i) => topCardHTML(s, i, "sunset")).join("");
 
     wowBox.querySelectorAll("[data-top-id]").forEach(el => {
       el.addEventListener("click", () => {
@@ -484,9 +566,9 @@
       });
     });
 
-    sunsetBox.querySelectorAll("[data-sunset-id]").forEach(el => {
+    sunsetBox.querySelectorAll("[data-top-id]").forEach(el => {
       el.addEventListener("click", () => {
-        const s = APP_SPOTS.spots.find(x => x.id === el.dataset.sunsetId);
+        const s = APP_SPOTS.spots.find(x => x.id === el.dataset.topId);
         if (s) {
           window.APP_UTILS.showSpotDetail(s);
           window.APP_UTILS.switchPage("detail");
@@ -510,30 +592,45 @@
       return;
     }
 
-    box.innerHTML = items.map(s => `
-      <div class="spot-card tap" data-spot-id="${esc(s.id)}">
-        <div class="spot-head">
-          <div>
-            <div class="spot-name">${esc(s.name)}</div>
-            <div class="spot-sub">${esc(window.APP_UTILS.displayDistance(s.distance))}</div>
+    box.innerHTML = items.map(s => {
+      const premium = premiumLabel(premiumScore(s));
+      const line = buildSpotMetaLine(s);
+
+      return `
+        <div class="spot-card tap" data-spot-id="${esc(s.id)}">
+          <div class="spot-head">
+            <div>
+              <div class="spot-name">${esc(s.name)}</div>
+              <div class="spot-sub">${esc(window.APP_UTILS.displayDistance(s.distance))}</div>
+            </div>
+            <button class="fav-btn" data-fav-id="${esc(s.id)}" type="button" aria-label="Preferito">${favIcon(s.id)}</button>
           </div>
-          <button class="fav-btn" data-fav-id="${esc(s.id)}" type="button" aria-label="Preferito">${favIcon(s.id)}</button>
-        </div>
 
-        <div class="spot-meta">
-          <span class="tag gold">${esc(s.level)}</span>
-          <span class="tag blue">${esc(s.zone)}</span>
-          <span class="tag">${esc(s.activity)}</span>
-          <span class="tag">${esc(s.difficulty)}</span>
-          <span class="tag pink">${esc(s.light)}</span>
-          ${app.mode === "sail" && s.sailMeta?.enabled ? `<span class="tag blue">vela</span>` : ``}
-          ${app.mode === "sail" && s.sailMeta?.nightShelter ? `<span class="tag green">riparo notte</span>` : ``}
-          ${app.mode === "sail" && s.sailMeta?.enabled ? `<span class="tag gold">${esc(s.sailMeta.label)}</span>` : ``}
-        </div>
+          <div class="spot-meta">
+            <span class="tag gold">${esc(pretty(s.level))}</span>
+            <span class="tag blue">${esc(pretty(s.zone))}</span>
+            <span class="tag">${esc(pretty(s.activity))}</span>
+            <span class="tag">${esc(pretty(s.access?.difficolta || s.difficulty || "n.d."))}</span>
+            <span class="tag pink">${esc(pretty(s.light || "giorno"))}</span>
+            ${weatherChip(s)}
+            <span class="tag ${esc(premium.cls)}">${esc(premium.text)}</span>
+            ${app.mode === "sail" && s.sailMeta?.enabled ? `<span class="tag blue">vela</span>` : ``}
+            ${app.mode === "sail" && s.sailMeta?.nightShelter ? `<span class="tag green">riparo notte</span>` : ``}
+            ${app.mode === "sail" && s.sailMeta?.enabled ? `<span class="tag gold">${esc(s.sailMeta.label)}</span>` : ``}
+          </div>
 
-        <div class="spot-desc">${esc(s.desc)}</div>
-      </div>
-    `).join("");
+          <div class="spot-desc">${esc(s.desc || "")}</div>
+
+          <div class="spot-meta" style="margin-top:10px">
+            ${s.experience?.wow != null ? `<span class="tag gold">⭐ ${esc(s.experience.wow)}/10</span>` : ``}
+            ${s.experience?.tempo ? `<span class="tag blue">${esc(s.experience.tempo)}</span>` : ``}
+            ${s.whenToGo?.best ? `<span class="tag">${esc(pretty(s.whenToGo.best))}</span>` : ``}
+          </div>
+
+          <div class="spot-desc" style="margin-top:10px;font-size:13px;opacity:.9">${esc(line)}</div>
+        </div>
+      `;
+    }).join("");
 
     box.querySelectorAll("[data-spot-id]").forEach(card => {
       card.addEventListener("click", (e) => {
@@ -554,6 +651,44 @@
     });
   }
 
+  function detailInfoGrid(spot, app, sail) {
+    const premium = premiumLabel(premiumScore(spot));
+
+    return `
+      <div class="detail-grid">
+        <div class="detail-box"><div class="k">Livello</div><div class="v">${esc(pretty(spot.level))}</div></div>
+        <div class="detail-box"><div class="k">Zona</div><div class="v">${esc(pretty(spot.zone))}</div></div>
+        <div class="detail-box"><div class="k">Attività</div><div class="v">${esc(pretty(spot.activity))}</div></div>
+        <div class="detail-box"><div class="k">Luce ideale</div><div class="v">${esc(pretty(spot.light || "giorno"))}</div></div>
+        <div class="detail-box"><div class="k">Difficoltà</div><div class="v">${esc(pretty(spot.access?.difficolta || spot.difficulty || "n.d."))}</div></div>
+        <div class="detail-box"><div class="k">Valutazione oggi</div><div class="v">${esc(spot.weatherFit?.label || "n/d")}</div></div>
+        <div class="detail-box"><div class="k">Distanza</div><div class="v">${esc(window.APP_UTILS.displayDistance(spot.distance))}</div></div>
+        <div class="detail-box"><div class="k">Livello dati</div><div class="v">${esc(premium.text)}</div></div>
+        <div class="detail-box"><div class="k">Wow</div><div class="v">${spot.experience?.wow != null ? esc(spot.experience.wow) + "/10" : "n/d"}</div></div>
+        <div class="detail-box"><div class="k">Tipo esperienza</div><div class="v">${esc(spot.experience?.tipo || "n.d.")}</div></div>
+        <div class="detail-box"><div class="k">Tempo medio</div><div class="v">${esc(spot.experience?.tempo || "n.d.")}</div></div>
+        <div class="detail-box"><div class="k">Mood</div><div class="v">${esc(spot.experience?.mood || "n.d.")}</div></div>
+        ${app.mode === "sail" ? `<div class="detail-box"><div class="k">Vela oggi</div><div class="v">${esc(sail?.label || "n/d")}</div></div>` : ``}
+        ${app.mode === "sail" ? `<div class="detail-box"><div class="k">Onde</div><div class="v">${app.marineData ? Number(app.marineData.waveHeight || 0).toFixed(1) + " m" : "—"}</div></div>` : ``}
+      </div>
+    `;
+  }
+
+  function listSection(title, icon, items, emptyText) {
+    const list = safeArray(items).filter(Boolean);
+
+    return `
+      <div class="detail-section">
+        <h3>${esc(title)}</h3>
+        ${
+          list.length
+            ? `<ul class="detail-ul">${list.map(item => `<li>${icon} ${esc(item)}</li>`).join("")}</ul>`
+            : `<p>${esc(emptyText)}</p>`
+        }
+      </div>
+    `;
+  }
+
   UI.renderSpotDetail = function (app, rawSpot) {
     const box = $("spotDetail");
     if (!box || !rawSpot) return;
@@ -563,12 +698,20 @@
     const goNow = app.mode === "travel" ? window.APP_UTILS.getGoNowSuggestions() : null;
     const isTopNow = goNow?.best?.id === spot.id;
     const isAlternative = goNow?.alternatives?.some(x => x.id === spot.id);
+    const whenToAvoid = safeArray(spot.whenToAvoid);
+    const smartTips = safeArray(spot.smartTips);
+    const premium = premiumLabel(premiumScore(spot));
 
     box.innerHTML = `
       <div class="detail-hero" style="background-image:
-        linear-gradient(180deg, rgba(4,8,14,.10), rgba(4,8,14,.82)),
+        linear-gradient(180deg, rgba(4,8,14,.10), rgba(4,8,14,.84)),
         url('${window.APP_UTILS.getSpotImage(spot)}')">
         <div class="detail-hero-inner">
+          <div class="sunset-chip-row" style="margin-bottom:10px">
+            <div class="mini-chip ${esc(premium.cls)}">${esc(premium.text)}</div>
+            ${spot.experience?.wow != null ? `<div class="mini-chip gold">⭐ ${esc(spot.experience.wow)}/10</div>` : ``}
+            ${spot.whenToGo?.best ? `<div class="mini-chip blue">${esc(pretty(spot.whenToGo.best))}</div>` : ``}
+          </div>
           <h3 class="detail-title">${esc(spot.name)}</h3>
           <div class="detail-sub">${esc(spot.desc)}</div>
         </div>
@@ -581,24 +724,42 @@
         </div>
       ` : ``}
 
-      <div class="detail-grid">
-        <div class="detail-box"><div class="k">Livello</div><div class="v">${esc(spot.level)}</div></div>
-        <div class="detail-box"><div class="k">Zona</div><div class="v">${esc(spot.zone)}</div></div>
-        <div class="detail-box"><div class="k">Luce ideale</div><div class="v">${esc(spot.light)}</div></div>
-        <div class="detail-box"><div class="k">Attività</div><div class="v">${esc(spot.activity)}</div></div>
-        <div class="detail-box"><div class="k">Difficoltà</div><div class="v">${esc(spot.difficulty)}</div></div>
-        <div class="detail-box"><div class="k">Valutazione oggi</div><div class="v">${esc(spot.weatherFit?.label || "n/d")}</div></div>
-        <div class="detail-box"><div class="k">Distanza</div><div class="v">${esc(window.APP_UTILS.displayDistance(spot.distance))}</div></div>
-        ${app.mode === "sail" ? `<div class="detail-box"><div class="k">Vela oggi</div><div class="v">${esc(sail?.label || "n/d")}</div></div>` : ``}
-        ${app.mode === "sail" ? `<div class="detail-box"><div class="k">Onde</div><div class="v">${app.marineData ? Number(app.marineData.waveHeight || 0).toFixed(1) + " m" : "—"}</div></div>` : ``}
-      </div>
+      ${detailInfoGrid(spot, app, sail)}
 
       <div class="detail-section">
         <h3>Consiglio pratico</h3>
-        <p>${esc(spot.tip || "Nessun consiglio aggiuntivo disponibile.")}</p>
+        <p>${esc(spot.tip || spot.whenToGo?.note || "Nessun consiglio aggiuntivo disponibile.")}</p>
       </div>
 
-      ${spot.longDescription ? `<div class="detail-section"><h3>Dettaglio extra</h3><p>${esc(spot.longDescription)}</p></div>` : ``}
+      ${spot.longDescription ? `<div class="detail-section"><h3>Perché vale</h3><p>${esc(spot.longDescription)}</p></div>` : ``}
+
+      <div class="detail-section">
+        <h3>Quando andarci</h3>
+        <p><strong>${esc(pretty(spot.whenToGo?.best || "n.d."))}</strong>${spot.whenToGo?.note ? ` · ${esc(spot.whenToGo.note)}` : ""}</p>
+      </div>
+
+      ${listSection("Quando evitarlo", "⛔", whenToAvoid, "Nessun limite specifico salvato.")}
+
+      <div class="detail-section">
+        <h3>Accesso reale</h3>
+        <div class="detail-grid">
+          <div class="detail-box"><div class="k">Parcheggio</div><div class="v">${esc(spot.access?.parcheggio || "n.d.")}</div></div>
+          <div class="detail-box"><div class="k">Walk</div><div class="v">${esc(spot.access?.walk || "n.d.")}</div></div>
+          <div class="detail-box"><div class="k">Strada</div><div class="v">${esc(spot.access?.strada || "n.d.")}</div></div>
+          <div class="detail-box"><div class="k">Difficoltà</div><div class="v">${esc(pretty(spot.access?.difficolta || spot.difficulty || "n.d."))}</div></div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h3>Affollamento</h3>
+        <div class="detail-grid">
+          <div class="detail-box"><div class="k">Meglio</div><div class="v">${esc(spot.crowd?.best || "n.d.")}</div></div>
+          <div class="detail-box"><div class="k">Peggio</div><div class="v">${esc(spot.crowd?.worst || "n.d.")}</div></div>
+        </div>
+      </div>
+
+      ${listSection("Smart tips", "🧠", smartTips, "Nessun tip salvato.")}
+
       ${spot.photoTips ? `<div class="detail-section"><h3>Consiglio foto</h3><p>${esc(spot.photoTips)}</p></div>` : ``}
       ${app.mode === "sail" && sail?.enabled ? `<div class="detail-section"><h3>Sezione vela</h3><p>${esc(sail.detailText || "Spot compatibile con modalità vela.")}</p></div>` : ``}
 
@@ -646,6 +807,8 @@
         `;
       }
 
+      const meta = buildSpotMetaLine(spot);
+
       return `
         <div class="planner-slot tap">
           <div class="planner-slot-head">
@@ -654,6 +817,7 @@
           </div>
           <div class="planner-slot-name">${esc(spot.name)}</div>
           <div class="planner-slot-sub">${esc(spot.desc)}</div>
+          <div class="planner-slot-sub" style="margin-top:8px;opacity:.9">${esc(meta)}</div>
         </div>
       `;
     }).join("");
