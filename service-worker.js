@@ -1,5 +1,5 @@
-const APP_CACHE = "travel-sail-app-v2";
-const STATIC_CACHE = "travel-sail-static-v2";
+const APP_CACHE = "travel-sail-app-v3";
+const STATIC_CACHE = "travel-sail-static-v3";
 
 const STATIC_FILES = [
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
