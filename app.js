@@ -16,7 +16,7 @@
 
   const APP = {
     mode: loadJson(STORAGE_KEYS.mode, "travel"),
-    level: "core",
+    level: "all",
     light: "all",
     zone: "all",
     activity: "all",
@@ -179,10 +179,7 @@
   }
 
   function getBaseSpots() {
-    if (APP.mode === "sail") {
-      return APP_SPOTS.spots;
-    }
-    return APP_SPOTS.spots.filter(s => s.level === "core");
+    return APP_SPOTS.spots;
   }
 
   function getBaseSpotById(id) {
@@ -243,7 +240,7 @@
 
   function getFilteredSpots() {
     let items = getAllSpotsWithMeta().filter(s =>
-      (APP.mode === "sail" ? (APP.level === "all" || s.level === APP.level) : true) &&
+      (APP.level === "all" || s.level === APP.level) &&
       (APP.light === "all" || s.light === APP.light) &&
       (APP.zone === "all" || s.zone === APP.zone) &&
       (APP.activity === "all" || s.activity === APP.activity) &&
@@ -274,6 +271,10 @@
   function getMapFilteredSpots() {
     let items = getAllSpotsWithMeta();
 
+    if (APP.level !== "all") {
+      items = items.filter(s => s.level === APP.level);
+    }
+
     if (APP.mode === "sail" && window.SAIL) {
       items = items.filter(s => window.SAIL.filterSpotForSailMode(s, APP));
     }
@@ -292,16 +293,27 @@
     }
 
     const desired = currentPeriod();
-    let pool = getAllSpotsWithMeta().filter(s => s.light === desired);
-    if (!pool.length) pool = getAllSpotsWithMeta();
+    let pool = getAllSpotsWithMeta();
 
-    return pool.sort((a, b) =>
+    if (APP.level !== "all") {
+      pool = pool.filter(s => s.level === APP.level);
+    }
+
+    let periodPool = pool.filter(s => s.light === desired);
+    if (!periodPool.length) periodPool = pool;
+
+    return periodPool.sort((a, b) =>
       b.weatherFit.score - a.weatherFit.score || ((a.distance ?? 9999) - (b.distance ?? 9999))
     )[0] || null;
   }
 
   function getBestWowSpot() {
-    const pool = getAllSpotsWithMeta().filter(s => (APP_SPOTS.topWowNames || []).includes(s.name));
+    let pool = getAllSpotsWithMeta().filter(s => (APP_SPOTS.topWowNames || []).includes(s.name));
+
+    if (APP.level !== "all") {
+      pool = pool.filter(s => s.level === APP.level);
+    }
+
     return pool.sort((a, b) =>
       b.weatherFit.score - a.weatherFit.score || ((a.distance ?? 9999) - (b.distance ?? 9999))
     )[0] || null;
@@ -312,7 +324,12 @@
       return window.SAIL.getBestSailSunsetSpot(APP);
     }
 
-    const pool = getAllSpotsWithMeta().filter(s => s.light === "tramonto");
+    let pool = getAllSpotsWithMeta().filter(s => s.light === "tramonto");
+
+    if (APP.level !== "all") {
+      pool = pool.filter(s => s.level === APP.level);
+    }
+
     return pool.sort((a, b) =>
       b.weatherFit.score - a.weatherFit.score || ((a.distance ?? 9999) - (b.distance ?? 9999))
     )[0] || null;
@@ -322,6 +339,10 @@
     if (!APP.userPos) return null;
 
     let pool = getAllSpotsWithMeta().filter(s => s.distance != null);
+
+    if (APP.level !== "all") {
+      pool = pool.filter(s => s.level === APP.level);
+    }
 
     if (APP.mode === "sail" && window.SAIL) {
       pool = pool.filter(s => window.SAIL.filterSpotForSailMode(s, APP));
@@ -399,7 +420,7 @@
       pool = pool.filter(s => s.zone === APP.zone);
     }
 
-    if (APP.mode === "sail" && APP.level !== "all") {
+    if (APP.level !== "all") {
       pool = pool.filter(s => s.level === APP.level);
     }
 
@@ -444,7 +465,13 @@
       return { best: best || null, alternatives: [] };
     }
 
-    let pool = getAllSpotsWithMeta().map(s => ({
+    let pool = getAllSpotsWithMeta();
+
+    if (APP.level !== "all") {
+      pool = pool.filter(s => s.level === APP.level);
+    }
+
+    pool = pool.map(s => ({
       ...s,
       goNowScore: rankSpotForGoNow(s)
     }));
@@ -793,7 +820,7 @@
   }
 
   function centerSpot(id) {
-    const spot = getBaseSpotById(id);
+    const spot = getSpotById(id);
     if (!spot || !APP.map) return;
 
     switchPage("map");
@@ -852,13 +879,6 @@
 
   function toggleMode(forceMode) {
     APP.mode = forceMode || (APP.mode === "travel" ? "sail" : "travel");
-
-    if (APP.mode === "travel") {
-      APP.level = "core";
-    } else if (APP.level === "core") {
-      APP.level = "all";
-    }
-
     saveJson(STORAGE_KEYS.mode, APP.mode);
     updateModeUI();
     renderAll();
@@ -1021,10 +1041,6 @@
   }
 
   function initApp() {
-    if (APP.mode === "travel") {
-      APP.level = "core";
-    }
-
     updateModeUI();
     bindEvents();
     initMap();
