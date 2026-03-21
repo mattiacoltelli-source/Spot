@@ -1,18 +1,5 @@
-const APP_CACHE = "travel-sail-app";
-const STATIC_CACHE = "travel-sail-static";
-
-const APP_FILES = [
-  "./",
-  "./index.html",
-  "./styles.css",
-  "./spots.js",
-  "./ui.js",
-  "./app.js",
-  "./sail.js",
-  "./manifest.json",
-  "./icon-192.png",
-  "./icon-512.png"
-];
+const APP_CACHE = "travel-sail-app-v2";
+const STATIC_CACHE = "travel-sail-static-v2";
 
 const STATIC_FILES = [
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
