@@ -1,23 +1,19 @@
-const CACHE_NAME = "madeira-spot-planner-v2";
+const CACHE_NAME = "madeira-spot-planner-v3";
 
 const APP_SHELL = [
   "./",
   "./index.html",
+  "./styles.css",
+  "./spots.js",
+  "./ui.js",
+  "./app.js",
+  "./sail.js",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
 ];
-
-function isAppAsset(url) {
-  return (
-    url.pathname.endsWith(".js") ||
-    url.pathname.endsWith(".css") ||
-    url.pathname.endsWith(".json") ||
-    url.pathname.endsWith(".html")
-  );
-}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -48,31 +44,33 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
 
-  if (
-    url.href.includes("api.open-meteo.com") ||
-    url.href.includes("marine-api.open-meteo.com") ||
-    url.href.includes("google.com/maps")
-  ) {
+  const isAppFile =
+    url.pathname.endsWith("/index.html") ||
+    url.pathname.endsWith("/styles.css") ||
+    url.pathname.endsWith("/spots.js") ||
+    url.pathname.endsWith("/ui.js") ||
+    url.pathname.endsWith("/app.js") ||
+    url.pathname.endsWith("/sail.js") ||
+    url.pathname.endsWith("/manifest.json") ||
+    url.pathname.endsWith("/icon-192.png") ||
+    url.pathname.endsWith("/icon-512.png") ||
+    url.pathname === "/" ||
+    url.pathname.endsWith("/");
+
+  const isExternalStatic =
+    request.url.includes("unpkg.com");
+
+  const isNoCacheApi =
+    request.url.includes("api.open-meteo.com") ||
+    request.url.includes("marine-api.open-meteo.com") ||
+    request.url.includes("google.com/maps");
+
+  if (isNoCacheApi) {
     event.respondWith(fetch(request));
     return;
   }
 
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put("./index.html", responseClone);
-          });
-          return networkResponse;
-        })
-        .catch(() => caches.match("./index.html"))
-    );
-    return;
-  }
-
-  if (isAppAsset(url)) {
+  if (isAppFile) {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
@@ -82,7 +80,24 @@ self.addEventListener("fetch", (event) => {
           });
           return networkResponse;
         })
-        .catch(() => caches.match(request))
+        .catch(() => caches.match(request).then((cached) => cached || caches.match("./index.html")))
+    );
+    return;
+  }
+
+  if (isExternalStatic) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) return cachedResponse;
+
+        return fetch(request).then((networkResponse) => {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseClone);
+          });
+          return networkResponse;
+        });
+      })
     );
     return;
   }
@@ -91,16 +106,10 @@ self.addEventListener("fetch", (event) => {
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) return cachedResponse;
 
-      return fetch(request).then((networkResponse) => {
-        const responseClone = networkResponse.clone();
-
-        if (url.protocol.startsWith("http")) {
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
+      return fetch(request).catch(() => {
+        if (request.mode === "navigate") {
+          return caches.match("./index.html");
         }
-
-        return networkResponse;
       });
     })
   );
