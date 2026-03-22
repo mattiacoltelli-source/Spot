@@ -4,9 +4,28 @@ window.APP_SPOTS = {
   zoom: 11,
   storageKeys: {
     favorites: "riva_favorites_v2",
-    planner: "riva_day_planner_v2"
+    planner:   "riva_day_planner_v2"
   },
 
+  // ── Zone visibili nei filtri ──────────────────────────────────────────────
+  zones: [
+    { id: "lago",     label: "Lago"     },
+    { id: "ovest",    label: "Ovest"    },
+    { id: "est",      label: "Est"      },
+    { id: "nord",     label: "Nord"     },
+    { id: "montagna", label: "Montagna" }
+  ],
+
+  // ── Attività visibili nei filtri ──────────────────────────────────────────
+  activities: [
+    { id: "trekking", label: "Trekking", emoji: "🥾" },
+    { id: "mtb",      label: "MTB",      emoji: "🚵" },
+    { id: "view",     label: "View",     emoji: "🔭" },
+    { id: "relax",    label: "Relax",    emoji: "🌊" },
+    { id: "water",    label: "Acqua",    emoji: "🏄" }
+  ],
+
+  // ── Top list per home e top page ──────────────────────────────────────────
   topWowNames: [
     "Punta Larici",
     "Sentiero del Ponale",
@@ -33,7 +52,11 @@ window.APP_SPOTS = {
     "Lago di Tenno"
   ],
 
+  // ── Spot ──────────────────────────────────────────────────────────────────
   spots: [
+
+    // ═══ CORE ════════════════════════════════════════════════════════════════
+
     {
       id: "core-0",
       name: "Punta Larici",
@@ -44,38 +67,18 @@ window.APP_SPOTS = {
       level: "core",
       lat: 45.8598,
       lon: 10.8075,
-      desc: "Il viewpoint più forte della zona, balcone naturale enorme sopra il Garda.",
-      tip: "Se vuoi il colpo grosso, qui vai fortissimo soprattutto nel tardo pomeriggio.",
-      experience: {
-        wow: 10,
-        tipo: "trekking panoramico",
-        tempo: "2-4h",
-        mood: "epico"
-      },
-      whenToGo: {
-        best: "tramonto",
-        note: "luce bassa e cielo abbastanza pulito alzano tantissimo la resa"
-      },
-      whenToAvoid: [
-        "vento forte",
-        "temporali",
-        "visibilità molto chiusa"
-      ],
-      access: {
-        difficolta: "medio",
-        parcheggio: "più comodo lato Pregasina",
-        walk: "variabile in base al punto di partenza",
-        strada: "asfaltata fino ai punti base"
-      },
-      crowd: {
-        best: "giorni feriali o arrivo anticipato",
-        worst: "tramonti perfetti e weekend"
-      },
-      smartTips: [
-        "Perfetto come highlight del giorno",
-        "Meglio non arrivare all'ultimo minuto",
-        "Ultimo tratto da rispettare se il terreno è brutto"
-      ],
+      tags: ["epico", "panorama", "viewpoint", "tramonto", "belvedere", "esperienza forte", "wow"],
+      alias: ["larici", "punta larici riva"],
+      desc: "Il viewpoint più forte della zona. Balcone naturale enorme sopra il Garda, luce di tramonto fenomenale.",
+      tip: "Arriva con almeno 30 min di anticipo. Il cielo pulito fa la differenza totale.",
+      weatherNote: "Vento forte rende scomodo stare fermi. Evita con raffiche > 35 km/h.",
+      photoTips: "Posizionati verso nord con il lago in primo piano, luce da ovest.",
+      experience: { wow: 10, tipo: "trekking panoramico", tempo: "2-4h", mood: "epico" },
+      whenToGo: { best: "tramonto", note: "luce bassa e cielo pulito moltiplicano la resa" },
+      whenToAvoid: ["vento forte", "temporali", "foschia chiusa"],
+      access: { difficolta: "medio", parcheggio: "lato Pregasina", walk: "variabile", strada: "asfaltata ai punti base" },
+      crowd: { best: "feriali o anticipo", worst: "tramonti perfetti in weekend" },
+      smartTips: ["Highlight assoluto della zona", "Non arrivare all'ultimo minuto"],
       image: "https://picsum.photos/seed/Punta-Larici-Riva/900/600"
     },
 
@@ -89,37 +92,16 @@ window.APP_SPOTS = {
       level: "core",
       lat: 45.8719,
       lon: 10.8501,
-      desc: "La classica strada panoramica sul lago: iconica, facile da capire, fortissima da vivere.",
-      tip: "Vai presto se vuoi goderla davvero meglio.",
-      experience: {
-        wow: 10,
-        tipo: "bike / hike panoramico",
-        tempo: "1-3h",
-        mood: "iconico"
-      },
-      whenToGo: {
-        best: "giorno",
-        note: "molto bene la mattina o in ore non troppo piene"
-      },
-      whenToAvoid: [
-        "ore centrali affollate",
-        "giorni con meteo instabile forte"
-      ],
-      access: {
-        difficolta: "medio",
-        parcheggio: "facile da Riva",
-        walk: "0 min",
-        strada: "asfaltata e sterrata"
-      },
-      crowd: {
-        best: "presto",
-        worst: "metà mattina e pomeriggio nei giorni forti"
-      },
-      smartTips: [
-        "Uno dei migliori spot da spiegare a chi non conosce la zona",
-        "Ottimo sia in MTB che a piedi",
-        "Più atmosfera di movimento che spot statico"
-      ],
+      tags: ["iconico", "MTB panoramica", "bike", "storico", "classico", "esperienza forte"],
+      alias: ["ponale", "riva bike", "ciclabile ponale"],
+      desc: "La strada panoramica sul lago più famosa della zona. Iconica, leggibile, fortissima da vivere in MTB o a piedi.",
+      tip: "Prima delle 9 è un'altra cosa. Evita le ore centrali nei giorni di punta.",
+      experience: { wow: 10, tipo: "bike / hike panoramico", tempo: "1-3h", mood: "iconico" },
+      whenToGo: { best: "mattina", note: "luce laterale e meno folla" },
+      whenToAvoid: ["ore centrali in alta stagione", "meteo instabile forte"],
+      access: { difficolta: "medio", parcheggio: "facile da Riva", walk: "0 min", strada: "asfaltata e sterrata" },
+      crowd: { best: "presto mattina", worst: "metà mattina nei giorni forti" },
+      smartTips: ["Ottimo sia in MTB che a piedi", "Più movimento che spot statico"],
       image: "https://picsum.photos/seed/Ponale-Riva/900/600"
     },
 
@@ -133,37 +115,16 @@ window.APP_SPOTS = {
       level: "core",
       lat: 45.8892,
       lon: 10.8595,
-      desc: "Vista altissima ma accessibile su Riva, Torbole e tutto il lago nord.",
-      tip: "Uno dei migliori spot easy della zona.",
-      experience: {
-        wow: 9,
-        tipo: "viewpoint facile",
-        tempo: "30-90 min",
-        mood: "panorama pulito"
-      },
-      whenToGo: {
-        best: "tramonto",
-        note: "molto forte con luce morbida e aria pulita"
-      },
-      whenToAvoid: [
-        "luce dura",
-        "momenti molto pieni"
-      ],
-      access: {
-        difficolta: "facile",
-        parcheggio: "medio in base al lato",
-        walk: "breve",
-        strada: "asfaltata"
-      },
-      crowd: {
-        best: "tardo pomeriggio con un po' di anticipo",
-        worst: "sunset popolari"
-      },
-      smartTips: [
-        "Perfetto se vuoi resa alta con sforzo basso",
-        "Buono anche per far vedere l'app a qualcuno",
-        "Spot molto leggibile"
-      ],
+      tags: ["tramonto", "viewpoint facile", "panorama", "golden hour", "tramonto rapido", "facile bello"],
+      alias: ["brione", "monte brione riva"],
+      desc: "Vista alta su Riva, Torbole e tutto il lago nord. Accessibile, forte, perfetto per chiusura giornata.",
+      tip: "Uno dei migliori spot tramonto easy della zona. Resa altissima con poco sforzo.",
+      experience: { wow: 9, tipo: "viewpoint facile", tempo: "30-90 min", mood: "panorama pulito" },
+      whenToGo: { best: "tramonto", note: "luce morbida e aria pulita" },
+      whenToAvoid: ["luce dura di mezzogiorno", "foschia"],
+      access: { difficolta: "facile", parcheggio: "medio", walk: "breve", strada: "asfaltata" },
+      crowd: { best: "arrivo anticipato", worst: "tramonti perfetti" },
+      smartTips: ["Piano B eccellente se Larici è troppo lontana", "Molto leggibile anche per chi non conosce la zona"],
       image: "https://picsum.photos/seed/Monte-Brione-Riva/900/600"
     },
 
@@ -177,37 +138,16 @@ window.APP_SPOTS = {
       level: "core",
       lat: 45.8871,
       lon: 10.8404,
-      desc: "Vista alta su Riva del Garda, bellissima per finale di giornata senza troppa fatica.",
-      tip: "Molto bene in golden hour.",
-      experience: {
-        wow: 9,
-        tipo: "view urbano-lago",
-        tempo: "30-75 min",
-        mood: "forte ma semplice"
-      },
-      whenToGo: {
-        best: "tramonto",
-        note: "top come chiusura facile"
-      },
-      whenToAvoid: [
-        "ore centrali",
-        "meteo piatto e spento"
-      ],
-      access: {
-        difficolta: "facile",
-        parcheggio: "molto comodo in città",
-        walk: "breve salita",
-        strada: "asfaltata"
-      },
-      crowd: {
-        best: "feriali o arrivo anticipato",
-        worst: "tramonti perfetti"
-      },
-      smartTips: [
-        "Ottimo piano B se non vuoi muoverti troppo",
-        "Molto utile come spot sunset rapido",
-        "Combina bene con centro storico"
-      ],
+      tags: ["tramonto rapido", "storico", "view", "golden hour", "piano B", "vicino", "tramonto facile"],
+      alias: ["bastione", "rocca riva"],
+      desc: "Fortezza storica sopra Riva con vista alta sul lago. Tramonto rapido e accessibile, ottimo come piano B.",
+      tip: "In golden hour è molto forte. Si abbina bene a una passeggiata nel centro storico.",
+      experience: { wow: 9, tipo: "view urbano-lago", tempo: "30-75 min", mood: "forte ma semplice" },
+      whenToGo: { best: "tramonto", note: "chiusura facile e soddisfacente" },
+      whenToAvoid: ["ore centrali", "meteo piatto"],
+      access: { difficolta: "facile", parcheggio: "ottimo in città", walk: "breve salita", strada: "asfaltata" },
+      crowd: { best: "feriali", worst: "tramonti perfetti" },
+      smartTips: ["Tramonto in 45 minuti porta a porta", "Ideale se sei in centro e vuoi il colpo d'occhio"],
       image: "https://picsum.photos/seed/Bastione-Riva/900/600"
     },
 
@@ -221,38 +161,17 @@ window.APP_SPOTS = {
       level: "core",
       lat: 45.8962,
       lon: 10.8508,
-      desc: "Grande classico di quota, con vista enorme sul Garda e sensazione vera di montagna.",
-      tip: "Da fare quando vuoi la giornata seria.",
-      experience: {
-        wow: 10,
-        tipo: "trekking di quota",
-        tempo: "4-7h",
-        mood: "grande panorama"
-      },
-      whenToGo: {
-        best: "giorno / tramonto",
-        note: "meglio con buona visibilità e poca instabilità"
-      },
-      whenToAvoid: [
-        "temporali",
-        "vento forte",
-        "giorni di scarsa visibilità"
-      ],
-      access: {
-        difficolta: "impegnativo",
-        parcheggio: "variabile in base all'accesso scelto",
-        walk: "lungo",
-        strada: "asfaltata fino ai punti base"
-      },
-      crowd: {
-        best: "partenza presto",
-        worst: "giorni top di stagione"
-      },
-      smartTips: [
-        "Da trattare come esperienza centrale",
-        "Non sprecarlo in mezza giornata scarsa",
-        "Se il cielo è chiuso, valuta un piano più basso"
-      ],
+      tags: ["quota", "giornata seria", "grande panorama", "montagna vera", "esperienza forte", "trekking wow"],
+      alias: ["altissimo", "monte altissimo di nago"],
+      desc: "Grande classico di quota sopra il Garda. Vista enorme, sensazione vera di montagna, giornata intera.",
+      tip: "Da fare solo quando sei pronto a dargli una giornata vera. Non sprecarlo con meteo chiuso.",
+      weatherNote: "Instabilità pomeridiana frequente. Partenza presto è fondamentale.",
+      experience: { wow: 10, tipo: "trekking di quota", tempo: "4-7h", mood: "grande panorama" },
+      whenToGo: { best: "giorno", note: "buona visibilità e niente temporali in arrivo" },
+      whenToAvoid: ["temporali", "vento forte", "scarsa visibilità"],
+      access: { difficolta: "impegnativo", parcheggio: "variabile", walk: "lungo", strada: "asfaltata ai punti base" },
+      crowd: { best: "partenza presto", worst: "giorni top stagione" },
+      smartTips: ["Tappa centrale, non marginale", "Se il cielo è chiuso, valuta un piano B a quota più bassa"],
       image: "https://picsum.photos/seed/Monte-Altissimo-Riva/900/600"
     },
 
@@ -266,38 +185,18 @@ window.APP_SPOTS = {
       level: "core",
       lat: 45.9381,
       lon: 10.8109,
-      desc: "Lago turchese molto forte visivamente, ottimo per pausa bella e facile.",
-      tip: "La mattina rende benissimo.",
-      experience: {
-        wow: 9,
-        tipo: "lago relax",
-        tempo: "1-2h",
-        mood: "pulito e scenico"
-      },
-      whenToGo: {
-        best: "mattina / giorno",
-        note: "molto bello con luce ancora non dura"
-      },
-      whenToAvoid: [
-        "momenti troppo pieni",
-        "giorni molto caldi con molta gente"
-      ],
-      access: {
-        difficolta: "facile",
-        parcheggio: "comodo",
-        walk: "breve",
-        strada: "asfaltata"
-      },
-      crowd: {
-        best: "presto",
-        worst: "metà giornata in alta stagione"
-      },
-      smartTips: [
-        "Ottimo se vuoi un wow facile",
-        "Più da equilibrio e bellezza che da sport duro",
-        "Combina bene con Canale di Tenno"
-      ],
-      image: "https://picsum.photos/seed/Lago-di-Tenno-Riva/900/600"
+      tags: ["turchese", "lago relax", "fotogenico", "colori", "spot acqua", "piano B pioggia"],
+      alias: ["tenno", "lago tenno", "laghetto tenno"],
+      desc: "Lago turchese di forte impatto visivo. Facile, fotogenico, funziona bene anche in giornata grigia.",
+      tip: "La mattina presto è il momento migliore per colori e tranquillità.",
+      photoTips: "Dal bordo nord con luce mattutina il turchese è al massimo.",
+      experience: { wow: 9, tipo: "lago relax", tempo: "1-2h", mood: "relax wow" },
+      whenToGo: { best: "mattina", note: "luce che esalta il colore dell'acqua" },
+      whenToAvoid: ["metà giornata in alta stagione"],
+      access: { difficolta: "facile", parcheggio: "comodo", walk: "breve", strada: "asfaltata" },
+      crowd: { best: "presto mattina", worst: "metà giornata estate" },
+      smartTips: ["Abbinalo al borgo medievale di Tenno sopra", "Bello anche con cielo coperto leggero"],
+      image: "https://picsum.photos/seed/Lago-Tenno-Riva/900/600"
     },
 
     {
@@ -308,695 +207,213 @@ window.APP_SPOTS = {
       activity: "trekking",
       difficulty: "medio",
       level: "core",
-      lat: 45.8823,
-      lon: 10.8926,
-      desc: "Percorso spettacolare sopra il lago, con scale, balconi e passaggi molto scenici.",
-      tip: "Molto valido se vuoi panorama continuo e cammino appagante.",
-      experience: {
-        wow: 9,
-        tipo: "trekking panoramico",
-        tempo: "2-4h",
-        mood: "scenografico"
-      },
-      whenToGo: {
-        best: "giorno",
-        note: "meglio con visibilità ampia e temperature accettabili"
-      },
-      whenToAvoid: [
-        "ore troppo calde",
-        "temporali",
-        "terreno scivoloso"
-      ],
-      access: {
-        difficolta: "medio",
-        parcheggio: "comodo lato Torbole",
-        walk: "0 min",
-        strada: "asfaltata"
-      },
-      crowd: {
-        best: "presto",
-        worst: "fasce più comode di metà giornata"
-      },
-      smartTips: [
-        "Ottimo da proporre a chi vuole wow senza fare una cima vera",
-        "Molto fotogenico",
-        "Meglio non farlo in pieno forno"
-      ],
+      lat: 45.8778,
+      lon: 10.8834,
+      tags: ["altalena", "adrenalina", "vista", "esperienza forte", "wow", "diverso", "trekking"],
+      alias: ["busatte", "altalena torbole", "tempesta torbole"],
+      desc: "Percorso con altalena panoramica leggendaria sopra Torbole. Unico nel suo genere.",
+      tip: "Arriva presto per evitare la coda. Il percorso vale anche senza aspettare.",
+      experience: { wow: 10, tipo: "hike + adrenalina", tempo: "2-3h", mood: "avventura" },
+      whenToGo: { best: "mattina", note: "cielo pulito per il lago luminoso sotto" },
+      whenToAvoid: ["meteo chiuso", "weekend alta stagione"],
+      access: { difficolta: "medio", parcheggio: "comodo a Torbole", walk: "salita moderata", strada: "asfaltata alla base" },
+      crowd: { best: "feriali mattina", worst: "weekend estate" },
+      smartTips: ["Ottimo per chi vuole qualcosa di insolito", "Il panorama è già fortissimo a metà percorso"],
       image: "https://picsum.photos/seed/Busatte-Tempesta-Riva/900/600"
     },
 
     {
       id: "core-7",
-      name: "Lago di Ledro",
-      zone: "nord",
-      light: "giorno",
-      activity: "relax",
-      difficulty: "facile",
-      level: "core",
-      lat: 45.8788,
-      lon: 10.7388,
-      desc: "Uno dei laghi più belli e facili da godere della zona, perfetto per rallentare bene.",
-      tip: "Molto utile nelle giornate di equilibrio.",
-      experience: {
-        wow: 8,
-        tipo: "lago e passeggiata",
-        tempo: "1-3h",
-        mood: "rilassato"
-      },
-      whenToGo: {
-        best: "giorno",
-        note: "bello quasi sempre, soprattutto in momenti tranquilli"
-      },
-      whenToAvoid: [
-        "giorni super pieni"
-      ],
-      access: {
-        difficolta: "facile",
-        parcheggio: "comodo",
-        walk: "breve",
-        strada: "asfaltata"
-      },
-      crowd: {
-        best: "mattina o tardo pomeriggio",
-        worst: "metà giornata"
-      },
-      smartTips: [
-        "Molto buono come reset della giornata",
-        "Più esperienza piacevole che spot estremo",
-        "Funziona bene anche con meteo non perfetto"
-      ],
-      image: "https://picsum.photos/seed/Ledro-Riva/900/600"
-    },
-
-    {
-      id: "core-8",
       name: "Tremalzo Panorama",
       zone: "ovest",
       light: "giorno",
       activity: "mtb",
       difficulty: "impegnativo",
       level: "core",
-      lat: 45.8442,
-      lon: 10.7179,
-      desc: "Zona iconica per MTB seria, panorami enormi e sensazione outdoor vera.",
-      tip: "Quando vuoi bike forte, qui il livello sale.",
-      experience: {
-        wow: 9,
-        tipo: "mtb iconica",
-        tempo: "4-7h",
-        mood: "adrenalinico"
-      },
-      whenToGo: {
-        best: "giorno",
-        note: "da usare con gamba buona e meteo stabile"
-      },
-      whenToAvoid: [
-        "temporali",
-        "stanchezza alta",
-        "giornate troppo corte"
-      ],
-      access: {
-        difficolta: "impegnativo",
-        parcheggio: "variabile",
-        walk: "0 min",
-        strada: "mista"
-      },
-      crowd: {
-        best: "giorni feriali",
-        worst: "alta stagione bike"
-      },
-      smartTips: [
-        "Un must per chi ama la MTB",
-        "Non da inserire a caso in una giornata piena",
-        "Più esperienza che spot singolo"
-      ],
+      lat: 45.8404,
+      lon: 10.7197,
+      tags: ["MTB epico", "MTB panoramica", "quota", "giornata seria", "leggenda", "esperienza forte"],
+      alias: ["tremalzo", "passo tremalzo"],
+      desc: "Il giro MTB più leggendario della zona. Quota, panorama totale, sensazione vera. Giornata intera.",
+      tip: "Preparati bene: acqua, cibo, meteo stabile. Non un giro improvvisato.",
+      experience: { wow: 10, tipo: "MTB di quota", tempo: "5-8h", mood: "epico" },
+      whenToGo: { best: "giorno", note: "cielo pulito fondamentale" },
+      whenToAvoid: ["fondo bagnato", "meteo instabile", "pomeriggio in quota"],
+      access: { difficolta: "impegnativo", parcheggio: "variabile", walk: "n/a", strada: "sterrata e asfalto" },
+      crowd: { best: "feriali fuori stagione", worst: "weekend estate" },
+      smartTips: ["Giornata dedicata, non mezza giornata", "Il panorama finale ovest è il migliore dell'area"],
       image: "https://picsum.photos/seed/Tremalzo-Riva/900/600"
     },
 
     {
-      id: "core-9",
+      id: "core-8",
       name: "Belvedere di Pregasina",
       zone: "ovest",
       light: "tramonto",
       activity: "view",
       difficulty: "facile",
       level: "core",
-      lat: 45.8726,
-      lon: 10.8232,
-      desc: "Balcone incredibile sul lago, facilissimo da usare e molto forte nel finale di giornata.",
-      tip: "Ottimo se vuoi wow rapido.",
-      experience: {
-        wow: 8,
-        tipo: "viewpoint rapido",
-        tempo: "20-40 min",
-        mood: "forte e semplice"
-      },
-      whenToGo: {
-        best: "tramonto",
-        note: "top come pre-sunset o sunset easy"
-      },
-      whenToAvoid: [
-        "meteo spento",
-        "luce dura"
-      ],
-      access: {
-        difficolta: "facile",
-        parcheggio: "comodo",
-        walk: "minimo",
-        strada: "asfaltata"
-      },
-      crowd: {
-        best: "un po' prima del tramonto",
-        worst: "fasce più famose"
-      },
-      smartTips: [
-        "Molto utile come spot furbo",
-        "Grande resa con poco sforzo",
-        "Perfetto da inserire in una giornata piena"
-      ],
+      lat: 45.8649,
+      lon: 10.8106,
+      tags: ["tramonto rapido", "viewpoint facile", "panorama", "tramonto facile", "facile bello", "garda nord"],
+      alias: ["pregasina", "belvedere pregasina"],
+      desc: "Belvedere sul Garda nord con accesso facilissimo. Uno dei tramonto più accessibili e soddisfacenti.",
+      tip: "Rapido e sicuro. Ottimo se non vuoi rischiare di arrivare tardi al tramonto.",
+      experience: { wow: 9, tipo: "viewpoint facile", tempo: "30-60 min", mood: "panorama pulito" },
+      whenToGo: { best: "tramonto", note: "lago in controluce fortissimo" },
+      whenToAvoid: ["foschia intensa"],
+      access: { difficolta: "facile", parcheggio: "nel borgo", walk: "brevissima", strada: "asfaltata" },
+      crowd: { best: "feriali", worst: "tramonti stagione" },
+      smartTips: ["Abbinalo a Punta Larici se vuoi il tramonto di riserva vicino"],
       image: "https://picsum.photos/seed/Pregasina-Riva/900/600"
     },
 
     {
-      id: "core-10",
-      name: "Monte Baldo",
-      zone: "montagna",
-      light: "giorno",
-      activity: "trekking",
-      difficulty: "medio",
-      level: "core",
-      lat: 45.7588,
-      lon: 10.8104,
-      desc: "Fuori dal cuore di Riva ma fortissimo per trekking e panorami di grande scala sul Garda.",
-      tip: "Se vuoi ampliare il raggio dell'app con una montagna davvero valida, qui ci sta benissimo.",
-      experience: {
-        wow: 9,
-        tipo: "montagna panoramica",
-        tempo: "3-6h",
-        mood: "grande respiro"
-      },
-      whenToGo: {
-        best: "giorno",
-        note: "molto bene con cielo aperto e visibilità ampia"
-      },
-      whenToAvoid: [
-        "giorni chiusi",
-        "partenze troppo tardive"
-      ],
-      access: {
-        difficolta: "medio",
-        parcheggio: "variabile",
-        walk: "variabile",
-        strada: "asfaltata fino agli accessi"
-      },
-      crowd: {
-        best: "feriali o partenze presto",
-        worst: "giorni top di stagione"
-      },
-      smartTips: [
-        "Non è Riva stretta, ma è coerentissimo nel raggio Garda",
-        "Da usare come modulo premium più ampio",
-        "Alza tantissimo il valore dell'app"
-      ],
-      image: "https://picsum.photos/seed/Monte-Baldo-Riva/900/600"
-    },
-
-    {
-      id: "core-11",
-      name: "Lungolago Riva",
-      zone: "lago",
-      light: "tramonto",
-      activity: "relax",
-      difficulty: "facile",
-      level: "core",
-      lat: 45.8836,
-      lon: 10.8416,
-      desc: "Passeggiata lago super semplice ma fortissima nel mood, soprattutto per chiudere il giorno bene.",
-      tip: "Ottimo finale senza sbatti.",
-      experience: {
-        wow: 7,
-        tipo: "lungolago",
-        tempo: "30-90 min",
-        mood: "soft"
-      },
-      whenToGo: {
-        best: "tramonto / sera",
-        note: "perfetto quando vuoi bellezza facile"
-      },
-      whenToAvoid: [
-        "solo se cerchi sport duro"
-      ],
-      access: {
-        difficolta: "facile",
-        parcheggio: "comodo in città",
-        walk: "0 min",
-        strada: "asfaltata"
-      },
-      crowd: {
-        best: "quasi sempre",
-        worst: "momenti centrali turistici"
-      },
-      smartTips: [
-        "Molto utile per equilibrio giornata",
-        "Semplice ma da non sottovalutare",
-        "Funziona anche come spot demo"
-      ],
-      image: "https://picsum.photos/seed/Lungolago-Riva/900/600"
-    },
-
-    {
-      id: "core-12",
-      name: "Torbole Waterfront",
-      zone: "est",
-      light: "tramonto",
-      activity: "relax",
-      difficulty: "facile",
-      level: "core",
-      lat: 45.8718,
-      lon: 10.8751,
-      desc: "Lungolago di Torbole, semplice ma molto piacevole per chiudere la giornata con vista e aria buona.",
-      tip: "Perfetto se sei già lato Torbole.",
-      experience: {
-        wow: 7,
-        tipo: "waterfront relax",
-        tempo: "30-75 min",
-        mood: "rilassato"
-      },
-      whenToGo: {
-        best: "tramonto / sera",
-        note: "bello soprattutto come chiusura semplice"
-      },
-      whenToAvoid: [
-        "solo se cerchi spot più forti"
-      ],
-      access: {
-        difficolta: "facile",
-        parcheggio: "medio",
-        walk: "0 min",
-        strada: "asfaltata"
-      },
-      crowd: {
-        best: "feriali",
-        worst: "weekend e momenti top"
-      },
-      smartTips: [
-        "Utile più che estremo",
-        "Buon equilibrio nell'app",
-        "Perfetto come piano leggero"
-      ],
-      image: "https://picsum.photos/seed/Torbole-Waterfront-Riva/900/600"
-    },
-
-    {
-      id: "core-13",
-      name: "Canoa Garda Nord",
-      zone: "lago",
-      light: "alba",
-      activity: "water",
-      difficulty: "facile",
-      level: "core",
-      lat: 45.8852,
-      lon: 10.8431,
-      desc: "Esperienza molto bella e semplice in canoa sul lago, perfetta in acqua calma.",
-      tip: "Mattina presto o momenti tranquilli sono il top.",
-      experience: {
-        wow: 8,
-        tipo: "canoa / kayak",
-        tempo: "1-2h",
-        mood: "pulito e leggero"
-      },
-      whenToGo: {
-        best: "alba / mattina",
-        note: "molto meglio con acqua calma e vento basso"
-      },
-      whenToAvoid: [
-        "vento forte",
-        "acqua molto disturbata"
-      ],
-      access: {
-        difficolta: "facile",
-        parcheggio: "comodo in zona lago",
-        walk: "minimo",
-        strada: "asfaltata"
-      },
-      crowd: {
-        best: "presto",
-        worst: "momenti più caotici"
-      },
-      smartTips: [
-        "Una delle migliori micro-esperienze acqua",
-        "Aggiunge varietà vera all'app",
-        "Molto bella da far vedere"
-      ],
-      image: "https://picsum.photos/seed/Canoa-Garda-Riva/900/600"
-    },
-
-    {
-      id: "core-14",
-      name: "SUP Riva Morning",
-      zone: "lago",
-      light: "alba",
-      activity: "water",
-      difficulty: "facile",
-      level: "core",
-      lat: 45.8847,
-      lon: 10.8424,
-      desc: "SUP semplice e molto scenico sul lago, ottimo se vuoi una partenza diversa.",
-      tip: "Alba o mattina presto rendono tutto più bello.",
-      experience: {
-        wow: 7,
-        tipo: "sup lago",
-        tempo: "1h",
-        mood: "calmo"
-      },
-      whenToGo: {
-        best: "alba / mattina",
-        note: "top con acqua più liscia"
-      },
-      whenToAvoid: [
-        "vento forte",
-        "lago troppo mosso"
-      ],
-      access: {
-        difficolta: "facile",
-        parcheggio: "facile",
-        walk: "minimo",
-        strada: "asfaltata"
-      },
-      crowd: {
-        best: "prestissimo",
-        worst: "momenti popolari"
-      },
-      smartTips: [
-        "Perfetto come experience piccola ma bella",
-        "Molto instagrammabile senza essere pesante",
-        "Da usare come extra sportivo facile"
-      ],
-      image: "https://picsum.photos/seed/SUP-Riva-Riva/900/600"
-    },
-
-    {
-      id: "core-15",
-      name: "Rafting Sarca",
-      zone: "nord",
-      light: "giorno",
-      activity: "water",
-      difficulty: "medio",
-      level: "core",
-      lat: 45.9118,
-      lon: 10.8828,
-      desc: "Esperienza acqua più dinamica sul Sarca, diversa dal classico lago.",
-      tip: "Molto valida se vuoi varietà vera nel viaggio.",
-      experience: {
-        wow: 7,
-        tipo: "rafting guidato",
-        tempo: "2-3h",
-        mood: "adrenalinico soft"
-      },
-      whenToGo: {
-        best: "giorno",
-        note: "sempre meglio come esperienza organizzata"
-      },
-      whenToAvoid: [
-        "stanchezza alta",
-        "giornata già troppo piena"
-      ],
-      access: {
-        difficolta: "medio",
-        parcheggio: "dipende dal centro attività",
-        walk: "minimo",
-        strada: "asfaltata"
-      },
-      crowd: {
-        best: "prenotato bene",
-        worst: "alta stagione improvvisata"
-      },
-      smartTips: [
-        "Non è il cuore dell'app, ma come micro-modulo è forte",
-        "Molto meglio se trattato come attività guidata",
-        "Perfetto per cambiare ritmo"
-      ],
-      image: "https://picsum.photos/seed/Rafting-Sarca-Riva/900/600"
-    },
-
-    {
-      id: "core-16",
-      name: "Canyoning Base",
-      zone: "nord",
-      light: "giorno",
-      activity: "water",
-      difficulty: "medio",
-      level: "core",
-      lat: 45.9234,
-      lon: 10.8594,
-      desc: "Modulo canyoning base per chi vuole un’attività acqua più avventura ma non dominante.",
-      tip: "Sempre meglio guidato.",
-      experience: {
-        wow: 7,
-        tipo: "canyoning leggero",
-        tempo: "2-4h",
-        mood: "avventura"
-      },
-      whenToGo: {
-        best: "giorno",
-        note: "come esperienza dedicata, non infilata male"
-      },
-      whenToAvoid: [
-        "giornata già pesante",
-        "meteo incerto forte"
-      ],
-      access: {
-        difficolta: "medio",
-        parcheggio: "variabile",
-        walk: "variabile",
-        strada: "mista"
-      },
-      crowd: {
-        best: "con prenotazione ben gestita",
-        worst: "improvvisazione"
-      },
-      smartTips: [
-        "Lo terrei piccolo ma presente",
-        "Ottimo come esperienza diversa",
-        "Da non mettere al centro dell'app"
-      ],
-      image: "https://picsum.photos/seed/Canyoning-Riva/900/600"
-    },
-
-    {
-      id: "core-17",
-      name: "Arco Castle View",
-      zone: "nord",
-      light: "tramonto",
-      activity: "view",
-      difficulty: "facile",
-      level: "core",
-      lat: 45.9188,
-      lon: 10.8854,
-      desc: "Vista molto bella in area Arco, utile per dare varietà rispetto al lago puro.",
-      tip: "Bella nel tardo pomeriggio.",
-      experience: {
-        wow: 8,
-        tipo: "view storico-panoramico",
-        tempo: "45-90 min",
-        mood: "forte ma semplice"
-      },
-      whenToGo: {
-        best: "tramonto",
-        note: "ottimo con luce laterale"
-      },
-      whenToAvoid: [
-        "ore centrali forti"
-      ],
-      access: {
-        difficolta: "facile",
-        parcheggio: "comodo in Arco",
-        walk: "breve salita",
-        strada: "asfaltata"
-      },
-      crowd: {
-        best: "feriali",
-        worst: "momenti turistici classici"
-      },
-      smartTips: [
-        "Molto valido per ampliare l'app oltre Riva stretta",
-        "Piace molto anche a chi non è super sportivo",
-        "Grande resa senza grossa fatica"
-      ],
-      image: "https://picsum.photos/seed/Arco-Castle-Riva/900/600"
-    },
-
-    {
-      id: "core-18",
-      name: "Canale di Tenno",
+      id: "core-9",
+      name: "Lago di Ledro",
       zone: "nord",
       light: "giorno",
       activity: "relax",
       difficulty: "facile",
       level: "core",
-      lat: 45.9391,
-      lon: 10.8207,
-      desc: "Borgo molto bello da inserire vicino al Lago di Tenno, perfetto per aggiungere varietà vera.",
-      tip: "Funziona bene come tappa complementare.",
-      experience: {
-        wow: 7,
-        tipo: "borgo storico",
-        tempo: "30-75 min",
-        mood: "curato"
-      },
-      whenToGo: {
-        best: "giorno",
-        note: "ottimo in abbinata a Tenno"
-      },
-      whenToAvoid: [
-        "solo se vuoi una giornata solo sport"
-      ],
-      access: {
-        difficolta: "facile",
-        parcheggio: "comodo",
-        walk: "breve",
-        strada: "asfaltata"
-      },
-      crowd: {
-        best: "quasi sempre",
-        worst: "fasce più turistiche"
-      },
-      smartTips: [
-        "Aggiunge qualità travel all'app",
-        "Molto utile per bilanciare le giornate",
-        "Non è sport, ma è ottimo"
-      ],
-      image: "https://picsum.photos/seed/Canale-Tenno-Riva/900/600"
+      lat: 45.8761,
+      lon: 10.7479,
+      tags: ["lago relax", "ledro", "tranquillo", "bike lago", "giornata lenta", "spot acqua"],
+      alias: ["ledro", "lago ledro", "pieve di ledro"],
+      desc: "Lago verde e rilassante, ottimo per staccare il ritmo. Bici attorno al lago è un classico.",
+      tip: "Ideale come alternativa al Garda per chi vuole silenzio e ritmo lento.",
+      experience: { wow: 8, tipo: "lago relax / bike", tempo: "2-4h", mood: "relax" },
+      whenToGo: { best: "giorno", note: "tutta la giornata funziona, meglio non troppo caldo" },
+      whenToAvoid: ["weekend di agosto"],
+      access: { difficolta: "facile", parcheggio: "ampio", walk: "0", strada: "asfaltata" },
+      crowd: { best: "feriali", worst: "estate piena" },
+      smartTips: ["Museo delle Palafitte da abbinare", "La ciclabile attorno al lago è piacevolissima"],
+      image: "https://picsum.photos/seed/Lago-Ledro-Riva/900/600"
     },
 
+    // ═══ SECONDARY ════════════════════════════════════════════════════════════
+
     {
-      id: "core-19",
+      id: "secondary-0",
       name: "Belvedere di Nago",
       zone: "est",
       light: "tramonto",
       activity: "view",
       difficulty: "facile",
-      level: "core",
-      lat: 45.8794,
-      lon: 10.8889,
-      desc: "Viewpoint molto valido sopra Torbole, facile da usare e utile come stop intelligente.",
-      tip: "Molto bello con luce serale.",
-      experience: {
-        wow: 7,
-        tipo: "viewpoint rapido",
-        tempo: "20-40 min",
-        mood: "facile"
-      },
-      whenToGo: {
-        best: "tramonto",
-        note: "molto meglio nella fascia serale"
-      },
-      whenToAvoid: [
-        "luce dura",
-        "meteo spento"
-      ],
-      access: {
-        difficolta: "facile",
-        parcheggio: "comodo",
-        walk: "minimo",
-        strada: "asfaltata"
-      },
-      crowd: {
-        best: "feriali",
-        worst: "tramonti migliori"
-      },
-      smartTips: [
-        "Ottimo spot semplice ma utile",
-        "Perfetto per una chiusura veloce",
-        "Molto coerente nel raggio Riva-Torbole"
-      ],
+      level: "secondary",
+      lat: 45.8791,
+      lon: 10.8894,
+      tags: ["tramonto", "viewpoint facile", "piano B", "nago", "torbole", "tramonto rapido"],
+      alias: ["nago", "belvedere nago"],
+      desc: "Belvedere valido sopra Torbole, facile e forte al tramonto. Ottimo piano B se Brione è pieno.",
+      tip: "Valida alternativa a Monte Brione lato est.",
+      experience: { wow: 8, tipo: "viewpoint", tempo: "30-60 min", mood: "panorama" },
+      whenToGo: { best: "tramonto", note: "luce tardo pomeriggio molto forte" },
+      access: { difficolta: "facile", parcheggio: "comodo", walk: "breve", strada: "asfaltata" },
       image: "https://picsum.photos/seed/Nago-Riva/900/600"
     },
 
     {
-      id: "secondary-0",
-      name: "San Pietro Viewpoint",
-      zone: "lago",
-      light: "tramonto",
-      activity: "view",
-      difficulty: "medio",
-      level: "secondary",
-      lat: 45.8891,
-      lon: 10.8478,
-      desc: "Viewpoint classico sopra Riva, ottimo compromesso tra accesso e resa.",
-      tip: "Molto valido in fascia serale.",
-      image: "https://picsum.photos/seed/San-Pietro-Riva/900/600"
-    },
-    {
       id: "secondary-1",
-      name: "Monte Brione Trail",
-      zone: "lago",
-      light: "giorno",
-      activity: "trekking",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 45.8907,
-      lon: 10.8581,
-      desc: "Versione più camminata del Brione, ottima per muoversi senza esagerare.",
-      tip: "Molto valida per mezza giornata.",
-      image: "https://picsum.photos/seed/Monte-Brione-Trail-Riva/900/600"
-    },
-    {
-      id: "secondary-2",
-      name: "Porto San Nicolò View",
-      zone: "lago",
-      light: "tramonto",
-      activity: "view",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 45.8789,
-      lon: 10.8544,
-      desc: "Punto vista facile lato Riva, utile come bonus serale.",
-      tip: "Più pratico che estremo.",
-      image: "https://picsum.photos/seed/Porto-San-Nicolo-Riva/900/600"
-    },
-    {
-      id: "secondary-3",
-      name: "Lido di Riva",
-      zone: "lago",
-      light: "tramonto",
-      activity: "relax",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 45.8818,
-      lon: 10.8467,
-      desc: "Spot lago facile e piacevole per abbassare il ritmo.",
-      tip: "Molto valido come chiusura soft.",
-      image: "https://picsum.photos/seed/Lido-Riva-Riva/900/600"
-    },
-    {
-      id: "secondary-4",
-      name: "Old Town Riva",
-      zone: "lago",
-      light: "sera",
-      activity: "relax",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 45.8862,
-      lon: 10.8413,
-      desc: "Passeggiata nel centro di Riva, utile per equilibrio e chiusura giornata.",
-      tip: "Più atmosfera che sport, ma molto utile.",
-      image: "https://picsum.photos/seed/Old-Town-Riva/900/600"
-    },
-    {
-      id: "secondary-5",
-      name: "Busatte Park Area",
+      name: "Torbole Waterfront",
       zone: "est",
       light: "giorno",
       activity: "relax",
       difficulty: "facile",
       level: "secondary",
-      lat: 45.8787,
+      lat: 45.8703,
+      lon: 10.8814,
+      tags: ["waterfront", "surf", "windsurf", "vento", "relax lago", "spot acqua", "torbole"],
+      alias: ["torbole", "lungolago torbole"],
+      desc: "Lungolago di Torbole, vivace e ventoso. Il pomeriggio con vento è spettacolo di windsurf.",
+      tip: "Meglio nel pomeriggio quando il vento termico anima il lago.",
+      experience: { wow: 7, tipo: "relax lago / windsurf", tempo: "1-3h", mood: "relax" },
+      whenToGo: { best: "pomeriggio", note: "vento termico e windsurf al massimo" },
+      access: { difficolta: "facile", parcheggio: "comodo", walk: "0", strada: "asfaltata" },
+      image: "https://picsum.photos/seed/Torbole-Riva/900/600"
+    },
+
+    {
+      id: "secondary-2",
+      name: "Lungolago Riva",
+      zone: "lago",
+      light: "tramonto",
+      activity: "relax",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 45.8838,
+      lon: 10.8417,
+      tags: ["lungolago", "passeggiata", "tramonto relax", "sera", "aperitivo", "vicino", "piano B"],
+      alias: ["lungolago", "passeggiata riva", "riva centro"],
+      desc: "Passeggiata classica sul lungolago di Riva. Ottima per chiudere la giornata con calma.",
+      tip: "Con aperitivo al tramonto è una chiusura classica e soddisfacente.",
+      experience: { wow: 7, tipo: "passeggiata sera", tempo: "30-90 min", mood: "relax" },
+      whenToGo: { best: "tramonto", note: "passeggiata serale classica" },
+      access: { difficolta: "facile", parcheggio: "ottimo in città", walk: "0", strada: "asfaltata" },
+      image: "https://picsum.photos/seed/Lungolago-Riva/900/600"
+    },
+
+    {
+      id: "secondary-3",
+      name: "Lido di Riva",
+      zone: "lago",
+      light: "giorno",
+      activity: "relax",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 45.8821,
+      lon: 10.8461,
+      tags: ["spiaggia", "lago relax", "spot acqua", "bagno", "estate", "vicino"],
+      alias: ["lido riva", "spiaggia riva", "spiagge riva del garda"],
+      desc: "Spiaggia principale di Riva. Comoda, servita, ottima nelle giornate calde.",
+      tip: "Mattina presto per stare tranquilli. Pomeriggio è molto frequentata.",
+      experience: { wow: 6, tipo: "spiaggia lago", tempo: "2-4h", mood: "relax" },
+      whenToGo: { best: "mattina", note: "meno folla, acqua più fresca" },
+      access: { difficolta: "facile", parcheggio: "a pagamento vicino", walk: "0", strada: "asfaltata" },
+      image: "https://picsum.photos/seed/Lido-Riva/900/600"
+    },
+
+    {
+      id: "secondary-4",
+      name: "Arco Castello",
+      zone: "nord",
+      light: "giorno",
+      activity: "view",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 45.9218,
+      lon: 10.8892,
+      tags: ["castello", "storico", "viewpoint facile", "arco", "panorama valle", "facile bello"],
+      alias: ["castello arco", "arco", "rocca arco"],
+      desc: "Castello medievale iconico sopra Arco. Vista fortissima sulla valle del Sarca e sul Garda.",
+      tip: "Abbinalo alla visita di Arco. Mattina per la luce migliore sulla valle.",
+      experience: { wow: 8, tipo: "viewpoint storico", tempo: "1-2h", mood: "storico" },
+      whenToGo: { best: "mattina", note: "luce sulla valle più morbida" },
+      access: { difficolta: "facile", parcheggio: "comodo in città", walk: "salita breve", strada: "asfaltata" },
+      crowd: { best: "feriali", worst: "alta stagione" },
+      image: "https://picsum.photos/seed/Arco-Castello-Riva/900/600"
+    },
+
+    {
+      id: "secondary-5",
+      name: "Busatte Park Easy",
+      zone: "est",
+      light: "giorno",
+      activity: "trekking",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 45.8773,
       lon: 10.8859,
-      desc: "Zona verde sopra Torbole, utile come tappa easy o partenza verso sentieri.",
-      tip: "Buona base semplice.",
+      tags: ["trekking facile", "verde", "torbole", "piano B", "sentiero easy", "vicino"],
+      alias: ["busatte easy", "parco busatte"],
+      desc: "Zona verde sopra Torbole. Sentiero facile, bella come alternativa rilassata a Busatte Tempesta.",
+      tip: "Piano B ideale se non vuoi la salita impegnativa ma vuoi stare nella natura.",
+      experience: { wow: 6, tipo: "passeggiata natura", tempo: "1-2h", mood: "relax" },
+      whenToGo: { best: "giorno", note: "qualsiasi ora funziona" },
+      access: { difficolta: "facile", parcheggio: "comodo a Torbole", walk: "breve", strada: "asfaltata" },
       image: "https://picsum.photos/seed/Busatte-Park-Riva/900/600"
     },
+
     {
       id: "secondary-6",
       name: "Tempesta Lago",
@@ -1007,10 +424,16 @@ window.APP_SPOTS = {
       level: "secondary",
       lat: 45.8608,
       lon: 10.8928,
-      desc: "Zona più tranquilla del Garda estremo nord-est, piacevole come sosta.",
-      tip: "Bella se vuoi aria diversa.",
+      tags: ["tramonto", "relax lago", "tranquillo", "alternativo", "est"],
+      alias: ["tempesta", "garda nord-est"],
+      desc: "Zona tranquilla dell'estremo nord-est del Garda. Piacevole come sosta diversa e silenziosa.",
+      tip: "Bella quando vuoi staccare dalla folla di Riva e Torbole.",
+      experience: { wow: 6, tipo: "sosta lago", tempo: "30-60 min", mood: "relax" },
+      whenToGo: { best: "tramonto", note: "ora più silenziosa e bella" },
+      access: { difficolta: "facile", parcheggio: "comodo", walk: "0", strada: "asfaltata" },
       image: "https://picsum.photos/seed/Tempesta-Riva/900/600"
     },
+
     {
       id: "secondary-7",
       name: "Arco Olive Trail",
@@ -1021,10 +444,16 @@ window.APP_SPOTS = {
       level: "secondary",
       lat: 45.9181,
       lon: 10.8882,
-      desc: "Cammino facile e piacevole nell'area di Arco.",
-      tip: "Buona scelta easy.",
+      tags: ["ulivi", "sentiero facile", "arco", "trekking easy", "natura", "verde"],
+      alias: ["sentiero ulivi", "arco trekking", "olivi arco"],
+      desc: "Sentiero tra gli ulivi nell'area di Arco. Facile, profumato, piacevole senza stress.",
+      tip: "Ottimo per chi vuole camminare senza impegno in un paesaggio bello.",
+      experience: { wow: 7, tipo: "trekking facile", tempo: "1-2h", mood: "relax" },
+      whenToGo: { best: "mattina", note: "fresco e luce laterale sugli ulivi" },
+      access: { difficolta: "facile", parcheggio: "comodo ad Arco", walk: "partenza dal centro", strada: "asfaltata" },
       image: "https://picsum.photos/seed/Arco-Olive-Riva/900/600"
     },
+
     {
       id: "secondary-8",
       name: "Ceniga Riverside",
@@ -1035,13 +464,19 @@ window.APP_SPOTS = {
       level: "secondary",
       lat: 45.9362,
       lon: 10.9161,
-      desc: "Zona fiume molto tranquilla e piacevole, utile come stop diverso dal lago.",
-      tip: "Molto soft.",
+      tags: ["fiume", "relax", "sarca", "tranquillo", "alternativo lago"],
+      alias: ["ceniga", "fiume sarca", "sarca ceniga"],
+      desc: "Riva del Sarca in zona Ceniga. Tranquilla, verde, ottima alternativa al lago per chi vuole fresco e silenzio.",
+      tip: "Molto soft. Ideale nelle ore calde come pausa fresca.",
+      experience: { wow: 6, tipo: "relax fiume", tempo: "30-90 min", mood: "relax" },
+      whenToGo: { best: "pomeriggio", note: "fresco naturale nelle ore più calde" },
+      access: { difficolta: "facile", parcheggio: "comodo", walk: "breve", strada: "asfaltata" },
       image: "https://picsum.photos/seed/Ceniga-Riva/900/600"
     },
+
     {
       id: "secondary-9",
-      name: "Varone Area",
+      name: "Varone Cascate",
       zone: "nord",
       light: "giorno",
       activity: "relax",
@@ -1049,10 +484,16 @@ window.APP_SPOTS = {
       level: "secondary",
       lat: 45.9018,
       lon: 10.8516,
-      desc: "Area utile e piacevole, buona come tappa intermedia.",
-      tip: "Più utile che clamorosa.",
+      tags: ["cascate", "natura", "fresco", "alternativo", "curiosità", "vicino riva"],
+      alias: ["varone", "cascata varone", "gorge varone"],
+      desc: "Gola con cascate a pochi minuti da Riva. Fresca, suggestiva, ottima come tappa diversa.",
+      tip: "Ingresso a pagamento ma vale come sosta curiosa. Fresco anche in estate.",
+      experience: { wow: 7, tipo: "visita cascate", tempo: "45-90 min", mood: "curiosità" },
+      whenToGo: { best: "giorno", note: "bello in qualsiasi condizione meteo" },
+      access: { difficolta: "facile", parcheggio: "comodo", walk: "breve", strada: "asfaltata" },
       image: "https://picsum.photos/seed/Varone-Riva/900/600"
     },
+
     {
       id: "secondary-10",
       name: "Walking Lago di Ledro",
@@ -1063,10 +504,16 @@ window.APP_SPOTS = {
       level: "secondary",
       lat: 45.8793,
       lon: 10.7441,
-      desc: "Passeggiata lago molto semplice ma molto godibile.",
-      tip: "Ottima se vuoi abbassare il ritmo.",
+      tags: ["passeggiata", "ledro", "lago relax", "giornata lenta", "easy"],
+      alias: ["passeggiata ledro", "giro ledro"],
+      desc: "Passeggiata semplice attorno al Lago di Ledro. Piacevole, flat, ottima per abbassare il ritmo.",
+      tip: "Perfetta per chi vuole muoversi senza fatica in un paesaggio tranquillo.",
+      experience: { wow: 6, tipo: "passeggiata lago", tempo: "1-2h", mood: "relax" },
+      whenToGo: { best: "giorno", note: "tutta la giornata funziona" },
+      access: { difficolta: "facile", parcheggio: "ampio", walk: "0", strada: "asfaltata" },
       image: "https://picsum.photos/seed/Walking-Ledro-Riva/900/600"
     },
+
     {
       id: "secondary-11",
       name: "Ledro Bike Tour",
@@ -1077,10 +524,16 @@ window.APP_SPOTS = {
       level: "secondary",
       lat: 45.8761,
       lon: 10.7479,
-      desc: "Tour bike facile e molto piacevole attorno al Ledro.",
-      tip: "Perfetto per giornata più morbida.",
+      tags: ["bike", "MTB panoramica", "ledro", "giro lago", "mtb facile", "giornata morbida"],
+      alias: ["bike ledro", "ciclabile ledro", "mtb ledro"],
+      desc: "Giro in bici attorno al Lago di Ledro. Facile, godibile, ottimo per una giornata più soft.",
+      tip: "Ideale come alternativa al Ponale per chi vuole la bici senza impegno.",
+      experience: { wow: 7, tipo: "MTB facile lago", tempo: "1-2h", mood: "relax" },
+      whenToGo: { best: "mattina", note: "fresco e poco traffico" },
+      access: { difficolta: "facile", parcheggio: "ampio", walk: "0", strada: "asfaltata" },
       image: "https://picsum.photos/seed/Ledro-Bike-Riva/900/600"
     },
+
     {
       id: "secondary-12",
       name: "Bocca di Trat",
@@ -1091,10 +544,17 @@ window.APP_SPOTS = {
       level: "secondary",
       lat: 45.8677,
       lon: 10.7501,
-      desc: "Area di quota molto forte per cammino, pascoli e grande sensazione di spazio.",
-      tip: "Molto buona come alternativa meno mainstream.",
+      tags: ["quota", "pascoli", "panorama", "alternativo", "meno mainstream", "trekking"],
+      alias: ["bocca trat", "trat"],
+      desc: "Quota sopra il Ledro con pascoli e grande senso di spazio. Meno nota del mainstream, molto bella.",
+      tip: "Ottima per chi vuole la montagna vera senza incontrare troppa gente.",
+      experience: { wow: 8, tipo: "trekking quota", tempo: "3-5h", mood: "avventura" },
+      whenToGo: { best: "giorno", note: "luce pulita mattutina per i panorami" },
+      whenToAvoid: ["meteo instabile"],
+      access: { difficolta: "medio", parcheggio: "base valle", walk: "salita", strada: "sterrata finale" },
       image: "https://picsum.photos/seed/Bocca-di-Trat-Riva/900/600"
     },
+
     {
       id: "secondary-13",
       name: "Belvedere di Dromaé",
@@ -1105,10 +565,16 @@ window.APP_SPOTS = {
       level: "secondary",
       lat: 45.8872,
       lon: 10.7368,
-      desc: "Belvedere molto forte sopra il Ledro, ampio e pulito.",
-      tip: "Molto bello nel tardo pomeriggio.",
+      tags: ["belvedere", "ledro", "panorama", "tramonto", "alternativo", "meno mainstream"],
+      alias: ["dromae", "dromaé", "belvedere ledro"],
+      desc: "Belvedere ampio sopra il Ledro, poco conosciuto ma di grande qualità. Tramonto diverso dal solito.",
+      tip: "Ottimo se vuoi un tramonto alternativo fuori dai circuiti più frequentati.",
+      experience: { wow: 8, tipo: "viewpoint", tempo: "1-2h", mood: "panorama" },
+      whenToGo: { best: "tramonto", note: "luce serale molto bella sul Ledro" },
+      access: { difficolta: "medio", parcheggio: "limitato", walk: "salita", strada: "sterrata finale" },
       image: "https://picsum.photos/seed/Dromae-Riva/900/600"
     },
+
     {
       id: "secondary-14",
       name: "Madonnina di Besta",
@@ -1119,10 +585,16 @@ window.APP_SPOTS = {
       level: "secondary",
       lat: 45.8878,
       lon: 10.7268,
-      desc: "Viewpoint sulla valle di Ledro molto valido e intelligente.",
-      tip: "Ottimo se vuoi un punto meno scontato.",
+      tags: ["viewpoint", "ledro", "tramonto", "mistico", "alternativo", "meno mainstream"],
+      alias: ["besta", "madonnina besta"],
+      desc: "Viewpoint raccolto e suggestivo sulla valle di Ledro. Luce di tramonto molto bella, posto meno battuto.",
+      tip: "Per chi vuole qualcosa di diverso e silenzioso. Non ci trovi folla.",
+      experience: { wow: 8, tipo: "viewpoint raccolto", tempo: "1-2h", mood: "mistico" },
+      whenToGo: { best: "tramonto", note: "luce calda sulla valle" },
+      access: { difficolta: "medio", parcheggio: "limitato", walk: "salita", strada: "sterrata" },
       image: "https://picsum.photos/seed/Besta-Riva/900/600"
     },
+
     {
       id: "secondary-15",
       name: "Monte Corno Ledro",
@@ -1133,10 +605,17 @@ window.APP_SPOTS = {
       level: "secondary",
       lat: 45.9051,
       lon: 10.7246,
-      desc: "Cima forte sopra il Ledro, molto bella se vuoi una montagna vera fuori dal mainstream più noto.",
-      tip: "Più da giornata seria.",
+      tags: ["cima", "giornata seria", "montagna vera", "ledro", "trekking wow", "meno mainstream"],
+      alias: ["corno ledro", "monte corno"],
+      desc: "Cima vera sopra il Ledro. Bella, impegnativa, meno nota dell'Altissimo. Per chi vuole montagna autentica.",
+      tip: "Alternativa seria all'Altissimo per chi cerca qualcosa fuori dai radar.",
+      experience: { wow: 8, tipo: "trekking di cima", tempo: "4-6h", mood: "grande panorama" },
+      whenToGo: { best: "giorno", note: "partenza presto, meteo stabile" },
+      whenToAvoid: ["temporali", "meteo instabile"],
+      access: { difficolta: "impegnativo", parcheggio: "base valle", walk: "lungo", strada: "sterrata" },
       image: "https://picsum.photos/seed/Monte-Corno-Ledro-Riva/900/600"
     },
+
     {
       id: "secondary-16",
       name: "Kayak Easy Session",
@@ -1147,10 +626,17 @@ window.APP_SPOTS = {
       level: "secondary",
       lat: 45.8849,
       lon: 10.8444,
-      desc: "Versione facile acqua per chi vuole provare kayak senza complicarsi.",
-      tip: "Molto meglio con poco vento.",
+      tags: ["kayak", "spot acqua", "mattina calma", "sport acqua", "esperienza acqua"],
+      alias: ["kayak riva", "canoa riva"],
+      desc: "Sessione kayak facile sul Garda. Meglio la mattina quando l'acqua è calma e il vento non c'è ancora.",
+      tip: "Evita il pomeriggio con vento termico. La mattina è perfetta.",
+      experience: { wow: 7, tipo: "sport acqua", tempo: "1-3h", mood: "avventura" },
+      whenToGo: { best: "mattina", note: "lago calmo prima del vento termico" },
+      whenToAvoid: ["pomeriggio ventoso"],
+      access: { difficolta: "facile", parcheggio: "comodo a Riva", walk: "0", strada: "asfaltata" },
       image: "https://picsum.photos/seed/Kayak-Riva/900/600"
     },
+
     {
       id: "secondary-17",
       name: "SUP Sunset Session",
@@ -1161,10 +647,17 @@ window.APP_SPOTS = {
       level: "secondary",
       lat: 45.8839,
       lon: 10.8435,
-      desc: "SUP semplice e bello come esperienza serale.",
-      tip: "Bella se l'acqua è calma.",
+      tags: ["sup", "spot acqua", "tramonto acqua", "acqua calma", "esperienza acqua", "serale"],
+      alias: ["sup riva", "stand up paddle riva"],
+      desc: "SUP serale sul Garda con il tramonto. Bella se l'acqua è calma, esperienza rilassante e visiva.",
+      tip: "La sera il vento termico si calma. Scegli serate con acqua ferma.",
+      experience: { wow: 8, tipo: "SUP serale", tempo: "1-2h", mood: "relax" },
+      whenToGo: { best: "tramonto", note: "vento calmo dopo le 18-19" },
+      whenToAvoid: ["pomeriggio con vento termico forte"],
+      access: { difficolta: "facile", parcheggio: "comodo a Riva", walk: "0", strada: "asfaltata" },
       image: "https://picsum.photos/seed/SUP-Sunset-Riva/900/600"
     },
+
     {
       id: "secondary-18",
       name: "Tremalzo Access View",
@@ -1175,10 +668,16 @@ window.APP_SPOTS = {
       level: "secondary",
       lat: 45.8461,
       lon: 10.7232,
-      desc: "Punto panoramico in area Tremalzo, utile se vuoi il wow bike senza fare tutto il mega giro.",
-      tip: "Molto buono come modulo più leggero.",
+      tags: ["tremalzo", "viewpoint", "panorama ovest", "MTB panoramica", "modulo leggero"],
+      alias: ["tremalzo view", "tremalzo easy", "passo tremalzo view"],
+      desc: "Punto panoramico nell'area Tremalzo senza fare il giro epico completo. Molto bello, meno impegnativo.",
+      tip: "Ideale se vuoi il panorama del Tremalzo senza investire una giornata intera.",
+      experience: { wow: 8, tipo: "viewpoint quota", tempo: "2-4h", mood: "panorama" },
+      whenToGo: { best: "giorno", note: "luce pulita per il panorama" },
+      access: { difficolta: "medio", parcheggio: "base", walk: "salita", strada: "sterrata" },
       image: "https://picsum.photos/seed/Tremalzo-Access-Riva/900/600"
     },
+
     {
       id: "secondary-19",
       name: "Monte Baldo Easy View",
@@ -1189,10 +688,17 @@ window.APP_SPOTS = {
       level: "secondary",
       lat: 45.7568,
       lon: 10.8088,
-      desc: "Versione più semplice del modulo Baldo, per chi vuole la quota senza fare il trekking grande.",
-      tip: "Ottima variante smart.",
+      tags: ["baldo", "quota", "viewpoint facile", "panorama garda", "variante smart"],
+      alias: ["baldo easy", "monte baldo", "baldo view"],
+      desc: "Accesso facile alla quota del Baldo con panorama sul Garda. Variante smart senza il trekking completo.",
+      tip: "Se vuoi la quota e il panorama del Baldo senza impegno fisico, questa è la scelta.",
+      experience: { wow: 8, tipo: "viewpoint quota facile", tempo: "1-3h", mood: "panorama" },
+      whenToGo: { best: "giorno", note: "cielo pulito per vedere tutto il Garda" },
+      access: { difficolta: "facile", parcheggio: "comodo", walk: "breve", strada: "asfaltata" },
       image: "https://picsum.photos/seed/Baldo-Easy-Riva/900/600"
     },
+
+    // ═══ EXTRA ════════════════════════════════════════════════════════════════
 
     {
       id: "extra-0",
@@ -1204,10 +710,13 @@ window.APP_SPOTS = {
       level: "extra",
       lat: 45.8802,
       lon: 10.8493,
-      desc: "Stop facile sul lago.",
-      tip: "Buono per rallentare.",
+      tags: ["spiaggia", "relax", "vicino", "bagno", "spot acqua"],
+      alias: ["sabbioni", "spiaggia riva nord"],
+      desc: "Spiaggia ghiaiosa a nord di Riva. Stop facile per un bagno o una pausa.",
+      tip: "Comoda, vicina. Nessun wow ma funzionale.",
       image: "https://picsum.photos/seed/Sabbioni-Riva/900/600"
     },
+
     {
       id: "extra-1",
       name: "Marina Riva Pause",
@@ -1218,10 +727,13 @@ window.APP_SPOTS = {
       level: "extra",
       lat: 45.8857,
       lon: 10.8408,
-      desc: "Pausa semplice in zona marina.",
-      tip: "Chiude bene una giornata easy.",
+      tags: ["marina", "porto", "sera", "barche", "chiusura giornata"],
+      alias: ["porto riva", "marina riva"],
+      desc: "Zona porto di Riva, bella come pausa serale tra le barche.",
+      tip: "Chiusura piacevole dopo cena o tramonto.",
       image: "https://picsum.photos/seed/Marina-Riva/900/600"
     },
+
     {
       id: "extra-2",
       name: "Nago Short View",
@@ -1232,10 +744,13 @@ window.APP_SPOTS = {
       level: "extra",
       lat: 45.8791,
       lon: 10.8894,
-      desc: "Vista rapida ma valida sopra Torbole.",
-      tip: "Da infilare se passi di lì.",
+      tags: ["nago", "view rapido", "torbole", "piano B", "vicino"],
+      alias: ["nago view", "vista nago"],
+      desc: "Vista rapida sopra Torbole. Modesta ma valida se sei già in zona.",
+      tip: "Da fare se passi da Nago e hai 20 minuti.",
       image: "https://picsum.photos/seed/Nago-Short-Riva/900/600"
     },
+
     {
       id: "extra-3",
       name: "Mezzolago Stop",
@@ -1246,10 +761,13 @@ window.APP_SPOTS = {
       level: "extra",
       lat: 45.8886,
       lon: 10.7338,
-      desc: "Pausa tranquilla in area Ledro.",
-      tip: "Piccolo stop piacevole.",
+      tags: ["mezzolago", "ledro", "sosta", "relax", "pausa"],
+      alias: ["mezzolago"],
+      desc: "Piccola sosta sul Lago di Ledro. Tranquilla, senza pretese, piacevole.",
+      tip: "Buona pausa intermedia durante il giro del Ledro.",
       image: "https://picsum.photos/seed/Mezzolago-Riva/900/600"
     },
+
     {
       id: "extra-4",
       name: "Gelato vista lago",
@@ -1260,9 +778,12 @@ window.APP_SPOTS = {
       level: "extra",
       lat: 45.8834,
       lon: 10.8412,
-      desc: "Stop finale facile sul lago.",
-      tip: "Perfetto come chiusura leggera.",
+      tags: ["gelato", "sera", "chiusura giornata", "vicino", "relax"],
+      alias: ["gelato riva", "gelateria lago"],
+      desc: "Stop gelato con vista lago a Riva. Chiusura leggera e soddisfacente di qualsiasi giornata.",
+      tip: "Il classico finale. Funziona sempre.",
       image: "https://picsum.photos/seed/Gelato-Lago-Riva/900/600"
     }
+
   ]
 };
