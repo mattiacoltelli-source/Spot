@@ -45,7 +45,6 @@ window.APP_SPOTS = {
     "Câmara de Lobos",
     "Cabo Girão",
     "Ponta do Sol",
-    "Calheta Beach",
     "Pico dos Barcelos",
     "Miradouro do Pináculo",
     "Jardim do Mar View",
@@ -573,44 +572,6 @@ window.APP_SPOTS = {
     },
 
     {
-      id: "secondary-4",
-      name: "Calheta Beach",
-      zone: "ovest",
-      light: "tramonto",
-      activity: "relax",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 32.7182,
-      lon: -17.176,
-      tags: ["beach", "tramonto", "relax", "marina", "sabbia", "ovest", "chiusura giornata"],
-      alias: ["calheta", "spiaggia calheta"],
-      desc: "Spiaggia sabbiosa con marina comoda. Più utile come fine giornata che come wow assoluto.",
-      tip: "Valida come stop finale senza stress. Funziona bene abbinata al lato ovest.",
-      experience: { wow: 6, tipo: "spiaggia e marina", tempo: "1-2h", mood: "relax" },
-      whenToGo: { best: "tramonto", note: "Fine giornata, sbatticchiando." },
-      image: "https://picsum.photos/seed/Calheta-Beach-Madeira/900/600"
-    },
-
-    {
-      id: "secondary-5",
-      name: "Porto da Cruz Waterfront",
-      zone: "est",
-      light: "giorno",
-      activity: "relax",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 32.7661,
-      lon: -16.8299,
-      tags: ["village", "waterfront", "nord-est", "pausa logistica", "relax"],
-      alias: ["porto da cruz", "porto cruz"],
-      desc: "Waterfront piacevole nel nord-est. Ottimo come pausa strategica tra due spot forti.",
-      tip: "Buono come tappa di respiro. Non il main event, ma funziona.",
-      experience: { wow: 6, tipo: "waterfront paese", tempo: "30-60 min", mood: "relax" },
-      whenToGo: { best: "giorno", note: "Qualsiasi ora funziona come pausa." },
-      image: "https://picsum.photos/seed/Porto-da-Cruz-Waterfront-Madeira/900/600"
-    },
-
-    {
       id: "secondary-6",
       name: "Miradouro do Guindaste",
       zone: "est",
@@ -630,45 +591,6 @@ window.APP_SPOTS = {
     },
 
     {
-      id: "secondary-7",
-      name: "Santana Houses",
-      zone: "nord",
-      light: "giorno",
-      activity: "relax",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 32.8046,
-      lon: -16.8821,
-      tags: ["traditional houses", "village", "culture", "nord", "iconico culturale"],
-      alias: ["santana", "casette santana", "typical houses madeira"],
-      desc: "Casette tradizionali iconiche di Santana. Tappa culturale breve ma molto riconoscibile.",
-      tip: "Non la meta di una giornata, ma un buon extra da infilare nella rotta nord.",
-      experience: { wow: 6, tipo: "tappa culturale", tempo: "20-40 min", mood: "curiosità" },
-      whenToGo: { best: "mattina", note: "Meno folla e luce più bella." },
-      whenToAvoid: ["momenti molto pieni"],
-      image: "https://picsum.photos/seed/Santana-Houses-Madeira/900/600"
-    },
-
-    {
-      id: "secondary-8",
-      name: "Ribeiro Frio",
-      zone: "montagna",
-      light: "giorno",
-      activity: "trekking",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 32.7403,
-      lon: -16.8906,
-      tags: ["forest", "green", "levada breve", "natura", "fresco", "facile"],
-      alias: ["ribeiro frio", "balcoes start"],
-      desc: "Area verde e fresca in quota. Ottima per combinare natura e cammino leggero.",
-      tip: "Funziona bene anche con nuvole. Fresco e piacevole.",
-      experience: { wow: 6, tipo: "natura leggera", tempo: "1-2h", mood: "relax" },
-      whenToGo: { best: "giorno", note: "Funziona in qualsiasi condizione." },
-      image: "https://picsum.photos/seed/Ribeiro-Frio-Madeira/900/600"
-    },
-
-    {
       id: "secondary-9",
       name: "Curral das Freiras View",
       zone: "montagna",
@@ -685,25 +607,6 @@ window.APP_SPOTS = {
       experience: { wow: 7, tipo: "valley view", tempo: "30-60 min", mood: "panorama interno" },
       whenToGo: { best: "giorno", note: "Meglio al mattino con nuvole ancora basse che si aprono." },
       image: "https://picsum.photos/seed/Curral-das-Freiras-Madeira/900/600"
-    },
-
-    {
-      id: "secondary-10",
-      name: "Prainha do Caniçal",
-      zone: "est",
-      light: "alba",
-      activity: "relax",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 32.7397,
-      lon: -16.7167,
-      tags: ["volcanic beach", "black sand", "sunrise", "est", "tranquillo", "spiaggia nera"],
-      alias: ["prainha canical", "prainha do canical"],
-      desc: "Piccola spiaggia vulcanica nel lato est. Buona per un inizio giornata tranquillo.",
-      tip: "Meglio presto e con poca folla. Piacevole e poco frequentata.",
-      experience: { wow: 6, tipo: "spiaggia vulcanica", tempo: "30-60 min", mood: "relax" },
-      whenToGo: { best: "alba", note: "Mattina presto per tranquillità." },
-      image: "https://picsum.photos/seed/Prainha-do-Canical-Madeira/900/600"
     },
 
     {
@@ -727,63 +630,6 @@ window.APP_SPOTS = {
     },
 
     {
-      id: "secondary-12",
-      name: "Funchal Old Town",
-      zone: "sud",
-      light: "giorno",
-      activity: "relax",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 32.6482,
-      lon: -16.9036,
-      tags: ["city", "old town", "painted doors", "urban", "funchal", "atmosphere", "cultura"],
-      alias: ["funchal centro storico", "funchal old town", "zona velha funchal"],
-      desc: "Centro storico di Funchal con le porte dipinte. Utile per respirare atmosfera urbana.",
-      tip: "Meglio tra tardo pomeriggio e sera. Caldo di giorno.",
-      experience: { wow: 6, tipo: "centro storico", tempo: "1-2h", mood: "urban relax" },
-      whenToGo: { best: "tardo pomeriggio", note: "Meno caldo e più atmosfera." },
-      image: "https://picsum.photos/seed/Funchal-Old-Town-Madeira/900/600"
-    },
-
-    {
-      id: "secondary-13",
-      name: "Botanical Garden",
-      zone: "sud",
-      light: "giorno",
-      activity: "relax",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 32.6652,
-      lon: -16.8905,
-      tags: ["garden", "relax", "funchal", "verde", "giornata morbida", "tranquillo"],
-      alias: ["giardino botanico madeira", "jardim botanico"],
-      desc: "Giardino ordinato e piacevole. Utile per una giornata più soft o per abbassare il ritmo.",
-      tip: "Perfetto quando vuoi rallentare senza perdere la sensazione di fare qualcosa di bello.",
-      experience: { wow: 6, tipo: "giardino botanico", tempo: "1-2h", mood: "relax" },
-      whenToGo: { best: "mattina", note: "Meno caldo e più luce naturale." },
-      image: "https://picsum.photos/seed/Botanical-Garden-Madeira/900/600"
-    },
-
-    {
-      id: "secondary-14",
-      name: "Monte Palace Area",
-      zone: "sud",
-      light: "giorno",
-      activity: "relax",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 32.6765,
-      lon: -16.9008,
-      tags: ["garden", "monte", "relax", "funchal", "tranquillo", "giornata lenta"],
-      alias: ["monte palace", "monte gardens", "monte funchal"],
-      desc: "Area giardini sopra Funchal, bella tappa tranquilla. Ideale se vuoi rallentare.",
-      tip: "Ideale se vuoi rallentare ma vedere comunque cose belle.",
-      experience: { wow: 6, tipo: "giardini e panorami", tempo: "1-2h", mood: "relax" },
-      whenToGo: { best: "mattina", note: "Fresco e tranquillo." },
-      image: "https://picsum.photos/seed/Monte-Palace-Madeira/900/600"
-    },
-
-    {
       id: "secondary-15",
       name: "Garajau Cristo Rei",
       zone: "sud",
@@ -800,25 +646,6 @@ window.APP_SPOTS = {
       experience: { wow: 7, tipo: "viewpoint costiero", tempo: "20-40 min", mood: "tramonto" },
       whenToGo: { best: "tramonto", note: "Luce serale sulla costa est." },
       image: "https://picsum.photos/seed/Garajau-Cristo-Rei-Madeira/900/600"
-    },
-
-    {
-      id: "secondary-16",
-      name: "Praia Formosa",
-      zone: "sud",
-      light: "tramonto",
-      activity: "relax",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 32.6359,
-      lon: -16.9492,
-      tags: ["beach", "urban beach", "relax", "funchal", "tramonto", "comoda"],
-      alias: ["praia formosa", "spiaggia formosa"],
-      desc: "Spiaggia urbana comoda vicino a Funchal. Più utile che memorabile.",
-      tip: "Perfetta se vuoi poco sbatti e sei già in zona Funchal.",
-      experience: { wow: 5, tipo: "spiaggia urbana", tempo: "1-2h", mood: "relax" },
-      whenToGo: { best: "tramonto", note: "Fine giornata con luce morbida." },
-      image: "https://picsum.photos/seed/Praia-Formosa-Madeira/900/600"
     },
 
     {
@@ -876,25 +703,6 @@ window.APP_SPOTS = {
       experience: { wow: 6, tipo: "viewpoint", tempo: "15-30 min", mood: "panorama" },
       whenToGo: { best: "mattina", note: "Luce laterale e nuvole basse che si aprono." },
       image: "https://picsum.photos/seed/Portela-Madeira/900/600"
-    },
-
-    {
-      id: "secondary-20",
-      name: "Machico Bay",
-      zone: "est",
-      light: "giorno",
-      activity: "relax",
-      difficulty: "facile",
-      level: "secondary",
-      lat: 32.7167,
-      lon: -16.7667,
-      tags: ["bay", "village", "relax", "est", "pausa logistica", "spiaggia"],
-      alias: ["machico", "baia machico"],
-      desc: "Baia ordinata e piacevole. Buona come stop soft o pausa logistica nel lato est.",
-      tip: "Buona se vuoi respirare tra due spot forti. Baia comoda.",
-      experience: { wow: 6, tipo: "sosta baia", tempo: "30-60 min", mood: "relax" },
-      whenToGo: { best: "giorno", note: "Qualsiasi ora funziona." },
-      image: "https://picsum.photos/seed/Machico-Bay-Madeira/900/600"
     },
 
     {
@@ -973,6 +781,298 @@ window.APP_SPOTS = {
       image: "https://picsum.photos/seed/Risco-Madeira/900/600"
     },
 
+    // ═══ SPORT (secondary) ══════════════════════════════════════════════════════
+
+    {
+      id: "sport-0",
+      name: "Vereda do Larano",
+      zone: "est",
+      light: "giorno",
+      activity: "trekking",
+      difficulty: "medio",
+      level: "secondary",
+      lat: 32.7702,
+      lon: -16.8424,
+      tags: ["coastal hike", "cliff trail", "panoramic", "oceano", "wow", "costa drammatica", "trekking panoramico"],
+      alias: ["larano", "vereda do larano", "boca do risco", "porto da cruz machico trail"],
+      desc: "Uno dei trekking costieri più forti di Madeira: oceano sotto, scogliera viva e grande sensazione di esposizione.",
+      tip: "Da fare con meteo stabile e fondo asciutto. Se il tempo è incerto o il vento è forte, perde molto.",
+      weatherNote: "Con pioggia, raffiche o scarsa visibilità la parte esposta diventa meno piacevole e meno leggibile.",
+      photoTips: "Molto forte con luce laterale e mare ben leggibile sotto. Le linee della costa fanno già il lavoro.",
+      experience: { wow: 9, tipo: "trekking costiero panoramico", tempo: "3-5h", mood: "epico" },
+      whenToGo: { best: "giorno", note: "Meglio con cielo pulito, vento contenuto e buona visibilità sulla costa est." },
+      whenToAvoid: ["vento forte", "pioggia", "meteo instabile", "fondo scivoloso"],
+      access: { difficolta: "medio", parcheggio: "variabile tra Machico e Porto da Cruz", walk: "partenza diretta", strada: "asfaltata ai punti base" },
+      crowd: { best: "feriali o partenza presto", worst: "giorni molto belli nel weekend" },
+      smartTips: [
+        "Più esperienza lineare che viewpoint statico.",
+        "Ottimo se vuoi una Madeira più sportiva ma ancora visivamente fortissima.",
+        "Non sprecarlo con meteo mediocre."
+      ],
+      image: "https://picsum.photos/seed/Larano-Madeira/900/600"
+    },
+
+    {
+      id: "sport-1",
+      name: "Levada do Alecrim",
+      zone: "ovest",
+      light: "giorno",
+      activity: "trekking",
+      difficulty: "facile",
+      level: "secondary",
+      lat: 32.7582,
+      lon: -17.1371,
+      tags: ["levada", "waterfall", "green", "immersivo", "rabaçal", "laurisilva", "trekking easy"],
+      alias: ["alecrim", "levada do alecrim", "pr 6.2", "rabaçal alecrim"],
+      desc: "Levada molto riuscita nell'area del Rabaçal: verde, acqua, tunnel naturali e grande atmosfera senza essere pesante.",
+      tip: "Molto buona se vuoi un trekking completo ma più morbido rispetto ai percorsi più battuti o faticosi.",
+      weatherNote: "Regge bene anche con cielo grigio leggero. Con pioggia vera diventa meno piacevole.",
+      photoTips: "Più che cercare la singola foto, lavora sulle linee della levada, il verde e la profondità del bosco.",
+      experience: { wow: 8, tipo: "levada trekking facile", tempo: "2-3h", mood: "immersivo" },
+      whenToGo: { best: "mattina", note: "Partire presto migliora tranquillità, ritmo e qualità generale del percorso." },
+      whenToAvoid: ["pioggia forte", "metà giornata nei giorni più pieni"],
+      access: { difficolta: "facile", parcheggio: "area Rabaçal", walk: "partenza breve", strada: "asfaltata fino all'area base" },
+      crowd: { best: "presto mattina", worst: "fasce centrali con traffico Rabaçal" },
+      smartTips: [
+        "Scelta intelligente se vuoi natura vera senza giornata pesante.",
+        "Più uniforme e meno caotica di altri classici vicini.",
+        "Molto buona come modulo trekking di mezza giornata."
+      ],
+      image: "https://picsum.photos/seed/Alecrim-Madeira/900/600"
+    },
+
+    {
+      id: "sport-2",
+      name: "Lagoa do Vento",
+      zone: "ovest",
+      light: "giorno",
+      activity: "trekking",
+      difficulty: "medio",
+      level: "secondary",
+      lat: 32.7569,
+      lon: -17.1385,
+      tags: ["waterfall", "wild", "rabaçal", "trekking", "cascata", "più selvaggio", "verde"],
+      alias: ["lagoa do vento", "vereda da lagoa do vento", "pr 6.3", "rabaçal lagoa"],
+      desc: "Percorso più corto ma molto scenografico verso una delle cascate più suggestive dell'area del Rabaçal.",
+      tip: "Molto più bello se vuoi qualcosa di più wild e meno standard rispetto ai percorsi levada più classici.",
+      weatherNote: "Con terreno bagnato e pioggia vera il sentiero perde comfort. Molto meglio con finestra stabile.",
+      photoTips: "La cascata e l'ambiente attorno funzionano bene con luce morbida e aria umida, non con sole duro.",
+      experience: { wow: 8, tipo: "trekking cascata", tempo: "1h30-3h", mood: "avventura" },
+      whenToGo: { best: "mattina", note: "Meglio partire presto per avere più calma e una lettura migliore del luogo." },
+      whenToAvoid: ["pioggia forte", "fondo molto scivoloso", "metà giornata piena"],
+      access: { difficolta: "medio", parcheggio: "area Rabaçal", walk: "partenza breve", strada: "asfaltata fino alla base" },
+      crowd: { best: "presto", worst: "ore centrali nei giorni molto richiesti" },
+      smartTips: [
+        "Più experience spot che semplice cascata.",
+        "Ottimo se vuoi acqua e natura con più carattere.",
+        "Molto forte in combo con Alecrim o Risco, ma non tutto insieme se vuoi godertelo."
+      ],
+      image: "https://picsum.photos/seed/Lagoa-do-Vento-Madeira/900/600"
+    },
+
+    {
+      id: "sport-3",
+      name: "Canyoning Ribeiro Bonito",
+      zone: "nord",
+      light: "giorno",
+      activity: "water",
+      difficulty: "impegnativo",
+      level: "secondary",
+      lat: 32.8079,
+      lon: -16.9038,
+      tags: ["canyoning", "water sport", "adrenalina", "waterfall", "esperienza guidata", "natura forte"],
+      alias: ["ribeiro bonito", "canyoning ribeiro bonito", "bonito canyon", "madeira canyoning north"],
+      desc: "Una delle esperienze canyoning più forti e complete dell'isola: acqua, roccia, verticalità e ambiente molto bello.",
+      tip: "Da leggere come esperienza guidata premium, non come spot statico. È uno dei moduli sport più forti che puoi mettere in app.",
+      weatherNote: "Condizioni acqua e sicurezza vanno sempre verificate con guida o operatore. Non trattarlo come uscita improvvisata.",
+      photoTips: "Più esperienza che foto: qui conta l'ambiente totale, non il singolo viewpoint.",
+      experience: { wow: 10, tipo: "canyoning guidato", tempo: "3-5h", mood: "avventura" },
+      whenToGo: { best: "giorno", note: "Molto meglio con condizioni confermate e temperature buone." },
+      whenToAvoid: ["meteo instabile", "uscita improvvisata", "condizioni acqua non confermate"],
+      access: { difficolta: "impegnativo", parcheggio: "variabile in base al meeting point", walk: "variabile", strada: "asfaltata ai punti base" },
+      crowd: { best: "turni mattina o feriali", worst: "giorni top di alta stagione" },
+      smartTips: [
+        "Uno dei migliori spot sportivi per alzare davvero il livello dell'app.",
+        "Molto diverso dai classici trekking: aggiunge varietà vera.",
+        "Perfetto come 'esperienza forte' e non solo come luogo."
+      ],
+      image: "https://picsum.photos/seed/Ribeiro-Bonito-Madeira/900/600"
+    },
+
+    {
+      id: "sport-4",
+      name: "Canyoning Ribeira das Cales",
+      zone: "sud",
+      light: "giorno",
+      activity: "water",
+      difficulty: "medio",
+      level: "secondary",
+      lat: 32.6789,
+      lon: -16.9068,
+      tags: ["canyoning", "water sport", "waterfall", "esperienza guidata", "adrenalina", "entry level"],
+      alias: ["ribeira das cales", "canyoning ribeira das cales", "cales canyon"],
+      desc: "Modulo canyoning più accessibile ma molto divertente: ottimo per iniziare senza perdere il lato avventura.",
+      tip: "Se vuoi inserire un canyoning più facile e credibile nell'app, questo è perfetto come primo step.",
+      weatherNote: "Anche qui conta la guida e la verifica delle condizioni reali dell'acqua.",
+      photoTips: "Non è uno spot da guardare da fuori: va pensato come esperienza immersiva.",
+      experience: { wow: 8, tipo: "canyoning guidato", tempo: "2-4h", mood: "avventura" },
+      whenToGo: { best: "giorno", note: "Molto meglio con meteo stabile e gestione guidata." },
+      whenToAvoid: ["meteo incerto", "condizioni non confermate", "uscita improvvisata"],
+      access: { difficolta: "medio", parcheggio: "variabile in base al ritrovo", walk: "breve", strada: "asfaltata" },
+      crowd: { best: "feriali o turni presto", worst: "giorni pieni in alta stagione" },
+      smartTips: [
+        "Più facile del Ribeiro Bonito ma molto utile in app.",
+        "Perfetto per aprire il filtro Acqua a qualcosa di davvero sportivo.",
+        "Va raccontato come esperienza, non come viewpoint."
+      ],
+      image: "https://picsum.photos/seed/Ribeira-das-Cales-Madeira/900/600"
+    },
+
+    {
+      id: "sport-5",
+      name: "Surf Porto da Cruz",
+      zone: "est",
+      light: "giorno",
+      activity: "water",
+      difficulty: "medio",
+      level: "secondary",
+      lat: 32.7661,
+      lon: -16.8297,
+      tags: ["surf", "wave", "ocean", "sport", "east coast", "sea energy"],
+      alias: ["surf porto da cruz", "porto da cruz surf", "porto cruz surf"],
+      desc: "Uno dei riferimenti surf più conosciuti di Madeira. Spot con identità vera e mare da rispettare.",
+      tip: "Molto buono per rendere il filtro Acqua meno turistico e più sportivo. Da leggere sempre con swell e vento.",
+      weatherNote: "Le condizioni cambiano tutto: vento e mare decidono se ha senso o no.",
+      photoTips: "Più che il paesaggio, qui conta l'energia del mare e il timing giusto.",
+      experience: { wow: 8, tipo: "surf spot oceanico", tempo: "1-3h", mood: "sport" },
+      whenToGo: { best: "giorno", note: "Dipende dalle condizioni del mare più che dall'orario puro." },
+      whenToAvoid: ["mare disordinato per il tuo livello", "vento sfavorevole", "condizioni non lette bene"],
+      access: { difficolta: "medio", parcheggio: "comodo in zona", walk: "breve", strada: "asfaltata" },
+      crowd: { best: "giorni buoni ma non perfetti", worst: "swell forti con spot pieno" },
+      smartTips: [
+        "Aggiunge sport vero al lato est dell'isola.",
+        "Va usato come modulo activity-based, non come semplice sosta mare.",
+        "Ottimo se vuoi dare più personalità alla categoria water."
+      ],
+      image: "https://picsum.photos/seed/Surf-Porto-da-Cruz-Madeira/900/600"
+    },
+
+    {
+      id: "sport-6",
+      name: "Surf Paul do Mar",
+      zone: "sud",
+      light: "giorno",
+      activity: "water",
+      difficulty: "medio",
+      level: "secondary",
+      lat: 32.7604,
+      lon: -17.2291,
+      tags: ["surf", "wave", "ocean", "west side", "sport", "autentico"],
+      alias: ["surf paul do mar", "paul do mar surf", "paul surf madeira"],
+      desc: "Spot surf più ruvido e autentico del lato ovest. Meno cartolina, più carattere vero.",
+      tip: "Perfetto per dare al tuo dataset un modulo oceanico con personalità forte, non da spiaggia comoda.",
+      weatherNote: "Come ogni surf spot, senza lettura mare e vento non ha senso valutarlo davvero.",
+      photoTips: "La forza qui è l'atmosfera del posto e l'energia del mare più che il singolo frame pulito.",
+      experience: { wow: 9, tipo: "surf spot oceanico", tempo: "1-3h", mood: "sport" },
+      whenToGo: { best: "giorno", note: "Va letto sulle condizioni reali del mare, non solo sull'orario." },
+      whenToAvoid: ["condizioni troppo forti per il tuo livello", "vento sfavorevole", "mare disordinato"],
+      access: { difficolta: "medio", parcheggio: "comodo in paese", walk: "breve", strada: "asfaltata" },
+      crowd: { best: "giorni medi o feriali", worst: "condizioni top con spot pieno" },
+      smartTips: [
+        "Molto più sportivo di un semplice Paul do Mar relax.",
+        "Tiene bene il lato ovest e dà profondità al filtro water.",
+        "Molto coerente con una Madeira più attiva."
+      ],
+      image: "https://picsum.photos/seed/Surf-Paul-do-Mar-Madeira/900/600"
+    },
+
+    {
+      id: "sport-7",
+      name: "Coasteering Madeira South",
+      zone: "sud",
+      light: "giorno",
+      activity: "water",
+      difficulty: "medio",
+      level: "secondary",
+      lat: 32.6501,
+      lon: -16.9499,
+      tags: ["coasteering", "adrenalina", "ocean", "salti", "esperienza guidata", "roccia e mare"],
+      alias: ["coasteering madeira", "coasteering south madeira", "madeira south coasteering"],
+      desc: "Salti, nuoto e roccia sul mare: esperienza completa e molto diversa da kayak o surf.",
+      tip: "Molto utile per dare varietà vera alla categoria Acqua. Sempre da leggere come esperienza guidata.",
+      weatherNote: "Condizioni del mare fondamentali. Non è una semplice attività acqua soft.",
+      photoTips: "Qui conta l'azione e la sensazione di immersione, non la cartolina.",
+      experience: { wow: 9, tipo: "coasteering guidato", tempo: "2-4h", mood: "avventura" },
+      whenToGo: { best: "giorno", note: "Ha senso solo con mare leggibile e condizioni confermate." },
+      whenToAvoid: ["mare troppo mosso", "uscita improvvisata", "condizioni non confermate"],
+      access: { difficolta: "medio", parcheggio: "variabile in base al punto ritrovo", walk: "breve", strada: "asfaltata" },
+      crowd: { best: "feriali o turni mattina", worst: "giorni molto pieni" },
+      smartTips: [
+        "Aggiunge una dimensione molto fresca al filtro water.",
+        "Più esperienza che luogo preciso.",
+        "Ottimo per chi vuole fare qualcosa di memorabile senza essere solo trekking."
+      ],
+      image: "https://picsum.photos/seed/Coasteering-Madeira/900/600"
+    },
+
+    {
+      id: "sport-8",
+      name: "Paragliding Arco da Calheta",
+      zone: "ovest",
+      light: "tramonto",
+      activity: "view",
+      difficulty: "medio",
+      level: "secondary",
+      lat: 32.7102,
+      lon: -17.1798,
+      tags: ["paragliding", "air", "view", "oceano", "esperienza guidata", "tramonto"],
+      alias: ["paragliding calheta", "arco da calheta paragliding", "parapente calheta"],
+      desc: "Esperienza volo molto scenografica sopra il lato ovest, con oceano aperto e resa alta quando l'aria collabora.",
+      tip: "Va trattato come esperienza premium e non come semplice viewpoint. Il timing delle condizioni conta tutto.",
+      weatherNote: "Vento e condizioni aria sono decisivi. Non inserirlo in planner come fosse uno spot statico facile.",
+      photoTips: "L'impatto qui è l'esperienza totale del volo e del paesaggio sotto, più che la singola immagine.",
+      experience: { wow: 9, tipo: "parapendio panoramico", tempo: "1h", mood: "epico" },
+      whenToGo: { best: "tramonto", note: "Molto bello con luce calda e condizioni aria stabili." },
+      whenToAvoid: ["vento sfavorevole", "condizioni aria instabili", "meteo incerto"],
+      access: { difficolta: "medio", parcheggio: "variabile in base al decollo/ritrovo", walk: "breve", strada: "asfaltata" },
+      crowd: { best: "giorni buoni ma ordinati", worst: "finestre perfette molto richieste" },
+      smartTips: [
+        "Non complica i filtri ma alza tanto il livello del dataset.",
+        "Perfetto come esperienza wow fuori dal solo trekking.",
+        "Tienilo come modulo premium, non come filler."
+      ],
+      image: "https://picsum.photos/seed/Paragliding-Madeira/900/600"
+    },
+
+    {
+      id: "sport-9",
+      name: "Paul da Serra MTB Loop",
+      zone: "ovest",
+      light: "giorno",
+      activity: "mtb",
+      difficulty: "medio",
+      level: "secondary",
+      lat: 32.7631,
+      lon: -17.1332,
+      tags: ["mtb", "open space", "plateau", "paul da serra", "outdoor", "spazio"],
+      alias: ["paul da serra mtb", "mtb paul da serra", "paul plateau ride"],
+      desc: "Modulo MTB nell'altipiano più aperto dell'isola: spazio, aria e sensazione di terreno ampio e libero.",
+      tip: "Molto meglio con visibilità buona. Se c'è nebbia chiusa perde gran parte del suo fascino.",
+      weatherNote: "Vento e nebbia cambiano completamente la qualità dell'uscita.",
+      photoTips: "Più che cercare il punto singolo, qui funziona la sensazione di spazio aperto.",
+      experience: { wow: 7, tipo: "MTB plateau ride", tempo: "1-3h", mood: "sport" },
+      whenToGo: { best: "giorno", note: "Meglio con meteo pulito e orizzonte leggibile." },
+      whenToAvoid: ["nebbia densa", "vento molto forte", "meteo chiuso"],
+      access: { difficolta: "medio", parcheggio: "facile in area plateau", walk: "n/a", strada: "asfalto e sterrati aperti" },
+      crowd: { best: "feriali", worst: "giorni perfetti molto frequentati" },
+      smartTips: [
+        "Molto più coerente di un trail running dentro activity MTB.",
+        "Ottimo per rafforzare davvero il filtro bici.",
+        "Più atmosfera sportiva che singolo wow statico."
+      ],
+      image: "https://picsum.photos/seed/Paul-da-Serra-MTB-Madeira/900/600"
+    },
+
     // ═══ EXTRA ══════════════════════════════════════════════════════════════════
 
     {
@@ -1008,57 +1108,6 @@ window.APP_SPOTS = {
       tip: "Extra serio solo se completi São Lourenço. Non ha senso venirci apposta.",
       image: "https://picsum.photos/seed/Cais-do-Sardinha-Madeira/900/600"
     },
-
-    {
-      id: "extra-2",
-      name: "Palheiro Gardens",
-      zone: "sud",
-      light: "giorno",
-      activity: "relax",
-      difficulty: "facile",
-      level: "extra",
-      lat: 32.6684,
-      lon: -16.8515,
-      tags: ["garden", "relax", "giornata morbida", "tranquillo", "funchal"],
-      alias: ["palheiro", "giardini palheiro", "palheiro estate"],
-      desc: "Giardini tranquilli e curati sopra Funchal. Perfetti per una Madeira più morbida.",
-      tip: "Ottimo extra quando vuoi abbassare il ritmo senza annoiarti.",
-      image: "https://picsum.photos/seed/Palheiro-Gardens-Madeira/900/600"
-    },
-
-    {
-      id: "extra-3",
-      name: "Pico dos Barcelos Bonus",
-      zone: "sud",
-      light: "tramonto",
-      activity: "view",
-      difficulty: "facile",
-      level: "extra",
-      lat: 32.6659,
-      lon: -16.9375,
-      tags: ["sunset", "funchal", "rapido", "bonus", "tramonto rapido"],
-      alias: ["barcelos bonus"],
-      desc: "Vista ampia su Funchal. Extra furbo da città se sei già in zona.",
-      tip: "Bonus rapido senza perdere troppo tempo. Funziona bene come appendice.",
-      image: "https://picsum.photos/seed/Pico-dos-Barcelos-Bonus-Madeira/900/600"
-    },
-
-    {
-      id: "extra-4",
-      name: "Penha d'Águia",
-      zone: "est",
-      light: "giorno",
-      activity: "view",
-      difficulty: "medio",
-      level: "extra",
-      lat: 32.7633,
-      lon: -16.8244,
-      tags: ["rock", "landmark", "nord-est", "alternativo", "distinctive"],
-      alias: ["penha aguia", "eagle rock madeira"],
-      desc: "Roccia iconica del nord-est, molto distintiva e meno scontata.",
-      tip: "Extra interessante se vuoi qualcosa di diverso dai classici del nord-est.",
-      image: "https://picsum.photos/seed/Penha-dAguia-Madeira/900/600"
-    }
 
   ]
 };
