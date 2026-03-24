@@ -460,6 +460,7 @@
         ...s,
         _distance:  dist,   // usato internamente per intent nearMe
         distance:   dist,
+        altitude:   (typeof s.alt === "number" ? s.alt : (typeof s.altitude === "number" ? s.altitude : null)),
         weatherFit: weatherSuitability(s),
         sailMeta:   window.SAIL ? window.SAIL.getSpotSailMeta(s, APP) : null
       };
@@ -559,6 +560,67 @@
     if (nearest.weatherFit.cls !== "pink") return nearest;
     const better = pool.find(s => s.weatherFit.cls !== "pink" && s.distance <= nearest.distance + 12);
     return better || nearest;
+  }
+
+  function getClosestSpots(limit = 5) {
+    if (!APP.userPos) return [];
+    let pool = getAllSpotsWithMeta().filter(s => s.distance != null);
+    if (APP.level !== "all") pool = pool.filter(s => s.level === APP.level);
+    if (APP.mode === "sail" && window.SAIL) {
+      pool = pool.filter(s => window.SAIL.filterSpotForSailMode(s, APP));
+    }
+    pool.sort((a, b) => a.distance - b.distance);
+    return pool.slice(0, limit);
+  }
+
+  function renderNearbyPage() {
+    const box = $("nearbyList");
+    if (!box) return;
+
+    const items = getClosestSpots(5);
+
+    if (!APP.userPos) {
+      box.innerHTML = `<div class="detail-empty">Attiva il GPS per vedere gli spot vicini.</div>`;
+      return;
+    }
+
+    if (!items.length) {
+      box.innerHTML = `<div class="detail-empty">Nessuno spot trovato nelle vicinanze.</div>`;
+      return;
+    }
+
+    box.innerHTML = items.map(s => `
+    <div class="spot-card glass tap" data-nearby-id="${escapeHtml(s.id)}">
+      <div class="spot-head">
+        <div>
+          <div class="spot-name">${escapeHtml(s.name)}</div>
+          <div class="spot-sub">
+            ${escapeHtml(s.zone)} · ${escapeHtml(s.activity)}
+          </div>
+        </div>
+      </div>
+
+      <div class="spot-meta">
+        <span class="tag blue">${displayDistance(s.distance)}</span>
+        ${s.weatherFit ? `<span class="tag ${s.weatherFit.cls}">${escapeHtml(s.weatherFit.label)}</span>` : ""}
+        ${s.altitude != null ? `<span class="tag">${s.altitude} m</span>` : ""}
+      </div>
+
+      <div class="spot-desc">
+        ${escapeHtml(s.tip || s.desc || "")}
+      </div>
+    </div>
+  `).join("");
+
+    box.querySelectorAll("[data-nearby-id]").forEach(card => {
+      card.addEventListener("click", () => {
+        const spot = items.find(s => s.id === card.dataset.nearbyId);
+        if (spot) {
+          showSpotDetail(spot);
+          switchPage("detail");
+        }
+      });
+    });
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1199,7 +1261,10 @@
       latlngs.push([spot.lat, spot.lon]);
     });
 
-    if (latlngs.length) APP.map.fitBounds(L.latLngBounds(latlngs).pad(0.18));
+    if (!APP._mapInitialized && latlngs.length) {
+      APP.map.fitBounds(L.latLngBounds(latlngs).pad(0.18));
+      APP._mapInitialized = true;
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1301,11 +1366,31 @@
             radius: 8, color: "#dff3ff", weight: 2, fillColor: "#59b6ff", fillOpacity: 1
           }).addTo(APP.map);
         } else {
-          APP.gpsMarker.setLatLng([lat, lon]);
+          const current = APP.gpsMarker.getLatLng();
+          const smoothLat = current.lat + (lat - current.lat) * 0.3;
+          const smoothLon = current.lng + (lon - current.lng) * 0.3;
+          APP.gpsMarker.setLatLng([smoothLat, smoothLon]);
         }
-        APP.userPos = { lat, lon };
+        if (APP.map && APP.gpsMarker) {
+          const mapCenter = APP.map.getCenter();
+          const dist = Math.abs(mapCenter.lat - lat) + Math.abs(mapCenter.lng - lon);
+
+          if (dist > 0.01) {
+            APP.map.panTo([lat, lon], { animate: true, duration: 0.5 });
+          }
+        }
+        APP.userPos = {
+          lat,
+          lon,
+          accuracy: pos.coords.accuracy,
+          altitude: (typeof pos.coords.altitude === "number" ? pos.coords.altitude : null)
+        };
         if (window.UI?.renderGpsBox) window.UI.renderGpsBox(APP, { speedMs: pos.coords.speed, heading: pos.coords.heading });
-        renderAll();
+        renderNearbyPage();
+        if (!APP._lastMarkerUpdate || Date.now() - APP._lastMarkerUpdate > 4000) {
+          renderMarkers();
+          APP._lastMarkerUpdate = Date.now();
+        }
       },
       () => toast("Permesso GPS negato o posizione non disponibile"),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
@@ -1335,6 +1420,7 @@
   function renderAll() {
     if (window.UI?.renderAll) window.UI.renderAll(APP);
     renderMarkers();
+    renderNearbyPage();
   }
 
   function toast(message) {
@@ -1379,7 +1465,12 @@
       if (!navigator.geolocation) { toast("GPS non disponibile"); return; }
       navigator.geolocation.getCurrentPosition(
         pos => {
-          APP.userPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+          APP.userPos = {
+            lat: pos.coords.latitude,
+            lon: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+            altitude: (typeof pos.coords.altitude === "number" ? pos.coords.altitude : null)
+          };
           renderAll();
           toast("Posizione aggiornata");
         },
@@ -1410,7 +1501,12 @@
 
     navigator.geolocation?.getCurrentPosition(
       pos => {
-        APP.userPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+        APP.userPos = {
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          altitude: (typeof pos.coords.altitude === "number" ? pos.coords.altitude : null)
+        };
         renderAll();
       },
       () => {},
@@ -1461,6 +1557,7 @@
     getBestWowSpot,
     getBestSunsetSpot,
     getClosestSpot,
+    getClosestSpots,
 
     // ── Go Now + Explain ──────────────────────────────────────────────────
     getGoNowSuggestions,
