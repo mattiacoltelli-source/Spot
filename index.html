@@ -6,29 +6,23 @@
 
   <title>Travel & Sail Planner</title>
 
-  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0b0f14">
   <link rel="apple-touch-icon" href="icon-192.png">
 
-  <!-- NO CACHE (fondamentale per evitare app vecchia) -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 
-  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css?v=11">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js?v=11"></script>
 
-  <!-- App files -->
   <link rel="stylesheet" href="styles.css?v=11">
-  <script src="spots.js?v=11"></script>
 </head>
 
 <body>
   <div class="app-bg"></div>
 
-  <!-- SPLASH -->
   <div class="splash" id="splash">
     <div class="splash-card">
       <div class="splash-emoji">🗺️</div>
@@ -40,7 +34,6 @@
 
   <div class="wrap">
 
-    <!-- HERO -->
     <section class="hero">
       <div class="hero-top">
         <div class="eyebrow">
@@ -58,6 +51,12 @@
             <small id="modeLabelSub">Sail mode OFF</small>
           </span>
         </label>
+      </div>
+
+      <div class="panel glass gps-box" id="gpsBox" style="margin-bottom:1rem; display:grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap:10px; padding:12px;">
+        <div class="stat"><div class="k">Velocità</div><div class="v" id="gpsSpeed">—</div></div>
+        <div class="stat"><div class="k">Direzione</div><div class="v" id="gpsHeading">—</div></div>
+        <div class="stat"><div class="k">Altitudine</div><div class="v" id="gpsAltitude">—</div></div>
       </div>
 
       <h1 id="heroTitle">Scopri meglio il posto.<br>Vai negli spot giusti.</h1>
@@ -81,19 +80,21 @@
       </div>
     </section>
 
-    <!-- HOME -->
     <section id="page-home" class="page active">
       <div class="stack">
         <div id="quickGrid" class="quick-grid"></div>
 
         <div class="panel glass">
-          <h2>Meteo</h2>
+          <h2 id="conditionsTitle">Meteo</h2>
           <div id="statsGrid" class="stats-grid"></div>
-          <div id="weatherAlert">Caricamento...</div>
+          <div id="weatherAlert" class="alert">Caricamento...</div>
         </div>
 
         <div class="panel glass">
-          <h2>Previsione</h2>
+          <div class="panel-head">
+            <h2 id="hourlySummaryMain">Previsione</h2>
+            <span class="tiny muted" id="hourlySummarySub">Caricamento...</span>
+          </div>
           <div id="hourlyStrip" class="hourly-strip"></div>
         </div>
 
@@ -104,31 +105,39 @@
       </div>
     </section>
 
-    <!-- TOP -->
     <section id="page-top" class="page">
       <div class="stack">
-        <div id="topWowList"></div>
-        <div id="topSunsetList"></div>
+        <div class="panel-head"><h2>Spot Wow</h2></div>
+        <div id="topWowList" class="featured-grid"></div>
+        <div class="panel-head"><h2>Tramonti Premium</h2></div>
+        <div id="topSunsetList" class="featured-grid"></div>
       </div>
     </section>
 
-    <!-- MAP -->
     <section id="page-map" class="page">
-      <div class="map-panel glass">
-        <div id="map"></div>
+      <div class="stack">
+        <div id="mapQuickFilters" class="chip-bar" style="margin-bottom:10px"></div>
+        <div class="map-panel glass">
+          <div id="map" style="height: 500px; border-radius: 12px;"></div>
+        </div>
+        <div id="mapLegend" class="legend-box glass" style="margin-top:10px; padding:10px; display:flex; gap:15px; font-size:12px;"></div>
       </div>
     </section>
 
-    <!-- SPOTS -->
     <section id="page-spots" class="page">
       <div class="stack">
+        <div class="filter-section">
+          <div id="levelChips" class="chip-bar"></div>
+          <div id="zoneChips" class="chip-bar"></div>
+          <div id="activityChips" class="chip-bar"></div>
+        </div>
+        <div class="panel-head"><h2 id="resultNote">Tutti gli spot</h2></div>
         <div id="spotList"></div>
       </div>
     </section>
 
-    <!-- DETAIL -->
     <section id="page-detail" class="page">
-      <div id="spotDetail"></div>
+      <div id="spotDetail" class="stack"></div>
     </section>
 
     <div class="footer-note">
@@ -137,7 +146,6 @@
 
   </div>
 
-  <!-- NAV -->
   <nav class="bottom-nav">
     <button class="nav-btn active" data-page="home">Home</button>
     <button class="nav-btn" data-page="top">Top</button>
@@ -148,23 +156,16 @@
 
   <div id="toastWrap"></div>
 
-  <!-- JS -->
+  <!-- ORDINE CORRETTO -->
+  <script src="spots.js?v=11"></script>
   <script src="sail.js?v=11"></script>
-  <script src="ui.js?v=11"></script>
   <script src="app.js?v=11"></script>
+  <script src="ui.js?v=11"></script>
 
-  <!-- SERVICE WORKER HARD RESET + REGISTER -->
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', async () => {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        for (const reg of regs) {
-          await reg.unregister();
-        }
-
-        await navigator.serviceWorker.register('sw-v11.js');
-
-        console.log("SW v11 attivo");
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw-v11.js');
       });
     }
   </script>
