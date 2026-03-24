@@ -3,31 +3,40 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
-  <title>Travel & Sail Planner</title>
+  <title>Explorer</title>
 
+  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0b0f14">
   <link rel="apple-touch-icon" href="icon-192.png">
 
+  <!-- MAP -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <link rel="stylesheet" href="styles.css">
-  <script src="spots.js"></script>
+  <!-- STYLE -->
+  <link rel="stylesheet" href="styles.css?v=3">
+
+  <!-- DATA -->
+  <script src="spots.js?v=3"></script>
 </head>
+
 <body>
   <div class="app-bg"></div>
 
+  <!-- SPLASH -->
   <div class="splash" id="splash">
     <div class="splash-card">
       <div class="splash-emoji">🗺️</div>
-      <div class="splash-title">Travel &amp; Sail Planner</div>
-      <div class="splash-sub">Guida smart per spot, giornate e attività outdoor.</div>
+      <div class="splash-title">Explorer</div>
+      <div class="splash-sub">Guida smart per spot, meteo e decisioni veloci.</div>
       <div class="splash-bar"><div></div></div>
     </div>
   </div>
 
   <div class="wrap">
+
+    <!-- HERO -->
     <section class="hero">
       <div class="hero-top">
         <div class="eyebrow">
@@ -47,35 +56,37 @@
         </label>
       </div>
 
-      <h1 id="heroTitle">Scopri meglio il posto.<br>Vai negli spot giusti.</h1>
+      <h1 id="heroTitle">Vai negli spot giusti,<br>al momento giusto.</h1>
 
       <p id="heroDescription">
-        Guida travel e outdoor con mappa, spot wow, tramonti, vai ora intelligente, planner giornata e preferiti personali.
+        Decisioni intelligenti basate su meteo, distanza e contesto. Meno scroll, più esperienza.
       </p>
 
       <div class="hero-actions">
         <div class="search-box glass">
           <input id="searchInput" type="text"
-            placeholder="Cerca spot, zona, attività, tag… (es: tramonto facile, trekking wow, acqua calma)">
+            placeholder="Cerca spot (es: tramonto facile, trekking wow, acqua calma)">
           <button class="btn btn-primary tap" id="searchBtn" type="button">Cerca</button>
           <button class="btn btn-secondary tap" id="goNowBtn" type="button">Vai ora</button>
         </div>
 
         <div class="panel glass side-actions">
-          <button class="btn btn-gold tap" id="autofillPlannerBtn" type="button">Pianifica giornata</button>
-          <button class="btn btn-secondary tap" id="gpsBtn" type="button">Usa GPS</button>
+          <button class="btn btn-gold tap" id="autofillPlannerBtn" type="button">Pianifica</button>
+          <button class="btn btn-secondary tap" id="gpsBtn" type="button">GPS</button>
         </div>
       </div>
     </section>
 
+    <!-- HOME -->
     <section id="page-home" class="page active">
       <div class="stack">
+
         <div class="quick-grid" id="quickGrid"></div>
 
         <div class="panel glass">
           <div class="panel-head">
-            <h2 id="conditionsTitle">Meteo e mood del giorno</h2>
-            <span class="tiny muted" id="conditionsSub">Travel</span>
+            <h2>Meteo e condizioni</h2>
+            <span class="tiny muted" id="conditionsSub">Live</span>
           </div>
           <div class="stats-grid" id="statsGrid"></div>
           <div id="weatherAlert" class="alert ok" style="margin-top:10px">Caricamento meteo...</div>
@@ -83,152 +94,60 @@
 
         <div class="panel glass">
           <div class="panel-head">
-            <h2 id="forecastTitle">Previsione oraria · prossime 12 ore</h2>
-            <span class="tiny muted" id="forecastSub">Lettura rapida</span>
-          </div>
-          <div class="hourly-summary">
-            <div>
-              <div class="hourly-summary-main" id="hourlySummaryMain">Sto leggendo la finestra migliore della giornata.</div>
-              <div class="hourly-summary-sub" id="hourlySummarySub">Fra poco trovi una lettura rapida delle prossime ore.</div>
-            </div>
+            <h2>Prossime 12 ore</h2>
           </div>
           <div class="hourly-strip" id="hourlyStrip"></div>
-        </div>
-
-        <div class="panel glass sail-only" id="sailHomePanel">
-          <div class="panel-head">
-            <h2>Modalità rotta live</h2>
-            <span class="tiny muted">Solo Sail Mode</span>
-          </div>
-          <div class="planner-actions">
-            <button class="btn btn-primary tap" id="gpsStartBtn" type="button">Avvia rotta</button>
-            <button class="btn btn-secondary tap" id="gpsStopBtn" type="button">Ferma</button>
-            <button class="btn btn-danger tap" id="gpsResetBtn" type="button">Reset rotta</button>
-          </div>
-          <div class="stats-grid" style="margin-top:10px">
-            <div class="stat"><div class="k">Velocità</div><div class="v" id="gpsSpeed">—</div></div>
-            <div class="stat"><div class="k">Direzione</div><div class="v" id="gpsHeading">—</div></div>
-            <div class="stat"><div class="k">Distanza</div><div class="v" id="gpsDistance">0 km</div></div>
-            <div class="stat"><div class="k">Punti traccia</div><div class="v" id="gpsPoints">0</div></div>
-          </div>
         </div>
 
         <div class="panel glass">
           <h2>Planner giornata</h2>
           <div class="planner-box" id="plannerBox"></div>
           <div class="planner-actions">
-            <button class="btn btn-secondary tap" id="plannerOpenBtn" type="button">Apri planner</button>
-            <button class="btn btn-danger tap" id="clearPlannerBtn" type="button">Svuota planner</button>
+            <button class="btn btn-secondary tap" id="plannerOpenBtn">Apri</button>
+            <button class="btn btn-danger tap" id="clearPlannerBtn">Reset</button>
           </div>
         </div>
+
       </div>
     </section>
 
-    <section id="page-top" class="page">
-      <div class="stack">
-        <div class="featured-panel glass">
-          <div class="featured-head">
-            <div class="featured-sub" id="topBox1Sub">I più forti del posto</div>
-            <h2 class="featured-title" id="topBox1Title">Top wow</h2>
-          </div>
-          <div id="topWowList" class="featured-scroll"></div>
-        </div>
-
-        <div class="featured-panel glass">
-          <div class="featured-head">
-            <div class="featured-sub" id="topBox2Sub">Luce serale</div>
-            <h2 class="featured-title" id="topBox2Title">Top tramonti</h2>
-          </div>
-          <div id="topSunsetList" class="featured-scroll"></div>
-        </div>
-      </div>
-    </section>
-
+    <!-- MAP -->
     <section id="page-map" class="page">
-      <div class="stack">
-        <div class="panel glass">
-          <h2>Filtri rapidi mappa</h2>
-          <div class="toolbar" id="mapQuickFilters"></div>
-        </div>
-
-        <div class="map-panel glass">
-          <div id="map"></div>
-          <div class="legend" id="mapLegend"></div>
-        </div>
+      <div class="map-panel glass">
+        <div id="map"></div>
       </div>
     </section>
 
+    <!-- SPOTS -->
     <section id="page-spots" class="page">
-      <div class="stack">
-        <div class="panel glass subtoolbar">
-          <h2>Filtri spot</h2>
-
-          <div id="travelFilters">
-            <div class="toolbar" id="levelChips"></div>
-            <div class="toolbar" id="lightChips"></div>
-            <div class="toolbar" id="zoneChips"></div>
-            <div class="toolbar" id="activityChips"></div>
-            <div class="toolbar" id="favoriteChips"></div>
-          </div>
-
-          <div id="sailFilters" class="sail-only">
-            <div class="toolbar" id="sailChips"></div>
-          </div>
-        </div>
-
-        <div class="panel glass">
-          <h2>Spot della zona</h2>
-          <div id="resultNote" class="detail-empty" style="margin-bottom:10px">Tutti gli spot</div>
-          <div class="spot-list" id="spotList"></div>
-        </div>
+      <div class="panel glass">
+        <div class="spot-list" id="spotList"></div>
       </div>
     </section>
 
+    <!-- DETAIL -->
     <section id="page-detail" class="page">
-      <div class="stack">
-        <div class="panel glass">
-          <h2>Dettaglio spot</h2>
-          <div id="spotDetail" class="detail-empty">
-            Tocca uno spot nella lista, nella Home, nella Top page o sulla mappa per vedere il dettaglio.
-          </div>
-        </div>
+      <div class="panel glass">
+        <div id="spotDetail"></div>
       </div>
     </section>
 
-    <div class="footer-note">
-      Questa app è una guida personale intelligente. Verifica sempre meteo reale, strade, sentieri, mare, regolamenti e condizioni locali.
-    </div>
   </div>
 
-  <nav class="bottom-nav" id="bottomNav">
-    <div class="bottom-nav-inner">
-      <button class="nav-btn active" data-page="home" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85"><path d="M3 11.5 12 4l9 7.5"/><path d="M6 10.5V20h12v-9.5"/></svg>
-        <strong>Home</strong>
-      </button>
-      <button class="nav-btn" data-page="top" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85"><path d="M12 3v18"/><path d="M5 9h5"/><path d="M14 15h5"/><path d="M5 15h3"/><path d="M16 9h3"/></svg>
-        <strong>Top</strong>
-      </button>
-      <button class="nav-btn" data-page="map" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14"/><path d="M15 6v14"/></svg>
-        <strong>Mappa</strong>
-      </button>
-      <button class="nav-btn" data-page="spots" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><circle cx="4" cy="6" r="1.2"/><circle cx="4" cy="12" r="1.2"/><circle cx="4" cy="18" r="1.2"/></svg>
-        <strong>Spot</strong>
-      </button>
-      <button class="nav-btn" data-page="detail" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85"><path d="M7 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
-        <strong>Dettaglio</strong>
-      </button>
-    </div>
+  <!-- NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-page="home">Home</button>
+    <button class="nav-btn" data-page="map">Mappa</button>
+    <button class="nav-btn" data-page="spots">Spot</button>
+    <button class="nav-btn" data-page="detail">Dettaglio</button>
   </nav>
 
   <div class="toast-wrap" id="toastWrap"></div>
 
-  <script src="sail.js"></script>
-  <script src="ui.js"></script>
-  <script src="app.js"></script>
+  <!-- SCRIPTS (cache busting 🔥) -->
+  <script src="sail.js?v=3"></script>
+  <script src="ui.js?v=3"></script>
+  <script src="app.js?v=3"></script>
+
 </body>
 </html>
