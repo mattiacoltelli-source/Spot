@@ -1,4 +1,4 @@
-// service-worker.js
+// Minimal Service Worker (network-first, no cache lock)
 
 self.addEventListener("install", () => {
   self.skipWaiting();

@@ -1514,7 +1514,23 @@
     );
 
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+      navigator.serviceWorker.register("service-worker.js").then(reg => {
+
+        // forza controllo aggiornamenti immediato
+        reg.update();
+
+        // se arriva una nuova versione → ricarica automaticamente
+        reg.onupdatefound = () => {
+          const newWorker = reg.installing;
+
+          newWorker.onstatechange = () => {
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              window.location.reload();
+            }
+          };
+        };
+
+      });
     }
 
     window.addEventListener("load", () => {
