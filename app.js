@@ -11,10 +11,6 @@
     throw new Error("APP_SPOTS non disponibile");
   }
 
-  // ─── SW VERSION ───────────────────────────────────────────────────────────
-
-  const SW_VERSION = "v12";
-
   // ─── STORAGE KEYS ─────────────────────────────────────────────────────────
 
   const STORAGE_KEYS = {
@@ -28,36 +24,32 @@
   // ─── APP STATE ────────────────────────────────────────────────────────────
 
   const APP = {
-    mode:              loadJson(STORAGE_KEYS.mode, "travel"),
-    level:             "all",
-    light:             "all",
-    zone:              "all",
-    activity:          "all",
-    favoritesFilter:   "all",
-    sailFilter:        "all",
-    mapQuickFilter:    "all",
-    search:            "",
-    userPos:           null,
-    currentSpot:       null,
-    weatherData:       null,
-    marineData:        null,
-    hourlyData:        [],
-    sunTimes:          null,
-    sunsetTimer:       null,
-    favorites:         loadJson(STORAGE_KEYS.favorites, []),
-    planner:           loadJson(STORAGE_KEYS.planner, DEFAULT_PLANNER),
-    activePage:        "home",
-    map:               null,
-    markers:           [],
-    markerBySpotId:    new Map(),
-    gpsWatchId:        null,
-    gpsPath:           [],
-    gpsLine:           null,
-    gpsMarker:         null,
-    liveGpsData:       null,
-    _lightUpdateTimer: null,
-    _nearbyCache:      null,
-    _weatherStamp:     null
+    mode:            loadJson(STORAGE_KEYS.mode, "travel"),
+    level:           "all",
+    light:           "all",
+    zone:            "all",
+    activity:        "all",
+    favoritesFilter: "all",
+    sailFilter:      "all",
+    mapQuickFilter:  "all",
+    search:          "",
+    userPos:         null,
+    currentSpot:     null,
+    weatherData:     null,
+    marineData:      null,
+    hourlyData:      [],
+    sunTimes:        null,
+    sunsetTimer:     null,
+    favorites:       loadJson(STORAGE_KEYS.favorites, []),
+    planner:         loadJson(STORAGE_KEYS.planner, DEFAULT_PLANNER),
+    activePage:      "home",
+    map:             null,
+    markers:         [],
+    markerBySpotId:  new Map(),
+    gpsWatchId:      null,
+    gpsPath:         [],
+    gpsLine:         null,
+    gpsMarker:       null
   };
 
   window.APP = APP;
@@ -91,6 +83,10 @@
       .replaceAll("'", "&#039;");
   }
 
+  /**
+   * Normalizza testo per confronto: minuscolo + rimuove accenti + trim.
+   * Gestisce tutti i caratteri Unicode compositi (à→a, ã→a, ñ→n, São→sao, ecc.)
+   */
   function normalizeText(value) {
     return String(value || "")
       .toLowerCase()
@@ -119,27 +115,19 @@
     return v || "giorno";
   }
 
-  // Supporta light come stringa o array
   function lightMatchesFilter(spotLight, filterLight) {
     if (filterLight === "all") return true;
-    const lights = Array.isArray(spotLight) ? spotLight : [spotLight];
-    return lights.some(l => normalizeLight(l) === normalizeLight(filterLight));
+    return normalizeLight(spotLight) === normalizeLight(filterLight);
   }
 
   function isMorningLike(spotLight) {
-    const lights = Array.isArray(spotLight) ? spotLight : [spotLight];
-    return lights.some(l => {
-      const v = normalizeLight(l);
-      return v === "alba" || normalizeText(l) === "mattina";
-    });
+    const v = normalizeLight(spotLight);
+    return v === "alba" || normalizeText(spotLight) === "mattina";
   }
 
   function isEveningLike(spotLight) {
-    const lights = Array.isArray(spotLight) ? spotLight : [spotLight];
-    return lights.some(l => {
-      const v = normalizeLight(l);
-      return v === "tramonto" || normalizeText(l) === "sera";
-    });
+    const v = normalizeLight(spotLight);
+    return v === "tramonto" || normalizeText(spotLight) === "sera";
   }
 
   function parseSunTime(raw) {
@@ -191,33 +179,19 @@
   function getBaseSpots()  { return APP_SPOTS.spots; }
   function getSpotById(id) { return APP_SPOTS.spots.find(s => s.id === id) || null; }
 
-  // Supporta coords: [lat, lon] oppure lat + lon separati
-  function getCoords(s) {
-    if (s.coords && Array.isArray(s.coords)) return s.coords;
-    return [s.lat, s.lon];
-  }
-
-  // Supporta activity/light come stringa o array
-  function matchValue(val, filter) {
-    if (filter === "all") return true;
-    const arr = Array.isArray(val) ? val : [val];
-    return arr.includes(filter);
-  }
-
-  // Single-entry point per tutti i render da app.js
-  function smartRender(type = "light") {
-    if (window.UI?.smartRender) {
-      window.UI.smartRender(APP, type);
-    } else if (window.UI?.renderAll) {
-      window.UI.renderAll(APP);
-    }
-  }
-
   // ═══════════════════════════════════════════════════════════════════════════
   // SEZIONE 2 — SMART SEARCH
+  // Cerca in tutti i campi testuali rilevanti.
+  // Supporta query composite con intent semantici.
   // ═══════════════════════════════════════════════════════════════════════════
 
+  /**
+   * Mappa parola → constraint semantico.
+   * Usata per interpretare query come:
+   *   "tramonto facile", "trekking wow", "acqua calma", "viewpoint vicino"
+   */
   const SEARCH_INTENT_MAP = {
+    // mood / qualità
     "epico":       { minWow: 9 },
     "wow":         { minWow: 9 },
     "forte":       { minWow: 8 },
@@ -227,6 +201,8 @@
     "avventura":   { tagMatch: "avventura" },
     "iconico":     { tagMatch: "iconico" },
     "panorama":    { anyOf: [{ activity: "view" }, { tagMatch: "panorama" }] },
+
+    // attività
     "trekking":    { activity: "trekking" },
     "mtb":         { activity: "mtb" },
     "bike":        { activity: "mtb" },
@@ -241,12 +217,16 @@
     "surf":        { anyOf: [{ activity: "water" }, { tagMatch: "surf" }] },
     "nuoto":       { anyOf: [{ activity: "water" }, { tagMatch: "bagno" }] },
     "sport acqua": { activity: "water" },
+
+    // luce / periodo
     "tramonto":    { light: "tramonto" },
     "alba":        { light: "alba" },
     "giorno":      { light: "giorno" },
     "mattina":     { light: "alba" },
     "sera":        { light: "tramonto" },
     "golden":      { light: "tramonto" },
+
+    // difficoltà
     "facile":      { difficulty: "facile" },
     "easy":        { difficulty: "facile" },
     "semplice":    { difficulty: "facile" },
@@ -255,64 +235,72 @@
     "impegnativo": { difficulty: "impegnativo" },
     "serio":       { difficulty: "impegnativo" },
     "tecnico":     { difficulty: "impegnativo" },
+
+    // zone
     "lago":        { anyOf: [{ zone: "lago" }, { tagMatch: "lago" }] },
     "montagna":    { zone: "montagna" },
     "nord":        { zone: "nord" },
     "est":         { zone: "est" },
     "ovest":       { zone: "ovest" },
     "sud":         { zone: "sud" },
+
+    // distanza (intent soft)
     "vicino":      { nearMe: true },
     "vicini":      { nearMe: true },
     "lontano":     { farMe: true },
+
+    // calma / condizioni acqua
     "calma":       { anyOf: [{ activity: "water" }, { tagMatch: "calma" }] }
   };
 
+  /**
+   * Valuta un singolo constraint contro uno spot.
+   */
   function evaluateConstraint(spot, c) {
     if (!c) return true;
     if (c.anyOf) return c.anyOf.some(sub => evaluateConstraint(spot, sub));
 
-    if ("activity" in c) {
-      if (!matchValue(spot.activity, c.activity)) return false;
-    }
+    if ("activity"   in c && spot.activity   !== c.activity)  return false;
     if ("zone"       in c && spot.zone       !== c.zone)       return false;
     if ("level"      in c && spot.level      !== c.level)      return false;
     if ("difficulty" in c && spot.difficulty !== c.difficulty) return false;
-    if ("light" in c) {
-      if (!matchValue(spot.light, c.light)) return false;
+    if ("light"      in c) {
+      if (normalizeLight(spot.light) !== normalizeLight(c.light)) return false;
     }
     if ("minWow" in c) {
       if ((spot.experience?.wow || 0) < c.minWow) return false;
     }
     if ("tagMatch" in c) {
       const needle  = normalizeText(c.tagMatch);
-      const actArr  = Array.isArray(spot.activity) ? spot.activity : [spot.activity];
       const hayTags = [
         ...(spot.tags   || []),
         ...(spot.alias  || []),
         spot.experience?.mood,
         spot.mood,
-        ...actArr,
+        spot.activity,
         spot.zone
       ].filter(Boolean).map(normalizeText);
       if (!hayTags.some(t => t.includes(needle))) return false;
     }
     if ("nearMe" in c) {
+      // hint distanza: ignora gracefully se GPS non attivo
       if (APP.userPos && spot._distance != null && spot._distance > 30) return false;
     }
     return true;
   }
 
+  /**
+   * Costruisce il haystack testuale di uno spot: stringa unificata di
+   * TUTTI i campi ricercabili, già normalizzata.
+   */
   function buildHaystack(spot) {
-    if (spot._haystack) return spot._haystack;
-    const actArr   = Array.isArray(spot.activity) ? spot.activity : [spot.activity];
-    const lightArr = Array.isArray(spot.light)    ? spot.light    : [spot.light];
-    const raw = [
+    return [
       spot.name,
       spot.zone,
-      ...actArr,
+      spot.activity,
       spot.difficulty,
       spot.level,
-      ...lightArr,
+      spot.light,
       spot.desc,
       spot.tip,
       spot.mood,
@@ -332,10 +320,15 @@
       .filter(Boolean)
       .map(normalizeText)
       .join(" ");
-    spot._haystack = raw;
-    return raw;
   }
 
+  /**
+   * smartSearchMatch — ricerca intelligente a 3 livelli.
+   *
+   * Livello 1 — Full-text: ogni parola della query appare nel haystack.
+   * Livello 2 — Intent puro: ogni parola è un intent semantico soddisfatto.
+   * Livello 3 — Mixed: parole testuali + intent semantici, tutti soddisfatti.
+   */
   function smartSearchMatch(spot, rawQuery) {
     if (!rawQuery || !rawQuery.trim()) return true;
 
@@ -343,15 +336,18 @@
     const words = q.split(/\s+/).filter(Boolean);
     const hay   = buildHaystack(spot);
 
+    // Livello 1: full-text
     if (words.every(w => hay.includes(w))) return true;
 
     const intentWords = words.filter(w => w in SEARCH_INTENT_MAP);
     const textWords   = words.filter(w => !(w in SEARCH_INTENT_MAP));
 
+    // Livello 2: tutti i word sono intent
     if (intentWords.length === words.length && intentWords.length > 0) {
       return intentWords.every(w => evaluateConstraint(spot, SEARCH_INTENT_MAP[w]));
     }
 
+    // Livello 3: mix testo + intent
     if (intentWords.length > 0) {
       const textOk   = textWords.every(w => hay.includes(w));
       const intentOk = intentWords.every(w => evaluateConstraint(spot, SEARCH_INTENT_MAP[w]));
@@ -366,9 +362,8 @@
   // ═══════════════════════════════════════════════════════════════════════════
 
   function getWeatherWindowFit(spot) {
-    const h      = getCurrentHour();
-    const lights = Array.isArray(spot.light) ? spot.light : [spot.light];
-    const light  = normalizeLight(lights[0]);
+    const h     = getCurrentHour();
+    const light = normalizeLight(spot.light);
 
     if (light === "alba") {
       if (h < 6)  return 2;
@@ -395,20 +390,14 @@
     const w = APP.weatherData;
     if (!w) return { score: 0, label: "meteo neutro", cls: "gold" };
 
-    // Cache: riusa weatherFit se il meteo non è cambiato
-    if (spot._weatherFit && spot._weatherStamp === APP._weatherStamp) {
-      return spot._weatherFit;
-    }
-
     let score    = 0;
     const zone   = normalizeText(spot.zone       || "");
-    const actArr = Array.isArray(spot.activity)  ? spot.activity : [spot.activity];
-    const act    = normalizeText(actArr[0]        || "");
+    const act    = normalizeText(spot.activity   || "");
     const diff   = normalizeText(spot.difficulty || "");
-    const lights = Array.isArray(spot.light)     ? spot.light    : [spot.light];
-    const light  = normalizeLight(lights[0]       || "");
+    const light  = normalizeLight(spot.light     || "");
     const hay    = buildHaystack(spot);
 
+    // ── Pioggia ──────────────────────────────────────────────────────────
     if (w.rain >= 55) {
       if (act === "relax") score += 3;
       if (["foresta", "bosco", "verde", "grotta"].some(t => hay.includes(t))) score += 4;
@@ -419,16 +408,17 @@
       if (act === "relax")    score += 1;
     }
 
+    // ── Vento ────────────────────────────────────────────────────────────
     if (w.wind >= 38) {
-      if (zone === "montagna")    score -= 5;
+      if (zone === "montagna")   score -= 5;
       if (diff === "impegnativo") score -= 3;
-      if (act === "view")         score -= 2;
-      if (act === "relax")        score += 1;
-      if (act === "water")        score -= 5;
+      if (act === "view")        score -= 2;
+      if (act === "relax")       score += 1;
+      if (act === "water")       score -= 5;
     } else if (w.wind >= 28) {
-      if (zone === "montagna")                         score -= 3;
+      if (zone === "montagna")                        score -= 3;
       if (act === "trekking" && diff === "impegnativo") score -= 2;
-      if (act === "water")                             score -= 3;
+      if (act === "water")                            score -= 3;
     } else if (w.wind <= 15) {
       if (act === "view")  score += 1;
       if (act === "water") score += 3;
@@ -437,28 +427,26 @@
       if (act === "water") score += 1;
     }
 
+    // ── Nuvole ───────────────────────────────────────────────────────────
     if (w.cloud >= 75) {
       if (["foresta", "verde", "bosco"].some(t => hay.includes(t)) || act === "trekking") score += 2;
       if (light === "tramonto" || light === "alba") score -= 2;
     } else if (w.cloud <= 35 && w.rain < 25) {
       if (light === "alba" || light === "tramonto") score += 3;
-      if (act === "view")      score += 2;
-      if (zone === "montagna") score += 1;
+      if (act === "view")       score += 2;
+      if (zone === "montagna")  score += 1;
     }
 
+    // ── Finestra oraria ──────────────────────────────────────────────────
     score += getWeatherWindowFit(spot);
 
+    // ── Bonus wow intrinseco ─────────────────────────────────────────────
     if ((spot.experience?.wow || 0) >= 10) score += 1;
 
-    let result;
-    if (score >= 7)       result = { score, label: "ottimo oggi",  cls: "green" };
-    else if (score >= 3)  result = { score, label: "molto valido", cls: "gold" };
-    else if (score <= -3) result = { score, label: "meno ideale",  cls: "pink" };
-    else                  result = { score, label: "così così",    cls: "blue" };
-
-    spot._weatherFit   = result;
-    spot._weatherStamp = APP._weatherStamp;
-    return result;
+    if (score >= 7)  return { score, label: "ottimo oggi",  cls: "green" };
+    if (score >= 3)  return { score, label: "molto valido", cls: "gold" };
+    if (score <= -3) return { score, label: "meno ideale",  cls: "pink" };
+    return { score, label: "così così", cls: "blue" };
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -467,15 +455,11 @@
 
   function getAllSpotsWithMeta() {
     return getBaseSpots().map(s => {
-      const [slat, slon] = getCoords(s);
-      const dist = APP.userPos ? distKm(APP.userPos.lat, APP.userPos.lon, slat, slon) : null;
+      const dist = APP.userPos ? distKm(APP.userPos.lat, APP.userPos.lon, s.lat, s.lon) : null;
       return {
         ...s,
-        lat:        slat,
-        lon:        slon,
-        _distance:  dist,
+        _distance:  dist,   // usato internamente per intent nearMe
         distance:   dist,
-        altitude:   (typeof s.alt === "number" ? s.alt : (typeof s.altitude === "number" ? s.altitude : null)),
         weatherFit: weatherSuitability(s),
         sailMeta:   window.SAIL ? window.SAIL.getSpotSailMeta(s, APP) : null
       };
@@ -484,10 +468,10 @@
 
   function getFilteredSpots() {
     let items = getAllSpotsWithMeta().filter(s =>
-      (APP.level           === "all" || s.level === APP.level) &&
+      (APP.level           === "all" || s.level    === APP.level) &&
       lightMatchesFilter(s.light, APP.light) &&
-      (APP.zone            === "all" || s.zone === APP.zone) &&
-      matchValue(s.activity, APP.activity) &&
+      (APP.zone            === "all" || s.zone     === APP.zone) &&
+      (APP.activity        === "all" || s.activity === APP.activity) &&
       (APP.favoritesFilter === "all" || isFavorite(s.id)) &&
       smartSearchMatch(s, APP.search)
     );
@@ -542,8 +526,8 @@
     const desired = currentPeriod();
     let pool = getAllSpotsWithMeta();
     if (APP.level !== "all") pool = pool.filter(s => s.level === APP.level);
-    let pp = pool.filter(s => lightMatchesFilter(s.light, desired));
-    if (!pp.length && desired === "giorno")   pp = pool.filter(s => lightMatchesFilter(s.light, "giorno") || isMorningLike(s.light));
+    let pp = pool.filter(s => normalizeLight(s.light) === desired);
+    if (!pp.length && desired === "giorno")   pp = pool.filter(s => normalizeText(s.light) === "mattina" || normalizeLight(s.light) === "giorno");
     if (!pp.length && desired === "tramonto") pp = pool.filter(s => isEveningLike(s.light));
     if (!pp.length && desired === "alba")     pp = pool.filter(s => isMorningLike(s.light));
     if (!pp.length) pp = pool;
@@ -577,71 +561,12 @@
     return better || nearest;
   }
 
-  function getClosestSpots(limit = 5) {
-    if (!APP.userPos) return [];
-    let pool = getAllSpotsWithMeta().filter(s => s.distance != null);
-    if (APP.level !== "all") pool = pool.filter(s => s.level === APP.level);
-    if (APP.mode === "sail" && window.SAIL) {
-      pool = pool.filter(s => window.SAIL.filterSpotForSailMode(s, APP));
-    }
-    pool.sort((a, b) => a.distance - b.distance);
-    return pool.slice(0, limit);
-  }
-
-  function renderNearbyPage() {
-    const box = $("nearbyList");
-    if (!box) return;
-
-    const items = getClosestSpots(5);
-
-    if (!APP.userPos) {
-      box.innerHTML = `<div class="detail-empty">Attiva il GPS per vedere gli spot vicini.</div>`;
-      return;
-    }
-
-    if (!items.length) {
-      box.innerHTML = `<div class="detail-empty">Nessuno spot trovato nelle vicinanze.</div>`;
-      return;
-    }
-
-    box.innerHTML = items.map(s => `
-    <div class="spot-card glass tap" data-nearby-id="${escapeHtml(s.id)}">
-      <div class="spot-head">
-        <div>
-          <div class="spot-name">${escapeHtml(s.name)}</div>
-          <div class="spot-sub">
-            ${escapeHtml(s.zone)} · ${escapeHtml(Array.isArray(s.activity) ? s.activity[0] : s.activity)}
-          </div>
-        </div>
-      </div>
-
-      <div class="spot-meta">
-        <span class="tag blue">${displayDistance(s.distance)}</span>
-        ${s.weatherFit ? `<span class="tag ${s.weatherFit.cls}">${escapeHtml(s.weatherFit.label)}</span>` : ""}
-        ${s.altitude != null ? `<span class="tag">${s.altitude} m</span>` : ""}
-      </div>
-
-      <div class="spot-desc">
-        ${escapeHtml(s.tip || s.desc || "")}
-      </div>
-    </div>
-  `).join("");
-
-    box.querySelectorAll("[data-nearby-id]").forEach(card => {
-      card.addEventListener("click", () => {
-        const spot = items.find(s => s.id === card.dataset.nearbyId);
-        if (spot) {
-          showSpotDetail(spot);
-          switchPage("detail");
-        }
-      });
-    });
-  }
-
   // ═══════════════════════════════════════════════════════════════════════════
   // SEZIONE 5 — GO NOW ENGINE v2
+  // Score composito a 7 fattori con pesi espliciti e documentati.
   // ═══════════════════════════════════════════════════════════════════════════
 
+  /** Fattore distanza: massimizza il vicinissimo, tollera il lontano */
   function scoreDistance(spot) {
     const d = spot.distance;
     if (d == null) return 0;
@@ -655,11 +580,11 @@
     return -Math.min(12, Math.round(d / 60));
   }
 
+  /** Fattore orario/luce: la finestra giusta di luce vale molto */
   function scoreTimeLight(spot) {
     const h        = getCurrentHour();
-    const lights   = Array.isArray(spot.light) ? spot.light : [spot.light];
-    const lightRaw = normalizeText(lights[0]);
-    const light    = normalizeLight(lights[0]);
+    const lightRaw = normalizeText(spot.light);
+    const light    = normalizeLight(spot.light);
 
     if (light === "alba") {
       if (h < 5)  return 10;
@@ -693,6 +618,7 @@
     return 0;
   }
 
+  /** Fattore difficoltà contestuale: rispetta l'ora del giorno */
   function scoreDifficulty(spot) {
     const diff = normalizeText(spot.difficulty || "");
     const h    = getCurrentHour();
@@ -707,6 +633,7 @@
     return 0;
   }
 
+  /** Fattore wow intrinseco */
   function scoreWow(spot) {
     const wow = spot.experience?.wow || 0;
     if (wow >= 10) return 10;
@@ -716,10 +643,10 @@
     return 0;
   }
 
+  /** Fattore attività × periodo del giorno */
   function scoreActivityPeriod(spot) {
     const period = currentPeriod();
-    const acts   = Array.isArray(spot.activity) ? spot.activity : [spot.activity];
-    const act    = normalizeText(acts[0] || "");
+    const act    = normalizeText(spot.activity || "");
     if (act === "view"     && period === "tramonto") return 8;
     if (act === "view"     && period === "alba")     return 6;
     if (act === "trekking" && period === "giorno")   return 5;
@@ -732,16 +659,15 @@
     return 0;
   }
 
+  /** Fattore meteo contestuale: regole specifiche sulle condizioni attuali */
   function scoreWeatherContext(spot) {
     const w = APP.weatherData;
     if (!w) return 0;
-    let bonus  = 0;
-    const acts = Array.isArray(spot.activity) ? spot.activity : [spot.activity];
-    const act  = normalizeText(acts[0] || "");
-    const zone = normalizeText(spot.zone || "");
-    const lights = Array.isArray(spot.light) ? spot.light : [spot.light];
-    const light  = normalizeLight(lights[0] || "");
-    const hay  = buildHaystack(spot);
+    let bonus = 0;
+    const act   = normalizeText(spot.activity || "");
+    const zone  = normalizeText(spot.zone     || "");
+    const light = normalizeLight(spot.light   || "");
+    const hay   = buildHaystack(spot);
 
     if (w.rain >= 50) {
       if (["foresta", "bosco", "verde", "grotta"].some(t => hay.includes(t))) bonus += 10;
@@ -766,6 +692,12 @@
     return bonus;
   }
 
+  /**
+   * Rank Go Now finale.
+   *
+   * formula:
+   *   meteo×10 + orario + distanza + livello + wow + difficoltà + attività×periodo + meteo_contesto
+   */
   function rankSpotForGoNow(spot) {
     const levelBoost = { core: 18, secondary: 10, extra: 4 };
     return (spot.weatherFit?.score || 0) * 10
@@ -795,6 +727,7 @@
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SEZIONE 6 — EXPLAIN ENGINE
+  // Produce max 3 motivi leggibili del perché uno spot è consigliato.
   // ═══════════════════════════════════════════════════════════════════════════
 
   function explainGoNow(spot) {
@@ -803,14 +736,13 @@
     const reasons = [];
     const period  = currentPeriod();
     const w       = APP.weatherData;
-    const lights  = Array.isArray(spot.light)    ? spot.light    : [spot.light];
-    const light   = normalizeLight(lights[0]      || "");
-    const acts    = Array.isArray(spot.activity)  ? spot.activity : [spot.activity];
-    const act     = normalizeText(acts[0]          || "");
+    const light   = normalizeLight(spot.light || "");
+    const act     = normalizeText(spot.activity || "");
     const diff    = normalizeText(spot.difficulty || "");
     const h       = getCurrentHour();
     const wow     = spot.experience?.wow || 0;
 
+    // ── 1. Meteo complessivo ──────────────────────────────────────────────
     const fitCls = spot.weatherFit?.cls;
     if (fitCls === "green") {
       reasons.push("condizioni eccellenti in questo momento");
@@ -821,6 +753,7 @@
       else reasons.push("nonostante le condizioni, vale comunque la pena");
     }
 
+    // ── 2. Finestra di luce / orario ──────────────────────────────────────
     const tlScore = scoreTimeLight(spot);
     if (tlScore >= 20) {
       if (light === "tramonto" && period === "tramonto")  reasons.push("fascia di luce ideale per il tramonto");
@@ -833,6 +766,7 @@
       reasons.push("non è l'orario ideale, ma lo spot rimane valido");
     }
 
+    // ── 3. Meteo specifico ────────────────────────────────────────────────
     if (w && reasons.length < 3) {
       if (w.cloud <= 25 && w.rain < 15 && (light === "tramonto" || light === "alba")) {
         reasons.push("cielo pulito: tramonto potenzialmente molto forte");
@@ -847,6 +781,7 @@
       }
     }
 
+    // ── 4. Distanza ───────────────────────────────────────────────────────
     if (reasons.length < 3) {
       const d = spot.distance;
       if (d != null) {
@@ -862,17 +797,19 @@
       }
     }
 
+    // ── 5. Wow e difficoltà ───────────────────────────────────────────────
     if (reasons.length < 3) {
-      if (wow >= 10)                          reasons.push("wow factor massimo: 10/10");
-      else if (wow >= 9)                      reasons.push("resa altissima");
+      if (wow >= 10)                    reasons.push("wow factor massimo: 10/10");
+      else if (wow >= 9)                reasons.push("resa altissima");
       else if (diff === "facile" && wow >= 7) reasons.push("grande resa con poco sforzo");
-      else if (act === "trekking")            reasons.push("buona scelta come esperienza centrale");
-      else if (act === "view")                reasons.push("alta resa visiva");
-      else if (act === "relax")               reasons.push("ottima chiusura di giornata");
-      else if (act === "water")               reasons.push("esperienza acqua consigliata");
-      else if (act === "mtb")                 reasons.push("ottimo modulo bike");
+      else if (act === "trekking")      reasons.push("buona scelta come esperienza centrale");
+      else if (act === "view")          reasons.push("alta resa visiva");
+      else if (act === "relax")         reasons.push("ottima chiusura di giornata");
+      else if (act === "water")         reasons.push("esperienza acqua consigliata");
+      else if (act === "mtb")           reasons.push("ottimo modulo bike");
     }
 
+    // ── 6. Fallback ora tardiva ───────────────────────────────────────────
     if (reasons.length < 2 && h >= 17) {
       if (diff === "facile") reasons.push("accessibile anche partendo tardi");
       else reasons.push("ancora gestibile per questa sera");
@@ -888,7 +825,7 @@
   function bestSpotForSlot(options) {
     let pool = getAllSpotsWithMeta();
     if (options.light)    pool = pool.filter(s => lightMatchesFilter(s.light, options.light));
-    if (options.activity) pool = pool.filter(s => options.activity.some(a => matchValue(s.activity, a)));
+    if (options.activity) pool = pool.filter(s => options.activity.includes(s.activity));
     if (options.exclude?.length) pool = pool.filter(s => !options.exclude.includes(s.id));
     if (APP.zone  !== "all") pool = pool.filter(s => s.zone  === APP.zone);
     if (APP.level !== "all") pool = pool.filter(s => s.level === APP.level);
@@ -944,7 +881,7 @@
       APP.favorites = [...APP.favorites, id];
     }
     saveJson(STORAGE_KEYS.favorites, APP.favorites);
-    smartRender("light");
+    renderAll();
     if (APP.currentSpot?.id === id) showSpotDetail(APP.currentSpot);
   }
 
@@ -970,8 +907,10 @@
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SEZIONE 9 — EXPORT / IMPORT DATI
+  // Funzioni pronte per collegare pulsanti UI quando vuoi.
   // ═══════════════════════════════════════════════════════════════════════════
 
+  /** Ritorna un oggetto JSON con preferiti + planner + metadati */
   function exportUserData() {
     return {
       version:    2,
@@ -982,6 +921,7 @@
     };
   }
 
+  /** Scarica il backup come file .json */
   function downloadUserData() {
     const data     = exportUserData();
     const blob     = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -994,6 +934,11 @@
     toast("Backup scaricato");
   }
 
+  /**
+   * Importa preferiti + planner da stringa JSON.
+   * Valida gli ID: accetta solo ID che esistono negli spot attuali.
+   * Ritorna { ok: true } oppure { ok: false, error: "..." }
+   */
   function importUserData(jsonString) {
     let data;
     try { data = JSON.parse(jsonString); }
@@ -1020,11 +965,15 @@
       saveJson(STORAGE_KEYS.planner, APP.planner);
     }
 
-    smartRender("full");
+    renderAll();
     toast("Dati importati con successo");
     return { ok: true };
   }
 
+  /**
+   * Importa da File (da <input type="file">).
+   * Uso: importUserDataFromFile(fileInputEl.files[0])
+   */
   function importUserDataFromFile(file) {
     if (!file) return;
     const reader   = new FileReader();
@@ -1169,13 +1118,12 @@
 
       let headline = "Meteo aggiornato";
       let advice   = "Controlla rapidamente la situazione della giornata.";
-      if (rain >= 55)                    { headline = "Pioggia probabile";     advice = "Meglio spot riparati o attività flessibili."; }
-      else if (wind >= 32)               { headline = "Vento forte";           advice = "Attenzione ai punti molto esposti."; }
+      if (rain >= 55)               { headline = "Pioggia probabile";       advice = "Meglio spot riparati o attività flessibili."; }
+      else if (wind >= 32)          { headline = "Vento forte";             advice = "Attenzione ai punti molto esposti."; }
       else if (cloud <= 35 && rain < 25) { headline = "Finestra interessante"; advice = "Buona giornata per spot aperti e luce più pulita."; }
 
-      APP.weatherData   = { temp, wind, windDir, gust, cloud, rain, period: currentPeriod(), headline, advice };
-      APP._weatherStamp = Date.now();
-      APP.marineData    = {
+      APP.weatherData = { temp, wind, windDir, gust, cloud, rain, period: currentPeriod(), headline, advice };
+      APP.marineData  = {
         waveHeight:    marine?.current?.wave_height    ?? 0,
         waveDirection: marine?.current?.wave_direction ?? 0,
         wavePeriod:    marine?.current?.wave_period    ?? 0
@@ -1183,14 +1131,13 @@
       APP.hourlyData = getNext12Hours(forecast.hourly, marine.hourly);
 
     } catch {
-      APP.weatherData   = null;
-      APP._weatherStamp = null;
-      APP.marineData    = null;
-      APP.hourlyData    = [];
-      APP.sunTimes      = null;
+      APP.weatherData = null;
+      APP.marineData  = null;
+      APP.hourlyData  = [];
+      APP.sunTimes    = null;
     }
 
-    smartRender("full");
+    renderAll();
     startSunsetCountdown();
   }
 
@@ -1252,10 +1199,7 @@
       latlngs.push([spot.lat, spot.lon]);
     });
 
-    if (!APP._mapInitialized && latlngs.length) {
-      APP.map.fitBounds(L.latLngBounds(latlngs).pad(0.18));
-      APP._mapInitialized = true;
-    }
+    if (latlngs.length) APP.map.fitBounds(L.latLngBounds(latlngs).pad(0.18));
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1313,7 +1257,7 @@
     APP.mode = forceMode || (APP.mode === "travel" ? "sail" : "travel");
     saveJson(STORAGE_KEYS.mode, APP.mode);
     updateModeUI();
-    smartRender("full");
+    renderAll();
     toast(APP.mode === "sail" ? "Sail mode attivata" : "Travel mode attiva");
   }
 
@@ -1327,7 +1271,7 @@
     const q = input.value.trim();
     if (!q) return;
     APP.search = q;
-    smartRender("light");
+    renderAll();
     const found = getBaseSpots().find(s => smartSearchMatch(s, q));
     if (found) {
       showSpotDetail(found);
@@ -1348,48 +1292,20 @@
     if (APP.gpsWatchId) return;
     APP.gpsWatchId = navigator.geolocation.watchPosition(
       pos => {
-        const lat      = pos.coords.latitude;
-        const lon      = pos.coords.longitude;
-        const speedMs  = (typeof pos.coords.speed    === "number") ? pos.coords.speed    : null;
-        const heading  = (typeof pos.coords.heading  === "number") ? pos.coords.heading  : null;
-        const altitude = (typeof pos.coords.altitude === "number") ? pos.coords.altitude : null;
-
-        APP.liveGpsData = { lat, lon, speedMs, heading, altitude, timestamp: Date.now() };
-
-        APP.userPos = { lat, lon, accuracy: pos.coords.accuracy, altitude };
-
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
         APP.gpsPath.push([lat, lon]);
         if (APP.gpsLine) APP.gpsLine.setLatLngs(APP.gpsPath);
-
         if (!APP.gpsMarker) {
           APP.gpsMarker = L.circleMarker([lat, lon], {
             radius: 8, color: "#dff3ff", weight: 2, fillColor: "#59b6ff", fillOpacity: 1
           }).addTo(APP.map);
         } else {
-          const current   = APP.gpsMarker.getLatLng();
-          const smoothLat = current.lat + (lat - current.lat) * 0.3;
-          const smoothLon = current.lng + (lon - current.lng) * 0.3;
-          APP.gpsMarker.setLatLng([smoothLat, smoothLon]);
+          APP.gpsMarker.setLatLng([lat, lon]);
         }
-
-        if (APP.map && APP.gpsMarker) {
-          const mapCenter = APP.map.getCenter();
-          const dist = Math.abs(mapCenter.lat - lat) + Math.abs(mapCenter.lng - lon);
-          if (dist > 0.01) {
-            APP.map.panTo([lat, lon], { animate: true, duration: 0.5 });
-          }
-        }
-
-        APP._nearbyCache = getClosestSpots(3);
-
-        if (window.UI?.renderGpsBox) window.UI.renderGpsBox(APP, APP.liveGpsData);
-
-        renderNearbyPage();
-
-        if (!APP._lastMarkerUpdate || Date.now() - APP._lastMarkerUpdate > 4000) {
-          renderMarkers();
-          APP._lastMarkerUpdate = Date.now();
-        }
+        APP.userPos = { lat, lon };
+        if (window.UI?.renderGpsBox) window.UI.renderGpsBox(APP, { speedMs: pos.coords.speed, heading: pos.coords.heading });
+        renderAll();
       },
       () => toast("Permesso GPS negato o posizione non disponibile"),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
@@ -1402,9 +1318,7 @@
 
   function resetGPSRoute() {
     stopGPSRoute();
-    APP.gpsPath      = [];
-    APP.liveGpsData  = null;
-    APP._nearbyCache = null;
+    APP.gpsPath = [];
     if (APP.gpsLine)           APP.gpsLine.setLatLngs([]);
     if (APP.gpsMarker && APP.map) { APP.map.removeLayer(APP.gpsMarker); APP.gpsMarker = null; }
     if (window.UI?.renderGpsBox) window.UI.renderGpsBox(APP, null);
@@ -1419,9 +1333,8 @@
   }
 
   function renderAll() {
-    smartRender("full");
+    if (window.UI?.renderAll) window.UI.renderAll(APP);
     renderMarkers();
-    renderNearbyPage();
   }
 
   function toast(message) {
@@ -1452,27 +1365,22 @@
 
     const searchInput = $("searchInput");
     if (searchInput) {
-      searchInput.addEventListener("input",   () => { APP.search = searchInput.value.trim(); smartRender("light"); });
+      searchInput.addEventListener("input",   () => { APP.search = searchInput.value.trim(); renderAll(); });
       searchInput.addEventListener("keydown", e  => { if (e.key === "Enter") searchSpot(); });
     }
 
-    $("searchBtn")?.addEventListener("click",          searchSpot);
-    $("goNowBtn")?.addEventListener("click",           runGoNow);
+    $("searchBtn")?.addEventListener("click",       searchSpot);
+    $("goNowBtn")?.addEventListener("click",        runGoNow);
     $("autofillPlannerBtn")?.addEventListener("click", buildDayPlanner);
-    $("plannerOpenBtn")?.addEventListener("click",     () => switchPage("home"));
-    $("clearPlannerBtn")?.addEventListener("click",    clearPlannerAll);
+    $("plannerOpenBtn")?.addEventListener("click",  () => switchPage("home"));
+    $("clearPlannerBtn")?.addEventListener("click", clearPlannerAll);
 
     $("gpsBtn")?.addEventListener("click", () => {
       if (!navigator.geolocation) { toast("GPS non disponibile"); return; }
       navigator.geolocation.getCurrentPosition(
         pos => {
-          APP.userPos = {
-            lat:      pos.coords.latitude,
-            lon:      pos.coords.longitude,
-            accuracy: pos.coords.accuracy,
-            altitude: (typeof pos.coords.altitude === "number" ? pos.coords.altitude : null)
-          };
-          smartRender("full");
+          APP.userPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+          renderAll();
           toast("Posizione aggiornata");
         },
         () => toast("Permesso GPS negato"),
@@ -1493,55 +1401,24 @@
   // SEZIONE 19 — INIT
   // ═══════════════════════════════════════════════════════════════════════════
 
-  function startLightUpdateLoop() {
-    if (APP._lightUpdateTimer) clearInterval(APP._lightUpdateTimer);
-    APP._lightUpdateTimer = setInterval(() => {
-      if (window.UI?.smartRender) window.UI.smartRender(APP, "light");
-    }, 1500);
-  }
-
   function initApp() {
     updateModeUI();
     bindEvents();
     initMap();
-    smartRender("full");
+    renderAll();
     loadWeather();
-    startLightUpdateLoop();
 
     navigator.geolocation?.getCurrentPosition(
       pos => {
-        APP.userPos = {
-          lat:      pos.coords.latitude,
-          lon:      pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-          altitude: (typeof pos.coords.altitude === "number" ? pos.coords.altitude : null)
-        };
-        smartRender("full");
+        APP.userPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+        renderAll();
       },
       () => {},
       { enableHighAccuracy: true, timeout: 8000 }
     );
 
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        const toUnregister = registrations.filter(r =>
-          r.active?.scriptURL &&
-          !r.active.scriptURL.endsWith(`sw-${SW_VERSION}.js`)
-        );
-        return Promise.all(toUnregister.map(r => r.unregister()));
-      }).then(() => {
-        return navigator.serviceWorker.register(`sw-${SW_VERSION}.js`);
-      }).then(reg => {
-        reg.update();
-        reg.onupdatefound = () => {
-          const newWorker = reg.installing;
-          newWorker.onstatechange = () => {
-            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-              window.location.reload();
-            }
-          };
-        };
-      }).catch(() => {});
+      navigator.serviceWorker.register("service-worker.js").catch(() => {});
     }
 
     window.addEventListener("load", () => {
@@ -1551,9 +1428,11 @@
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SEZIONE 20 — PUBLIC API  (window.APP_UTILS)
+  // Tutto ciò che ui.js, sail.js o altri file possono chiamare.
   // ═══════════════════════════════════════════════════════════════════════════
 
   window.APP_UTILS = {
+    // ── Utilities base ────────────────────────────────────────────────────
     $,
     escapeHtml,
     normalizeText,
@@ -1564,42 +1443,47 @@
     getSpotImage,
     isMorningLike,
     isEveningLike,
-    getCoords,
-    matchValue,
 
+    // ── Smart search ──────────────────────────────────────────────────────
     smartSearchMatch,
     buildHaystack,
     evaluateConstraint,
 
+    // ── Spot data ─────────────────────────────────────────────────────────
     getBaseSpots,
     getSpotById,
     getAllSpotsWithMeta,
     getFilteredSpots,
     getMapFilteredSpots,
 
+    // ── Best spot selectors ───────────────────────────────────────────────
     getBestSpotToday,
     getBestWowSpot,
     getBestSunsetSpot,
     getClosestSpot,
-    getClosestSpots,
 
+    // ── Go Now + Explain ──────────────────────────────────────────────────
     getGoNowSuggestions,
     explainGoNow,
     rankSpotForGoNow,
 
+    // ── Sun phase ─────────────────────────────────────────────────────────
     getSunPhaseInfo,
 
+    // ── Favorites & Planner ───────────────────────────────────────────────
     isFavorite,
     toggleFavorite,
     setPlannerSlot,
     clearPlannerSlot,
     clearPlannerAll,
 
+    // ── Export / Import ───────────────────────────────────────────────────
     exportUserData,
     downloadUserData,
     importUserData,
     importUserDataFromFile,
 
+    // ── UI helpers ────────────────────────────────────────────────────────
     showSpotDetail,
     switchPage,
     centerSpot,
