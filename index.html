@@ -1,174 +1,147 @@
 <!doctype html>
+
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-
-  <title>Travel & Sail Planner</title>
-
-  <link rel="manifest" href="manifest.json">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">  <title>Travel & Sail Planner</title>  <!-- PWA -->  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0b0f14">
-  <link rel="apple-touch-icon" href="icon-192.png">
-
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css?v=11">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js?v=11"></script>
-
-  <link rel="stylesheet" href="styles.css?v=11">
-</head>
-
-<body>
-  <div class="app-bg"></div>
-
-  <div class="splash" id="splash">
+  <link rel="apple-touch-icon" href="icon-192.png">  <!-- PWA mobile (fix esperienza iOS-like) -->  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">  <!-- Leaflet -->  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css?v=12">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js?v=12"></script>  <!-- App CSS -->  <link rel="preload" href="styles.css?v=12" as="style">
+  <link rel="stylesheet" href="styles.css?v=12">
+</head><body>
+  <div class="app-bg"></div>  <!-- SPLASH -->  <div class="splash" id="splash">
     <div class="splash-card">
       <div class="splash-emoji">🗺️</div>
       <div class="splash-title">Travel &amp; Sail Planner</div>
       <div class="splash-sub">Guida smart per spot, giornate e attività outdoor.</div>
       <div class="splash-bar"><div></div></div>
     </div>
-  </div>
-
-  <div class="wrap">
-
-    <section class="hero">
-      <div class="hero-top">
-        <div class="eyebrow">
-          <span class="eyebrow-dot"></span>
-          <span id="eyebrowRegion">Zona attiva</span>
-        </div>
-
-        <label class="mode-switch">
-          <input type="checkbox" id="sailModeToggle">
-          <span class="mode-switch-track">
-            <span class="mode-switch-thumb"></span>
-          </span>
-          <span class="mode-switch-label">
-            <strong id="modeLabelMain">Travel Mode</strong>
-            <small id="modeLabelSub">Sail mode OFF</small>
-          </span>
-        </label>
-      </div>
-
-      <div class="panel glass gps-box" id="gpsBox" style="margin-bottom:1rem; display:grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap:10px; padding:12px;">
-        <div class="stat"><div class="k">Velocità</div><div class="v" id="gpsSpeed">—</div></div>
-        <div class="stat"><div class="k">Direzione</div><div class="v" id="gpsHeading">—</div></div>
-        <div class="stat"><div class="k">Altitudine</div><div class="v" id="gpsAltitude">—</div></div>
-      </div>
-
-      <h1 id="heroTitle">Scopri meglio il posto.<br>Vai negli spot giusti.</h1>
-
-      <p id="heroDescription">
-        Guida travel e outdoor con mappa, spot wow, tramonti e suggerimenti intelligenti.
-      </p>
-
-      <div class="hero-actions">
-        <div class="search-box glass">
-          <input id="searchInput" type="text"
-            placeholder="Cerca spot (es: tramonto, trekking, acqua calma)">
-          <button class="btn btn-primary" id="searchBtn">Cerca</button>
-          <button class="btn btn-secondary" id="goNowBtn">Vai ora</button>
-        </div>
-
-        <div class="panel glass side-actions">
-          <button class="btn btn-gold" id="autofillPlannerBtn">Pianifica giornata</button>
-          <button class="btn btn-secondary" id="gpsBtn">Usa GPS</button>
-        </div>
-      </div>
-    </section>
-
-    <section id="page-home" class="page active">
-      <div class="stack">
-        <div id="quickGrid" class="quick-grid"></div>
-
-        <div class="panel glass">
-          <h2 id="conditionsTitle">Meteo</h2>
-          <div id="statsGrid" class="stats-grid"></div>
-          <div id="weatherAlert" class="alert">Caricamento...</div>
-        </div>
-
-        <div class="panel glass">
-          <div class="panel-head">
-            <h2 id="hourlySummaryMain">Previsione</h2>
-            <span class="tiny muted" id="hourlySummarySub">Caricamento...</span>
-          </div>
-          <div id="hourlyStrip" class="hourly-strip"></div>
-        </div>
-
-        <div class="panel glass">
-          <h2>Planner giornata</h2>
-          <div id="plannerBox"></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="page-top" class="page">
-      <div class="stack">
-        <div class="panel-head"><h2>Spot Wow</h2></div>
-        <div id="topWowList" class="featured-grid"></div>
-        <div class="panel-head"><h2>Tramonti Premium</h2></div>
-        <div id="topSunsetList" class="featured-grid"></div>
-      </div>
-    </section>
-
-    <section id="page-map" class="page">
-      <div class="stack">
-        <div id="mapQuickFilters" class="chip-bar" style="margin-bottom:10px"></div>
-        <div class="map-panel glass">
-          <div id="map" style="height: 500px; border-radius: 12px;"></div>
-        </div>
-        <div id="mapLegend" class="legend-box glass" style="margin-top:10px; padding:10px; display:flex; gap:15px; font-size:12px;"></div>
-      </div>
-    </section>
-
-    <section id="page-spots" class="page">
-      <div class="stack">
-        <div class="filter-section">
-          <div id="levelChips" class="chip-bar"></div>
-          <div id="zoneChips" class="chip-bar"></div>
-          <div id="activityChips" class="chip-bar"></div>
-        </div>
-        <div class="panel-head"><h2 id="resultNote">Tutti gli spot</h2></div>
-        <div id="spotList"></div>
-      </div>
-    </section>
-
-    <section id="page-detail" class="page">
-      <div id="spotDetail" class="stack"></div>
-    </section>
-
-    <div class="footer-note">
-      Verifica sempre condizioni reali e sicurezza.
+  </div>  <div class="wrap"><!-- HERO -->
+<section class="hero">
+  <div class="hero-top">
+    <div class="eyebrow">
+      <span class="eyebrow-dot"></span>
+      <span id="eyebrowRegion">Zona attiva</span>
     </div>
 
+    <label class="mode-switch">
+      <input type="checkbox" id="sailModeToggle">
+      <span class="mode-switch-track">
+        <span class="mode-switch-thumb"></span>
+      </span>
+      <span class="mode-switch-label">
+        <strong id="modeLabelMain">Travel Mode</strong>
+        <small id="modeLabelSub">Sail mode OFF</small>
+      </span>
+    </label>
   </div>
 
-  <nav class="bottom-nav">
+  <!-- GPS -->
+  <div class="panel glass gps-box" id="gpsBox" style="margin-bottom:1rem; display:grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap:10px; padding:12px;">
+    <div class="stat"><div class="k">Velocità</div><div class="v" id="gpsSpeed">—</div></div>
+    <div class="stat"><div class="k">Direzione</div><div class="v" id="gpsHeading">—</div></div>
+    <div class="stat"><div class="k">Altitudine</div><div class="v" id="gpsAltitude">—</div></div>
+  </div>
+
+  <h1 id="heroTitle">Scopri meglio il posto.<br>Vai negli spot giusti.</h1>
+
+  <p id="heroDescription">
+    Guida travel e outdoor con mappa, spot wow, tramonti e suggerimenti intelligenti.
+  </p>
+
+  <div class="hero-actions">
+    <div class="search-box glass">
+      <input id="searchInput" type="text" placeholder="Cerca spot (es: tramonto, trekking, acqua calma)">
+      <button class="btn btn-primary" id="searchBtn">Cerca</button>
+      <button class="btn btn-secondary" id="goNowBtn">Vai ora</button>
+    </div>
+
+    <div class="panel glass side-actions">
+      <button class="btn btn-gold" id="autofillPlannerBtn">Pianifica giornata</button>
+      <button class="btn btn-secondary" id="gpsBtn">Usa GPS</button>
+    </div>
+  </div>
+</section>
+
+<!-- HOME -->
+<section id="page-home" class="page active">
+  <div class="stack">
+    <div id="quickGrid" class="quick-grid"></div>
+
+    <div class="panel glass">
+      <h2 id="conditionsTitle">Meteo</h2>
+      <div id="statsGrid" class="stats-grid"></div>
+      <div id="weatherAlert" class="alert">Caricamento...</div>
+    </div>
+
+    <div class="panel glass">
+      <div class="panel-head">
+        <h2 id="hourlySummaryMain">Previsione</h2>
+        <span class="tiny muted" id="hourlySummarySub">Caricamento...</span>
+      </div>
+      <div id="hourlyStrip" class="hourly-strip"></div>
+    </div>
+
+    <div class="panel glass">
+      <h2>Planner giornata</h2>
+      <div id="plannerBox"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOP -->
+<section id="page-top" class="page">
+  <div class="stack">
+    <div class="panel-head"><h2>Spot Wow</h2></div>
+    <div id="topWowList" class="featured-grid"></div>
+
+    <div class="panel-head"><h2>Tramonti Premium</h2></div>
+    <div id="topSunsetList" class="featured-grid"></div>
+  </div>
+</section>
+
+<!-- MAP -->
+<section id="page-map" class="page">
+  <div class="stack">
+    <div id="mapQuickFilters" class="chip-bar" style="margin-bottom:10px"></div>
+
+    <div class="map-panel glass">
+      <div id="map" style="height:500px; border-radius:12px;"></div>
+    </div>
+
+    <div id="mapLegend" class="legend-box glass" style="margin-top:10px; padding:10px; display:flex; gap:15px; font-size:12px;"></div>
+  </div>
+</section>
+
+<!-- SPOTS -->
+<section id="page-spots" class="page">
+  <div class="stack">
+    <div class="filter-section">
+      <div id="levelChips" class="chip-bar"></div>
+      <div id="zoneChips" class="chip-bar"></div>
+      <div id="activityChips" class="chip-bar"></div>
+    </div>
+
+    <div class="panel-head"><h2 id="resultNote">Tutti gli spot</h2></div>
+    <div id="spotList"></div>
+  </div>
+</section>
+
+<!-- DETAIL -->
+<section id="page-detail" class="page">
+  <div id="spotDetail" class="stack"></div>
+</section>
+
+<div class="footer-note">
+  Verifica sempre condizioni reali e sicurezza.
+</div>
+
+  </div>  <!-- NAV -->  <nav class="bottom-nav">
     <button class="nav-btn active" data-page="home">Home</button>
     <button class="nav-btn" data-page="top">Top</button>
     <button class="nav-btn" data-page="map">Mappa</button>
     <button class="nav-btn" data-page="spots">Spot</button>
     <button class="nav-btn" data-page="detail">Dettaglio</button>
-  </nav>
-
-  <div id="toastWrap"></div>
-
-  <!-- ORDINE CORRETTO -->
-  <script src="spots.js?v=11"></script>
-  <script src="sail.js?v=11"></script>
-  <script src="app.js?v=11"></script>
-  <script src="ui.js?v=11"></script>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw-v11.js');
-      });
-    }
-  </script>
-
-</body>
+  </nav>  <div id="toastWrap"></div>  <!-- JS ORDER (CRITICO) -->  <script src="spots.js?v=12"></script>  <script src="sail.js?v=12"></script>  <script src="app.js?v=12"></script>  <script src="ui.js?v=12"></script>  <!-- ❌ NIENTE SERVICE WORKER QUI -->  <!-- Gestito completamente da app.js --></body>
 </html>
