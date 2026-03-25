@@ -1,6 +1,6 @@
-const CACHE_NAME = "travel-sail-v1";
+const CACHE_NAME = "travel-sail-cache-v12";
 
-const ASSETS = [
+const STATIC_ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
@@ -10,53 +10,89 @@ const ASSETS = [
   "./spots.js",
   "./manifest.json",
   "./icon-192.png",
-  "./icon-512.png"
+  "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
+  "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
 ];
 
-// ─── INSTALL ─────────────────────────────────────
-
+// ─────────────────────────────────────────
+// INSTALL
+// ─────────────────────────────────────────
 self.addEventListener("install", event => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.addAll(STATIC_ASSETS);
+    })
   );
 });
 
-// ─── ACTIVATE ────────────────────────────────────
-
+// ─────────────────────────────────────────
+// ACTIVATE
+// ─────────────────────────────────────────
 self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.map(key => {
-          if (key !== CACHE_NAME) return caches.delete(key);
-        })
-      )
-    ).then(() => self.clients.claim())
+    caches.keys().then(keys => {
+      return Promise.all(
+        keys
+          .filter(key => key !== CACHE_NAME)
+          .map(key => caches.delete(key))
+      );
+    }).then(() => self.clients.claim())
   );
 });
 
-// ─── FETCH STRATEGY ──────────────────────────────
-// Network first (sempre aggiornato) + fallback cache
-
+// ─────────────────────────────────────────
+// FETCH STRATEGY
+// ─────────────────────────────────────────
 self.addEventListener("fetch", event => {
-  if (event.request.method !== "GET") return;
+  const req = event.request;
 
-  event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        if (!response || response.status !== 200) return response;
+  // SOLO GET
+  if (req.method !== "GET") return;
 
-        const clone = response.clone();
+  // API → network first
+  if (req.url.includes("open-meteo.com")) {
+    event.respondWith(networkFirst(req));
+    return;
+  }
 
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, clone);
-        });
+  // HTML → network first
+  if (req.headers.get("accept")?.includes("text/html")) {
+    event.respondWith(networkFirst(req));
+    return;
+  }
 
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request);
-      })
-  );
+  // STATIC → cache first
+  event.respondWith(cacheFirst(req));
 });
+
+// ─────────────────────────────────────────
+// STRATEGIE
+// ─────────────────────────────────────────
+
+async function cacheFirst(req) {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(req);
+  if (cached) return cached;
+
+  try {
+    const res = await fetch(req);
+    cache.put(req, res.clone());
+    return res;
+  } catch {
+    return cached;
+  }
+}
+
+async function networkFirst(req) {
+  const cache = await caches.open(CACHE_NAME);
+
+  try {
+    const res = await fetch(req);
+    cache.put(req, res.clone());
+    return res;
+  } catch {
+    const cached = await cache.match(req);
+    return cached || new Response("Offline", { status: 503 });
+  }
+}

@@ -51,8 +51,8 @@
   }
 
   function getDistanceLabel(spot) {
-    if (!spot) return "GPS non attivo";
-    if (spot.distance == null) return "distanza n/d";
+    if (!spot) return "";
+    if (spot.distance == null) return "";
     return window.APP_UTILS.displayDistance(spot.distance);
   }
 
@@ -112,7 +112,7 @@
         <div class="quick-desc">${bestNow ? esc(getBestPracticalLine(bestNow)) : "Sto leggendo il miglior spot del momento."}</div>
 
         <div class="sunset-chip-row">
-          <div class="mini-chip blue">${bestNow ? esc(getDistanceLabel(bestNow)) : "distanza n/d"}</div>
+          ${bestNow && getDistanceLabel(bestNow) ? `<div class="mini-chip blue">${esc(getDistanceLabel(bestNow))}</div>` : ""}
           <div class="mini-chip ${chipClassFromFit(bestNow?.weatherFit)}">${bestNow?.weatherFit?.label || "lettura in corso"}</div>
           ${bestNow?.experience?.wow ? `<div class="mini-chip gold">Wow ${esc(String(bestNow.experience.wow))}/10</div>` : ""}
         </div>
@@ -130,8 +130,8 @@
         <div class="quick-desc">${closestSpot ? esc(getClosestPracticalLine(closestSpot)) : "Attiva il GPS per vedere lo spot più vicino."}</div>
 
         <div class="sunset-chip-row">
-          <div class="mini-chip blue">${closestSpot ? esc(getDistanceLabel(closestSpot)) : "GPS non attivo"}</div>
-          <div class="mini-chip gold">${closestSpot ? esc(pretty(closestSpot.zone)) : "zona n/d"}</div>
+          ${closestSpot && getDistanceLabel(closestSpot) ? `<div class="mini-chip blue">${esc(getDistanceLabel(closestSpot))}</div>` : ""}
+          ${closestSpot?.zone ? `<div class="mini-chip gold">${esc(pretty(closestSpot.zone))}</div>` : ""}
           ${closestSpot ? `<div class="mini-chip ${esc(closestQualityChipCls)}">${esc(closestQualityLabel)}</div>` : ""}
         </div>
       </div>
@@ -174,7 +174,7 @@
         <div class="quick-desc">${bestToday?.sailMeta?.enabled ? esc(bestToday.sailMeta.detailText || "Compatibilità live") : "Nessun dato vela negli spot attuali."}</div>
         <div class="sunset-chip-row">
           <div class="mini-chip blue">Sail</div>
-          <div class="mini-chip gold">${bestToday?.sailMeta?.label || "n/d"}</div>
+          ${bestToday?.sailMeta?.label ? `<div class="mini-chip gold">${esc(bestToday.sailMeta.label)}</div>` : ""}
         </div>
       </div>
 
@@ -373,6 +373,7 @@
     const activityChips   = $("activityChips");
     const favoriteChips   = $("favoriteChips");
     const sailChips       = $("sailChips");
+    const distanceChips   = $("distanceChips");
 
     // ── Mappa rapida ──────────────────────────────────────────────────────
     if (mapQuickFilters) {
@@ -384,7 +385,7 @@
         <button class="chip ${app.mapQuickFilter === "favorites" ? "active" : ""}" data-mapquick="favorites" type="button">Preferiti</button>
       `;
       mapQuickFilters.querySelectorAll("[data-mapquick]").forEach(btn => {
-        btn.addEventListener("click", () => { app.mapQuickFilter = btn.dataset.mapquick; window.APP_UTILS.renderAll(); });
+        btn.addEventListener("click", () => { app.mapQuickFilter = btn.dataset.mapquick; UI.smartRender(app); });
       });
     }
 
@@ -397,7 +398,7 @@
         <button class="chip ${app.level === "extra"     ? "active" : ""}" data-level="extra"     type="button">Extra</button>
       `;
       levelChips.querySelectorAll("[data-level]").forEach(btn => {
-        btn.addEventListener("click", () => { app.level = btn.dataset.level; window.APP_UTILS.renderAll(); });
+        btn.addEventListener("click", () => { app.level = btn.dataset.level; UI.smartRender(app); });
       });
     }
 
@@ -410,7 +411,7 @@
         <button class="chip ${app.light === "giorno"   ? "active" : ""}" data-light="giorno"   type="button">Giorno</button>
       `;
       lightChips.querySelectorAll("[data-light]").forEach(btn => {
-        btn.addEventListener("click", () => { app.light = btn.dataset.light; window.APP_UTILS.renderAll(); });
+        btn.addEventListener("click", () => { app.light = btn.dataset.light; UI.smartRender(app); });
       });
     }
 
@@ -423,7 +424,7 @@
           `<button class="chip ${app.zone === z.id ? "active" : ""}" data-zone="${esc(z.id)}" type="button">${esc(z.label)}</button>`
         ).join("");
       zoneChips.querySelectorAll("[data-zone]").forEach(btn => {
-        btn.addEventListener("click", () => { app.zone = btn.dataset.zone; window.APP_UTILS.renderAll(); });
+        btn.addEventListener("click", () => { app.zone = btn.dataset.zone; UI.smartRender(app); });
       });
     }
 
@@ -436,7 +437,7 @@
           `<button class="chip ${app.activity === a.id ? "active" : ""}" data-activity="${esc(a.id)}" type="button">${a.emoji ? a.emoji + " " : ""}${esc(a.label)}</button>`
         ).join("");
       activityChips.querySelectorAll("[data-activity]").forEach(btn => {
-        btn.addEventListener("click", () => { app.activity = btn.dataset.activity; window.APP_UTILS.renderAll(); });
+        btn.addEventListener("click", () => { app.activity = btn.dataset.activity; UI.smartRender(app); });
       });
     }
 
@@ -447,8 +448,25 @@
         <button class="chip ${app.favoritesFilter === "favorites" ? "active" : ""}" data-favoritesfilter="favorites" type="button">Solo preferiti</button>
       `;
       favoriteChips.querySelectorAll("[data-favoritesfilter]").forEach(btn => {
-        btn.addEventListener("click", () => { app.favoritesFilter = btn.dataset.favoritesfilter; window.APP_UTILS.renderAll(); });
+        btn.addEventListener("click", () => { app.favoritesFilter = btn.dataset.favoritesfilter; UI.smartRender(app); });
       });
+    }
+
+    // ── Distanza (solo se GPS attivo) ─────────────────────────────────────
+    if (distanceChips) {
+      if (!app.userPos) {
+        distanceChips.innerHTML = `<span style="font-size:12px;color:var(--muted);padding:4px 0">Attiva GPS per filtrare per distanza</span>`;
+      } else {
+        distanceChips.innerHTML = `
+          <button class="chip ${app.distanceFilter === "all" ? "active" : ""}" data-dist="all" type="button">Tutti</button>
+          <button class="chip ${app.distanceFilter === "5"   ? "active" : ""}" data-dist="5"   type="button">≤ 5 km</button>
+          <button class="chip ${app.distanceFilter === "10"  ? "active" : ""}" data-dist="10"  type="button">≤ 10 km</button>
+          <button class="chip ${app.distanceFilter === "15"  ? "active" : ""}" data-dist="15"  type="button">≤ 15 km</button>
+        `;
+        distanceChips.querySelectorAll("[data-dist]").forEach(btn => {
+          btn.addEventListener("click", () => { app.distanceFilter = btn.dataset.dist; UI.smartRender(app); });
+        });
+      }
     }
 
     // ── Sail ──────────────────────────────────────────────────────────────
@@ -461,7 +479,7 @@
         <button class="chip ${app.sailFilter === "beautiful" ? "active" : ""}" data-sailfilter="beautiful" type="button">Spot belli</button>
       `;
       sailChips.querySelectorAll("[data-sailfilter]").forEach(btn => {
-        btn.addEventListener("click", () => { app.sailFilter = btn.dataset.sailfilter; window.APP_UTILS.renderAll(); });
+        btn.addEventListener("click", () => { app.sailFilter = btn.dataset.sailfilter; UI.smartRender(app); });
       });
     }
   }
@@ -741,7 +759,8 @@
 
     box.innerHTML = `
       <div class="detail-hero" style="background-image:url('${esc(spot.image || "")}')">
-        <div class="detail-hero-inner">
+        <div style="position:absolute;inset:0;background:linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.62) 100%);border-radius:inherit;pointer-events:none"></div>
+        <div class="detail-hero-inner" style="position:relative;z-index:1">
           <h2 class="detail-title">${esc(spot.name)}</h2>
           <div class="detail-sub">${esc(pretty(spot.zone))} · ${esc(pretty(spot.activity))} · ${esc(pretty(spot.light))}</div>
         </div>
@@ -774,6 +793,12 @@
             <div class="v">${esc(sail.label)}</div>
           </div>
         ` : ""}
+        ${spot.altitude != null ? `
+          <div class="detail-box">
+            <div class="k">Altitudine</div>
+            <div class="v">${Math.round(spot.altitude)} m</div>
+          </div>
+        ` : ""}
       </div>
 
       ${spot.desc ? `<div class="detail-section"><p style="margin:0;font-size:15px;line-height:1.55;color:#deebf6">${esc(spot.desc)}</p></div>` : ""}
@@ -801,18 +826,12 @@
           <a class="btn btn-secondary tap" href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank" rel="noopener noreferrer">Apri in Google Maps</a>
           <button class="btn btn-secondary tap" id="detailFavBtn"   type="button">${isFavorite(spot.id) ? "Rimuovi preferito" : "Salva preferito"}</button>
           <a class="btn btn-secondary tap" href="https://www.google.com/search?q=${encodeURIComponent(spot.name + " " + (APP_SPOTS.region || ""))}&tbm=isch" target="_blank" rel="noopener noreferrer">Vedi foto reali</a>
-          <button class="btn btn-secondary tap" id="detailAlbaBtn"   type="button">Aggiungi ad Alba</button>
-          <button class="btn btn-secondary tap" id="detailMainBtn"   type="button">Aggiungi ad Attività</button>
-          <button class="btn btn-secondary tap" id="detailSunsetBtn" type="button">Aggiungi a Tramonto</button>
         </div>
       </div>
     `;
 
     $("detailMapBtn")?.addEventListener("click",    () => window.APP_UTILS.centerSpot(spot.id));
     $("detailFavBtn")?.addEventListener("click",    () => window.APP_UTILS.toggleFavorite(spot.id));
-    $("detailAlbaBtn")?.addEventListener("click",   () => window.APP_UTILS.setPlannerSlot("alba",     spot.id));
-    $("detailMainBtn")?.addEventListener("click",   () => window.APP_UTILS.setPlannerSlot("main",     spot.id));
-    $("detailSunsetBtn")?.addEventListener("click", () => window.APP_UTILS.setPlannerSlot("tramonto", spot.id));
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -875,7 +894,7 @@
     panel.innerHTML = `
       <div class="panel-head">
         <h2>Dati personali</h2>
-        <span class="tiny muted">Preferiti &amp; planner</span>
+        <span class="tiny muted">Preferiti</span>
       </div>
       <div class="planner-actions" style="grid-template-columns:1fr 1fr;gap:10px;margin-top:0">
         <button class="btn btn-secondary tap" id="exportDataBtn" type="button">⬇ Esporta dati</button>
@@ -921,8 +940,8 @@
     if (!liveData) {
       gpsSpeed.textContent    = "—";
       gpsHeading.textContent  = "—";
-      gpsDistance.textContent = "0 km";
-      gpsPoints.textContent   = "0";
+      gpsDistance.textContent = "—";
+      gpsPoints.textContent   = "—";
       return;
     }
 
@@ -976,58 +995,88 @@
   // RENDER ALL
   // ═══════════════════════════════════════════════════════════════════════════
 
+  let lastFullRender = 0;
+
   UI.renderAll = function (app) {
-    const counts = getSpotCounts();
+    const now    = Date.now();
+    const doFull = (now - lastFullRender) > 1500;
 
-    $("eyebrowRegion") && ($("eyebrowRegion").textContent =
-      `${APP_SPOTS.region || "Area"} · ${counts.main} spot principali${counts.extra ? ` + ${counts.extra} extra` : ""}`);
+    if (doFull) {
+      lastFullRender = now;
 
-    $("conditionsTitle") && ($("conditionsTitle").textContent = app.mode === "sail" ? "Condizioni vela" : "Meteo e mood del giorno");
-    $("conditionsSub")   && ($("conditionsSub").textContent   = app.mode === "sail" ? "Sail" : "Travel");
-    $("forecastTitle")   && ($("forecastTitle").textContent   = app.mode === "sail" ? "Previsione oraria vela · prossime 12 ore" : "Previsione oraria · prossime 12 ore");
-    $("forecastSub")     && ($("forecastSub").textContent     = app.mode === "sail" ? "Vento · direzione · onde" : "Lettura rapida");
+      const counts = getSpotCounts();
 
-    $("topBox1Sub")   && ($("topBox1Sub").textContent   = app.mode === "sail" ? "Spot belli / forti" : "I più forti del posto");
-    $("topBox1Title") && ($("topBox1Title").textContent = app.mode === "sail" ? "Top spot belli" : "Top wow");
-    $("topBox2Sub")   && ($("topBox2Sub").textContent   = "Luce serale");
-    $("topBox2Title") && ($("topBox2Title").textContent = "Top tramonti");
+      $("eyebrowRegion") && ($("eyebrowRegion").textContent =
+        `${APP_SPOTS.region || "Area"} · ${counts.main} spot principali${counts.extra ? ` + ${counts.extra} extra` : ""}`);
 
-    document.querySelectorAll(".sail-only").forEach(el => {
-      el.style.display = app.mode === "sail" ? "" : "none";
-    });
+      $("conditionsTitle") && ($("conditionsTitle").textContent = app.mode === "sail" ? "Condizioni vela" : "Meteo e mood del giorno");
+      $("conditionsSub")   && ($("conditionsSub").textContent   = app.mode === "sail" ? "Sail" : "Travel");
+      $("forecastTitle")   && ($("forecastTitle").textContent   = app.mode === "sail" ? "Previsione oraria vela · prossime 12 ore" : "Previsione oraria · prossime 12 ore");
+      $("forecastSub")     && ($("forecastSub").textContent     = app.mode === "sail" ? "Vento · direzione · onde" : "Lettura rapida");
 
-    if ($("travelFilters")) $("travelFilters").style.display = app.mode === "sail" ? "none" : "";
-    if ($("sailFilters"))   $("sailFilters").style.display   = app.mode === "sail" ? ""     : "";
+      $("topBox1Sub")   && ($("topBox1Sub").textContent   = app.mode === "sail" ? "Spot belli / forti" : "I più forti del posto");
+      $("topBox1Title") && ($("topBox1Title").textContent = app.mode === "sail" ? "Top spot belli" : "Top wow");
+      $("topBox2Sub")   && ($("topBox2Sub").textContent   = "Luce serale");
+      $("topBox2Title") && ($("topBox2Title").textContent = "Top tramonti");
 
-    renderQuickGrid(app);
-    renderStatsGrid(app);
-    renderHourly(app);
-    renderFilterBars(app);
-    renderLegend(app);
-    renderTopLists(app);
-    renderSpotList(app);
-    UI.renderPlannerBox(app);
+      document.querySelectorAll(".sail-only").forEach(el => {
+        el.style.display = app.mode === "sail" ? "" : "none";
+      });
 
-    // Pannello export/import: si crea una volta sola al primo renderAll
-    renderDataPanel();
+      if ($("travelFilters")) $("travelFilters").style.display = app.mode === "sail" ? "none" : "";
+      if ($("sailFilters"))   $("sailFilters").style.display   = app.mode === "sail" ? ""     : "";
 
-    if ($("weatherAlert")) {
-      if (!app.weatherData) {
-        $("weatherAlert").className   = "alert warn";
-        $("weatherAlert").textContent = "Meteo non disponibile.";
-      } else if (app.mode === "sail") {
-        $("weatherAlert").className   = "alert ok";
-        $("weatherAlert").textContent = app.marineData
-          ? `Vento ${Math.round(app.weatherData.wind)} km/h · onde ${Number(app.marineData.waveHeight || 0).toFixed(1)} m`
-          : "Lettura vela aggiornata.";
-      } else {
-        $("weatherAlert").className   = "alert ok";
-        $("weatherAlert").textContent = `${app.weatherData.headline} — ${app.weatherData.advice}`;
+      // BLOCCO PESANTE (solo quando serve davvero)
+      renderStatsGrid(app);
+      renderHourly(app);
+      renderFilterBars(app);
+      renderLegend(app);
+      renderTopLists(app);
+
+      // UI.renderPlannerBox(app); // planner rimosso dalla UI
+      UI.renderGpsBox(app, app.liveGpsData || null);
+
+      // Pannello export/import: si crea una volta sola al primo renderAll
+      renderDataPanel();
+
+      if ($("weatherAlert")) {
+        if (!app.weatherData) {
+          $("weatherAlert").className   = "alert warn";
+          $("weatherAlert").textContent = "Meteo non disponibile.";
+        } else if (app.mode === "sail") {
+          $("weatherAlert").className   = "alert ok";
+          $("weatherAlert").textContent = app.marineData
+            ? `Vento ${Math.round(app.weatherData.wind)} km/h · onde ${Number(app.marineData.waveHeight || 0).toFixed(1)} m`
+            : "Lettura vela aggiornata.";
+        } else {
+          $("weatherAlert").className   = "alert ok";
+          $("weatherAlert").textContent = `${app.weatherData.headline} — ${app.weatherData.advice}`;
+        }
       }
+
+      if (app.mode === "travel") UI.renderSunPhase(app);
     }
 
+    // BLOCCO LEGGERO (sempre)
+    renderQuickGrid(app);
+    renderSpotList(app);
+
     if (app.currentSpot) UI.renderSpotDetail(app, app.currentSpot);
-    if (app.mode === "travel") UI.renderSunPhase(app);
+  };
+
+  UI.renderLight = function (app) {
+    renderQuickGrid(app);
+    renderSpotList(app);
+
+    if (app.currentSpot) UI.renderSpotDetail(app, app.currentSpot);
+  };
+
+  UI.smartRender = function(app, type = "light") {
+    if (type === "full") {
+      UI.renderAll(app);
+    } else {
+      UI.renderLight(app);
+    }
   };
 
   window.UI = UI;
