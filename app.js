@@ -11,10 +11,6 @@
     throw new Error("APP_SPOTS non disponibile");
   }
 
-  // ─── SW VERSION ───────────────────────────────────────────────────────────
-
-  const SW_VERSION = "v12";
-
   // ─── STORAGE KEYS ─────────────────────────────────────────────────────────
 
   const STORAGE_KEYS = {
@@ -51,6 +47,7 @@
     map:               null,
     markers:           [],
     markerBySpotId:    new Map(),
+    userMarker:        null,
     gpsWatchId:        null,
     gpsPath:           [],
     gpsLine:           null,
@@ -120,7 +117,6 @@
     return v || "giorno";
   }
 
-  // Supporta light come stringa o array
   function lightMatchesFilter(spotLight, filterLight) {
     if (filterLight === "all") return true;
     const lights = Array.isArray(spotLight) ? spotLight : [spotLight];
@@ -192,20 +188,17 @@
   function getBaseSpots()  { return APP_SPOTS.spots; }
   function getSpotById(id) { return APP_SPOTS.spots.find(s => s.id === id) || null; }
 
-  // Supporta coords: [lat, lon] oppure lat + lon separati
   function getCoords(s) {
     if (s.coords && Array.isArray(s.coords)) return s.coords;
     return [s.lat, s.lon];
   }
 
-  // Supporta activity/light come stringa o array
   function matchValue(val, filter) {
     if (filter === "all") return true;
     const arr = Array.isArray(val) ? val : [val];
     return arr.includes(filter);
   }
 
-  // Restituisce il limite km del filtro distanza (null = tutti)
   function distanceFilterKm() {
     const v = APP.distanceFilter;
     if (v === "5")  return 5;
@@ -214,7 +207,7 @@
     return null;
   }
 
-  // Single-entry point per tutti i render da app.js
+  // Unico punto di ingresso render — evita chiamate duplicate
   function smartRender(type = "light") {
     if (window.UI?.smartRender) {
       window.UI.smartRender(APP, type);
@@ -280,25 +273,18 @@
   function evaluateConstraint(spot, c) {
     if (!c) return true;
     if (c.anyOf) return c.anyOf.some(sub => evaluateConstraint(spot, sub));
-
-    if ("activity" in c) {
-      if (!matchValue(spot.activity, c.activity)) return false;
-    }
-    if ("zone"       in c && spot.zone       !== c.zone)       return false;
-    if ("level"      in c && spot.level      !== c.level)      return false;
-    if ("difficulty" in c && spot.difficulty !== c.difficulty) return false;
-    if ("light" in c) {
-      if (!matchValue(spot.light, c.light)) return false;
-    }
-    if ("minWow" in c) {
-      if ((spot.experience?.wow || 0) < c.minWow) return false;
-    }
-    if ("tagMatch" in c) {
+    if ("activity" in c && !matchValue(spot.activity, c.activity))  return false;
+    if ("zone"       in c && spot.zone       !== c.zone)             return false;
+    if ("level"      in c && spot.level      !== c.level)            return false;
+    if ("difficulty" in c && spot.difficulty !== c.difficulty)       return false;
+    if ("light"      in c && !matchValue(spot.light, c.light))       return false;
+    if ("minWow"     in c && (spot.experience?.wow || 0) < c.minWow) return false;
+    if ("tagMatch"   in c) {
       const needle  = normalizeText(c.tagMatch);
       const actArr  = Array.isArray(spot.activity) ? spot.activity : [spot.activity];
       const hayTags = [
-        ...(spot.tags   || []),
-        ...(spot.alias  || []),
+        ...(spot.tags  || []),
+        ...(spot.alias || []),
         spot.experience?.mood,
         spot.mood,
         ...actArr,
@@ -306,9 +292,7 @@
       ].filter(Boolean).map(normalizeText);
       if (!hayTags.some(t => t.includes(needle))) return false;
     }
-    if ("nearMe" in c) {
-      if (APP.userPos && spot._distance != null && spot._distance > 30) return false;
-    }
+    if ("nearMe" in c && APP.userPos && spot._distance != null && spot._distance > 30) return false;
     return true;
   }
 
@@ -316,58 +300,31 @@
     if (spot._haystack) return spot._haystack;
     const actArr   = Array.isArray(spot.activity) ? spot.activity : [spot.activity];
     const lightArr = Array.isArray(spot.light)    ? spot.light    : [spot.light];
-    const raw = [
-      spot.name,
-      spot.zone,
-      ...actArr,
-      spot.difficulty,
-      spot.level,
-      ...lightArr,
-      spot.desc,
-      spot.tip,
-      spot.mood,
-      spot.longDescription,
-      spot.weatherNote,
-      spot.photoTips,
-      spot.experience?.mood,
-      spot.experience?.tipo,
-      spot.experience?.tempo,
-      spot.whenToGo?.note,
-      spot.whenToGo?.best,
-      ...(spot.tags        || []),
-      ...(spot.alias       || []),
-      ...(spot.smartTips   || []),
-      ...(spot.whenToAvoid || [])
-    ]
-      .filter(Boolean)
-      .map(normalizeText)
-      .join(" ");
-    spot._haystack = raw;
-    return raw;
+    spot._haystack = [
+      spot.name, spot.zone, ...actArr, spot.difficulty, spot.level, ...lightArr,
+      spot.desc, spot.tip, spot.mood, spot.longDescription, spot.weatherNote, spot.photoTips,
+      spot.experience?.mood, spot.experience?.tipo, spot.experience?.tempo,
+      spot.whenToGo?.note, spot.whenToGo?.best,
+      ...(spot.tags || []), ...(spot.alias || []), ...(spot.smartTips || []), ...(spot.whenToAvoid || [])
+    ].filter(Boolean).map(normalizeText).join(" ");
+    return spot._haystack;
   }
 
   function smartSearchMatch(spot, rawQuery) {
     if (!rawQuery || !rawQuery.trim()) return true;
-
     const q     = normalizeText(rawQuery);
     const words = q.split(/\s+/).filter(Boolean);
     const hay   = buildHaystack(spot);
-
     if (words.every(w => hay.includes(w))) return true;
-
     const intentWords = words.filter(w => w in SEARCH_INTENT_MAP);
     const textWords   = words.filter(w => !(w in SEARCH_INTENT_MAP));
-
     if (intentWords.length === words.length && intentWords.length > 0) {
       return intentWords.every(w => evaluateConstraint(spot, SEARCH_INTENT_MAP[w]));
     }
-
     if (intentWords.length > 0) {
-      const textOk   = textWords.every(w => hay.includes(w));
-      const intentOk = intentWords.every(w => evaluateConstraint(spot, SEARCH_INTENT_MAP[w]));
-      return textOk && intentOk;
+      return textWords.every(w => hay.includes(w)) &&
+             intentWords.every(w => evaluateConstraint(spot, SEARCH_INTENT_MAP[w]));
     }
-
     return false;
   }
 
@@ -376,27 +333,16 @@
   // ═══════════════════════════════════════════════════════════════════════════
 
   function getWeatherWindowFit(spot) {
-    const h      = getCurrentHour();
-    const lights = Array.isArray(spot.light) ? spot.light : [spot.light];
-    const light  = normalizeLight(lights[0]);
-
+    const h     = getCurrentHour();
+    const light = normalizeLight((Array.isArray(spot.light) ? spot.light[0] : spot.light) || "");
     if (light === "alba") {
-      if (h < 6)  return 2;
-      if (h < 9)  return 4;
-      if (h < 11) return 1;
-      return -2;
+      if (h < 6) return 2; if (h < 9) return 4; if (h < 11) return 1; return -2;
     }
     if (light === "tramonto") {
-      if (h < 14) return -1;
-      if (h < 17) return 1;
-      if (h < 20) return 4;
-      return 1;
+      if (h < 14) return -1; if (h < 17) return 1; if (h < 20) return 4; return 1;
     }
     if (light === "giorno") {
-      if (h < 8)  return 0;
-      if (h < 17) return 3;
-      if (h < 19) return 1;
-      return -1;
+      if (h < 8) return 0; if (h < 17) return 3; if (h < 19) return 1; return -1;
     }
     return 0;
   }
@@ -404,19 +350,13 @@
   function weatherSuitability(spot) {
     const w = APP.weatherData;
     if (!w) return { score: 0, label: "meteo neutro", cls: "gold" };
-
-    // Cache: riusa weatherFit se il meteo non è cambiato
-    if (spot._weatherFit && spot._weatherStamp === APP._weatherStamp) {
-      return spot._weatherFit;
-    }
+    if (spot._weatherFit && spot._weatherStamp === APP._weatherStamp) return spot._weatherFit;
 
     let score    = 0;
-    const zone   = normalizeText(spot.zone       || "");
-    const actArr = Array.isArray(spot.activity)  ? spot.activity : [spot.activity];
-    const act    = normalizeText(actArr[0]        || "");
+    const zone   = normalizeText(spot.zone || "");
+    const act    = normalizeText((Array.isArray(spot.activity) ? spot.activity[0] : spot.activity) || "");
     const diff   = normalizeText(spot.difficulty || "");
-    const lights = Array.isArray(spot.light)     ? spot.light    : [spot.light];
-    const light  = normalizeLight(lights[0]       || "");
+    const light  = normalizeLight((Array.isArray(spot.light) ? spot.light[0] : spot.light) || "");
     const hay    = buildHaystack(spot);
 
     if (w.rain >= 55) {
@@ -428,17 +368,16 @@
       if (act === "trekking") score -= 2;
       if (act === "relax")    score += 1;
     }
-
     if (w.wind >= 38) {
-      if (zone === "montagna")    score -= 5;
+      if (zone === "montagna") score -= 5;
       if (diff === "impegnativo") score -= 3;
-      if (act === "view")         score -= 2;
-      if (act === "relax")        score += 1;
-      if (act === "water")        score -= 5;
+      if (act === "view")  score -= 2;
+      if (act === "relax") score += 1;
+      if (act === "water") score -= 5;
     } else if (w.wind >= 28) {
-      if (zone === "montagna")                         score -= 3;
+      if (zone === "montagna") score -= 3;
       if (act === "trekking" && diff === "impegnativo") score -= 2;
-      if (act === "water")                             score -= 3;
+      if (act === "water") score -= 3;
     } else if (w.wind <= 15) {
       if (act === "view")  score += 1;
       if (act === "water") score += 3;
@@ -446,7 +385,6 @@
       if (act === "view")  score += 1;
       if (act === "water") score += 1;
     }
-
     if (w.cloud >= 75) {
       if (["foresta", "verde", "bosco"].some(t => hay.includes(t)) || act === "trekking") score += 2;
       if (light === "tramonto" || light === "alba") score -= 2;
@@ -455,17 +393,14 @@
       if (act === "view")      score += 2;
       if (zone === "montagna") score += 1;
     }
-
     score += getWeatherWindowFit(spot);
-
     if ((spot.experience?.wow || 0) >= 10) score += 1;
 
-    let result;
-    if (score >= 7)       result = { score, label: "ottimo oggi",  cls: "green" };
-    else if (score >= 3)  result = { score, label: "molto valido", cls: "gold" };
-    else if (score <= -3) result = { score, label: "meno ideale",  cls: "pink" };
-    else                  result = { score, label: "così così",    cls: "blue" };
-
+    const result =
+      score >= 7   ? { score, label: "ottimo oggi",  cls: "green" } :
+      score >= 3   ? { score, label: "molto valido", cls: "gold"  } :
+      score <= -3  ? { score, label: "meno ideale",  cls: "pink"  } :
+                     { score, label: "così così",    cls: "blue"  };
     spot._weatherFit   = result;
     spot._weatherStamp = APP._weatherStamp;
     return result;
@@ -494,7 +429,6 @@
 
   function getFilteredSpots() {
     const maxKm = distanceFilterKm();
-
     let items = getAllSpotsWithMeta().filter(s =>
       (APP.level           === "all" || s.level === APP.level) &&
       lightMatchesFilter(s.light, APP.light) &&
@@ -504,20 +438,18 @@
       (maxKm === null || (s.distance != null && s.distance <= maxKm)) &&
       smartSearchMatch(s, APP.search)
     );
-
     if (APP.mode === "sail" && window.SAIL) {
       items = items.filter(s => window.SAIL.filterSpotForSailMode(s, APP));
     }
-
     return items.sort((a, b) => {
       if (APP.mode === "sail") {
-        const sailDiff = (b.sailMeta?.score || 0) - (a.sailMeta?.score || 0);
-        if (sailDiff !== 0) return sailDiff;
+        const sd = (b.sailMeta?.score || 0) - (a.sailMeta?.score || 0);
+        if (sd !== 0) return sd;
       }
       const lo = { core: 0, secondary: 1, extra: 2 };
       if (b.weatherFit.score !== a.weatherFit.score) return b.weatherFit.score - a.weatherFit.score;
       if ((lo[a.level] ?? 9) !== (lo[b.level] ?? 9)) return (lo[a.level] ?? 9) - (lo[b.level] ?? 9);
-      if (a.distance == null && b.distance == null)  return a.name.localeCompare(b.name, "it");
+      if (a.distance == null && b.distance == null) return a.name.localeCompare(b.name, "it");
       if (a.distance == null) return 1;
       if (b.distance == null) return -1;
       if (a.distance !== b.distance) return a.distance - b.distance;
@@ -527,7 +459,6 @@
 
   function getMapFilteredSpots() {
     const maxKm = distanceFilterKm();
-
     let items = getAllSpotsWithMeta();
     if (APP.level !== "all") items = items.filter(s => s.level === APP.level);
     if (maxKm !== null)      items = items.filter(s => s.distance != null && s.distance <= maxKm);
@@ -546,10 +477,7 @@
       if (b.weatherFit.score !== a.weatherFit.score) return b.weatherFit.score - a.weatherFit.score;
       const lo = { core: 0, secondary: 1, extra: 2 };
       if ((lo[a.level] ?? 9) !== (lo[b.level] ?? 9)) return (lo[a.level] ?? 9) - (lo[b.level] ?? 9);
-      const ad = a.distance ?? 999999;
-      const bd = b.distance ?? 999999;
-      if (ad !== bd) return ad - bd;
-      return a.name.localeCompare(b.name, "it");
+      return (a.distance ?? 999999) - (b.distance ?? 999999) || a.name.localeCompare(b.name, "it");
     });
   }
 
@@ -587,69 +515,50 @@
     if (!pool.length) return null;
     pool.sort((a, b) => a.distance - b.distance);
     const nearest = pool[0];
-    if (!nearest) return null;
     if (nearest.weatherFit.cls !== "pink") return nearest;
-    const better = pool.find(s => s.weatherFit.cls !== "pink" && s.distance <= nearest.distance + 12);
-    return better || nearest;
+    return pool.find(s => s.weatherFit.cls !== "pink" && s.distance <= nearest.distance + 12) || nearest;
   }
 
   function getClosestSpots(limit = 5) {
     if (!APP.userPos) return [];
     let pool = getAllSpotsWithMeta().filter(s => s.distance != null);
     if (APP.level !== "all") pool = pool.filter(s => s.level === APP.level);
-    if (APP.mode === "sail" && window.SAIL) {
-      pool = pool.filter(s => window.SAIL.filterSpotForSailMode(s, APP));
-    }
-    pool.sort((a, b) => a.distance - b.distance);
-    return pool.slice(0, limit);
+    if (APP.mode === "sail" && window.SAIL) pool = pool.filter(s => window.SAIL.filterSpotForSailMode(s, APP));
+    return pool.sort((a, b) => a.distance - b.distance).slice(0, limit);
   }
 
   function renderNearbyPage() {
     const box = $("nearbyList");
     if (!box) return;
-
-    const items = getClosestSpots(5);
-
     if (!APP.userPos) {
       box.innerHTML = `<div class="detail-empty">Attiva il GPS per vedere gli spot vicini.</div>`;
       return;
     }
-
+    const items = getClosestSpots(5);
     if (!items.length) {
       box.innerHTML = `<div class="detail-empty">Nessuno spot trovato nelle vicinanze.</div>`;
       return;
     }
-
     box.innerHTML = items.map(s => `
-    <div class="spot-card glass tap" data-nearby-id="${escapeHtml(s.id)}">
-      <div class="spot-head">
-        <div>
-          <div class="spot-name">${escapeHtml(s.name)}</div>
-          <div class="spot-sub">
-            ${escapeHtml(s.zone)} · ${escapeHtml(Array.isArray(s.activity) ? s.activity[0] : s.activity)}
+      <div class="spot-card glass tap" data-nearby-id="${escapeHtml(s.id)}">
+        <div class="spot-head">
+          <div>
+            <div class="spot-name">${escapeHtml(s.name)}</div>
+            <div class="spot-sub">${escapeHtml(s.zone)} · ${escapeHtml(Array.isArray(s.activity) ? s.activity[0] : s.activity)}</div>
           </div>
         </div>
+        <div class="spot-meta">
+          <span class="tag blue">${displayDistance(s.distance)}</span>
+          ${s.weatherFit ? `<span class="tag ${s.weatherFit.cls}">${escapeHtml(s.weatherFit.label)}</span>` : ""}
+          ${s.altitude != null ? `<span class="tag">${s.altitude} m</span>` : ""}
+        </div>
+        <div class="spot-desc">${escapeHtml(s.tip || s.desc || "")}</div>
       </div>
-
-      <div class="spot-meta">
-        <span class="tag blue">${displayDistance(s.distance)}</span>
-        ${s.weatherFit ? `<span class="tag ${s.weatherFit.cls}">${escapeHtml(s.weatherFit.label)}</span>` : ""}
-        ${s.altitude != null ? `<span class="tag">${s.altitude} m</span>` : ""}
-      </div>
-
-      <div class="spot-desc">
-        ${escapeHtml(s.tip || s.desc || "")}
-      </div>
-    </div>
-  `).join("");
-
+    `).join("");
     box.querySelectorAll("[data-nearby-id]").forEach(card => {
       card.addEventListener("click", () => {
         const spot = items.find(s => s.id === card.dataset.nearbyId);
-        if (spot) {
-          showSpotDetail(spot);
-          switchPage("detail");
-        }
+        if (spot) { showSpotDetail(spot); switchPage("detail"); }
       });
     });
   }
@@ -661,13 +570,9 @@
   function scoreDistance(spot) {
     const d = spot.distance;
     if (d == null) return 0;
-    if (d <= 3)    return 25;
-    if (d <= 8)    return 20;
-    if (d <= 15)   return 14;
-    if (d <= 25)   return 8;
-    if (d <= 50)   return 2;
-    if (d <= 100)  return -2;
-    if (d <= 200)  return -5;
+    if (d <= 3)   return 25; if (d <= 8)   return 20; if (d <= 15) return 14;
+    if (d <= 25)  return 8;  if (d <= 50)  return 2;  if (d <= 100) return -2;
+    if (d <= 200) return -5;
     return -Math.min(12, Math.round(d / 60));
   }
 
@@ -676,35 +581,20 @@
     const lights   = Array.isArray(spot.light) ? spot.light : [spot.light];
     const lightRaw = normalizeText(lights[0]);
     const light    = normalizeLight(lights[0]);
-
     if (light === "alba") {
-      if (h < 5)  return 10;
-      if (h < 9)  return 26;
-      if (h < 11) return 8;
-      return -10;
+      if (h < 5) return 10; if (h < 9) return 26; if (h < 11) return 8; return -10;
     }
     if (lightRaw === "mattina") {
-      if (h < 8)  return 8;
-      if (h < 12) return 20;
-      if (h < 14) return 8;
-      return -5;
+      if (h < 8) return 8; if (h < 12) return 20; if (h < 14) return 8; return -5;
     }
     if (light === "giorno") {
-      if (h < 8)  return 2;
-      if (h < 16) return 20;
-      if (h < 18) return 8;
-      return -4;
+      if (h < 8) return 2; if (h < 16) return 20; if (h < 18) return 8; return -4;
     }
     if (light === "tramonto") {
-      if (h < 13) return -5;
-      if (h < 16) return 10;
-      if (h < 20) return 26;
-      return 8;
+      if (h < 13) return -5; if (h < 16) return 10; if (h < 20) return 26; return 8;
     }
     if (lightRaw === "sera") {
-      if (h < 16) return -3;
-      if (h < 21) return 20;
-      return 8;
+      if (h < 16) return -3; if (h < 21) return 20; return 8;
     }
     return 0;
   }
@@ -713,10 +603,7 @@
     const diff = normalizeText(spot.difficulty || "");
     const h    = getCurrentHour();
     if (diff === "impegnativo") {
-      if (h >= 17) return -10;
-      if (h >= 14) return -5;
-      if (h < 9)   return 4;
-      return 0;
+      if (h >= 17) return -10; if (h >= 14) return -5; if (h < 9) return 4; return 0;
     }
     if (diff === "medio"  && h >= 18) return -4;
     if (diff === "facile" && h >= 17) return 3;
@@ -725,17 +612,14 @@
 
   function scoreWow(spot) {
     const wow = spot.experience?.wow || 0;
-    if (wow >= 10) return 10;
-    if (wow >= 9)  return 7;
-    if (wow >= 8)  return 4;
-    if (wow >= 7)  return 2;
+    if (wow >= 10) return 10; if (wow >= 9) return 7;
+    if (wow >= 8)  return 4;  if (wow >= 7) return 2;
     return 0;
   }
 
   function scoreActivityPeriod(spot) {
     const period = currentPeriod();
-    const acts   = Array.isArray(spot.activity) ? spot.activity : [spot.activity];
-    const act    = normalizeText(acts[0] || "");
+    const act    = normalizeText((Array.isArray(spot.activity) ? spot.activity[0] : spot.activity) || "");
     if (act === "view"     && period === "tramonto") return 8;
     if (act === "view"     && period === "alba")     return 6;
     if (act === "trekking" && period === "giorno")   return 5;
@@ -751,14 +635,11 @@
   function scoreWeatherContext(spot) {
     const w = APP.weatherData;
     if (!w) return 0;
-    let bonus  = 0;
-    const acts = Array.isArray(spot.activity) ? spot.activity : [spot.activity];
-    const act  = normalizeText(acts[0] || "");
-    const zone = normalizeText(spot.zone || "");
-    const lights = Array.isArray(spot.light) ? spot.light : [spot.light];
-    const light  = normalizeLight(lights[0] || "");
-    const hay  = buildHaystack(spot);
-
+    let bonus = 0;
+    const act   = normalizeText((Array.isArray(spot.activity) ? spot.activity[0] : spot.activity) || "");
+    const zone  = normalizeText(spot.zone || "");
+    const light = normalizeLight((Array.isArray(spot.light) ? spot.light[0] : spot.light) || "");
+    const hay   = buildHaystack(spot);
     if (w.rain >= 50) {
       if (["foresta", "bosco", "verde", "grotta"].some(t => hay.includes(t))) bonus += 10;
       if (act === "relax") bonus += 5;
@@ -785,28 +666,21 @@
   function rankSpotForGoNow(spot) {
     const levelBoost = { core: 18, secondary: 10, extra: 4 };
     return (spot.weatherFit?.score || 0) * 10
-      + scoreTimeLight(spot)
-      + scoreDistance(spot)
-      + (levelBoost[spot.level] || 0)
-      + scoreWow(spot)
-      + scoreDifficulty(spot)
-      + scoreActivityPeriod(spot)
-      + scoreWeatherContext(spot);
+      + scoreTimeLight(spot) + scoreDistance(spot)
+      + (levelBoost[spot.level] || 0) + scoreWow(spot)
+      + scoreDifficulty(spot) + scoreActivityPeriod(spot) + scoreWeatherContext(spot);
   }
 
   function getGoNowSuggestions() {
     if (APP.mode === "sail" && window.SAIL) {
-      const best = window.SAIL.getBestSailSpot(APP);
-      return { best: best || null, alternatives: [] };
+      return { best: window.SAIL.getBestSailSpot(APP) || null, alternatives: [] };
     }
     let pool = getAllSpotsWithMeta();
     if (APP.level !== "all") pool = pool.filter(s => s.level === APP.level);
-    pool = pool
-      .map(s => ({ ...s, goNowScore: rankSpotForGoNow(s) }))
-      .sort((a, b) => b.goNowScore - a.goNowScore);
-    const best         = pool[0] || null;
-    const alternatives = pool.filter(s => !best || s.id !== best.id).slice(0, 2);
-    return { best, alternatives };
+    pool = pool.map(s => ({ ...s, goNowScore: rankSpotForGoNow(s) }))
+               .sort((a, b) => b.goNowScore - a.goNowScore);
+    const best = pool[0] || null;
+    return { best, alternatives: pool.filter(s => !best || s.id !== best.id).slice(0, 2) };
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -815,61 +689,50 @@
 
   function explainGoNow(spot) {
     if (!spot) return "";
-
     const reasons = [];
     const period  = currentPeriod();
     const w       = APP.weatherData;
-    const lights  = Array.isArray(spot.light)    ? spot.light    : [spot.light];
-    const light   = normalizeLight(lights[0]      || "");
-    const acts    = Array.isArray(spot.activity)  ? spot.activity : [spot.activity];
-    const act     = normalizeText(acts[0]          || "");
+    const light   = normalizeLight((Array.isArray(spot.light)   ? spot.light[0]   : spot.light)   || "");
+    const act     = normalizeText((Array.isArray(spot.activity) ? spot.activity[0] : spot.activity) || "");
     const diff    = normalizeText(spot.difficulty || "");
     const h       = getCurrentHour();
     const wow     = spot.experience?.wow || 0;
 
     const fitCls = spot.weatherFit?.cls;
-    if (fitCls === "green") {
-      reasons.push("condizioni eccellenti in questo momento");
-    } else if (fitCls === "gold") {
-      reasons.push("momento favorevole");
-    } else if (fitCls === "pink") {
-      if (act === "relax") reasons.push("regge bene anche con meteo incerto");
-      else reasons.push("nonostante le condizioni, vale comunque la pena");
+    if (fitCls === "green")      reasons.push("condizioni eccellenti in questo momento");
+    else if (fitCls === "gold")  reasons.push("momento favorevole");
+    else if (fitCls === "pink") {
+      reasons.push(act === "relax" ? "regge bene anche con meteo incerto" : "nonostante le condizioni, vale comunque la pena");
     }
 
-    const tlScore = scoreTimeLight(spot);
-    if (tlScore >= 20) {
+    const tl = scoreTimeLight(spot);
+    if (tl >= 20) {
       if (light === "tramonto" && period === "tramonto")  reasons.push("fascia di luce ideale per il tramonto");
       else if (light === "alba" && period === "alba")     reasons.push("luce perfetta per partire adesso");
       else if (light === "giorno" && period === "giorno") reasons.push("orario giusto per questo spot");
       else reasons.push("finestra oraria ottimale");
-    } else if (tlScore >= 8) {
+    } else if (tl >= 8) {
       reasons.push("buon momento per andarci");
-    } else if (tlScore < 0) {
+    } else if (tl < 0) {
       reasons.push("non è l'orario ideale, ma lo spot rimane valido");
     }
 
     if (w && reasons.length < 3) {
-      if (w.cloud <= 25 && w.rain < 15 && (light === "tramonto" || light === "alba")) {
+      if (w.cloud <= 25 && w.rain < 15 && (light === "tramonto" || light === "alba"))
         reasons.push("cielo pulito: tramonto potenzialmente molto forte");
-      } else if (w.wind <= 12 && act === "water") {
-        reasons.push("acqua calma — condizioni perfette");
-      } else if (w.wind <= 18 && act === "view") {
-        reasons.push("vento tranquillo, ideale per stare fermi a guardare");
-      } else if (w.rain >= 50 && act === "relax") {
-        reasons.push("ideale anche con la pioggia");
-      } else if (w.cloud <= 30 && w.rain < 20 && act === "trekking") {
-        reasons.push("buona visibilità per il percorso");
-      }
+      else if (w.wind <= 12 && act === "water") reasons.push("acqua calma — condizioni perfette");
+      else if (w.wind <= 18 && act === "view")  reasons.push("vento tranquillo, ideale per stare fermi a guardare");
+      else if (w.rain >= 50 && act === "relax") reasons.push("ideale anche con la pioggia");
+      else if (w.cloud <= 30 && w.rain < 20 && act === "trekking") reasons.push("buona visibilità per il percorso");
     }
 
     if (reasons.length < 3) {
       const d = spot.distance;
       if (d != null) {
-        if (d <= 3)        reasons.push("praticamente sotto casa");
-        else if (d <= 8)   reasons.push("vicinissimo — facile da raggiungere");
-        else if (d <= 20)  reasons.push("a portata di mano");
-        else if (d <= 50)  reasons.push("raggiungibile senza troppi sbatti");
+        if (d <= 3)       reasons.push("praticamente sotto casa");
+        else if (d <= 8)  reasons.push("vicinissimo — facile da raggiungere");
+        else if (d <= 20) reasons.push("a portata di mano");
+        else if (d <= 50) reasons.push("raggiungibile senza troppi sbatti");
         else if (d <= 120) reasons.push("vale il viaggio");
         else reasons.push("spot forte anche se lontano");
       } else {
@@ -882,16 +745,15 @@
       if (wow >= 10)                          reasons.push("wow factor massimo: 10/10");
       else if (wow >= 9)                      reasons.push("resa altissima");
       else if (diff === "facile" && wow >= 7) reasons.push("grande resa con poco sforzo");
-      else if (act === "trekking")            reasons.push("buona scelta come esperienza centrale");
-      else if (act === "view")                reasons.push("alta resa visiva");
-      else if (act === "relax")               reasons.push("ottima chiusura di giornata");
-      else if (act === "water")               reasons.push("esperienza acqua consigliata");
-      else if (act === "mtb")                 reasons.push("ottimo modulo bike");
+      else if (act === "trekking") reasons.push("buona scelta come esperienza centrale");
+      else if (act === "view")     reasons.push("alta resa visiva");
+      else if (act === "relax")    reasons.push("ottima chiusura di giornata");
+      else if (act === "water")    reasons.push("esperienza acqua consigliata");
+      else if (act === "mtb")      reasons.push("ottimo modulo bike");
     }
 
     if (reasons.length < 2 && h >= 17) {
-      if (diff === "facile") reasons.push("accessibile anche partendo tardi");
-      else reasons.push("ancora gestibile per questa sera");
+      reasons.push(diff === "facile" ? "accessibile anche partendo tardi" : "ancora gestibile per questa sera");
     }
 
     return reasons.slice(0, 3).join(" · ");
@@ -903,45 +765,27 @@
 
   function bestSpotForSlot(options) {
     let pool = getAllSpotsWithMeta();
-    if (options.light)    pool = pool.filter(s => lightMatchesFilter(s.light, options.light));
-    if (options.activity) pool = pool.filter(s => options.activity.some(a => matchValue(s.activity, a)));
+    if (options.light)         pool = pool.filter(s => lightMatchesFilter(s.light, options.light));
+    if (options.activity)      pool = pool.filter(s => options.activity.some(a => matchValue(s.activity, a)));
     if (options.exclude?.length) pool = pool.filter(s => !options.exclude.includes(s.id));
     if (APP.zone  !== "all") pool = pool.filter(s => s.zone  === APP.zone);
     if (APP.level !== "all") pool = pool.filter(s => s.level === APP.level);
-    if (!pool.length) return null;
     return sortBestPool(pool)[0] || null;
   }
 
   function buildDayPlanner() {
-    const hour = getCurrentHour();
-
+    const hour  = getCurrentHour();
     const albaC = bestSpotForSlot({ light: "alba",    activity: ["view", "trekking", "relax"] })
                || bestSpotForSlot({ light: "mattina", activity: ["view", "trekking", "relax"] });
-
-    const mainC = bestSpotForSlot({
-      light: "giorno", activity: ["trekking", "view", "relax", "mtb", "water"],
-      exclude: [albaC?.id]
-    }) || bestSpotForSlot({
-      activity: ["trekking", "view", "relax", "mtb", "water"],
-      exclude:  [albaC?.id]
-    });
-
-    const sunC = bestSpotForSlot({
-      light: "tramonto", activity: ["view", "relax"],
-      exclude: [albaC?.id, mainC?.id]
-    }) || bestSpotForSlot({
-      light: "sera", activity: ["view", "relax"],
-      exclude: [albaC?.id, mainC?.id]
-    });
-
-    if (hour >= 17) {
-      APP.planner = { alba: null, main: mainC?.id || null, tramonto: sunC?.id || mainC?.id || null };
-    } else if (hour >= 10) {
-      APP.planner = { alba: null, main: mainC?.id || null, tramonto: sunC?.id || null };
-    } else {
-      APP.planner = { alba: albaC?.id || null, main: mainC?.id || null, tramonto: sunC?.id || null };
-    }
-
+    const mainC = bestSpotForSlot({ light: "giorno",  activity: ["trekking", "view", "relax", "mtb", "water"], exclude: [albaC?.id] })
+               || bestSpotForSlot({ activity: ["trekking", "view", "relax", "mtb", "water"], exclude: [albaC?.id] });
+    const sunC  = bestSpotForSlot({ light: "tramonto", activity: ["view", "relax"], exclude: [albaC?.id, mainC?.id] })
+               || bestSpotForSlot({ light: "sera",     activity: ["view", "relax"], exclude: [albaC?.id, mainC?.id] });
+    APP.planner = hour >= 17
+      ? { alba: null, main: mainC?.id || null, tramonto: sunC?.id || mainC?.id || null }
+      : hour >= 10
+      ? { alba: null, main: mainC?.id || null, tramonto: sunC?.id || null }
+      : { alba: albaC?.id || null, main: mainC?.id || null, tramonto: sunC?.id || null };
     saveJson(STORAGE_KEYS.planner, APP.planner);
     renderPlannerBox();
     toast("Giornata pianificata");
@@ -954,11 +798,9 @@
   function isFavorite(id) { return APP.favorites.includes(id); }
 
   function toggleFavorite(id) {
-    if (isFavorite(id)) {
-      APP.favorites = APP.favorites.filter(x => x !== id);
-    } else {
-      APP.favorites = [...APP.favorites, id];
-    }
+    APP.favorites = isFavorite(id)
+      ? APP.favorites.filter(x => x !== id)
+      : [...APP.favorites, id];
     saveJson(STORAGE_KEYS.favorites, APP.favorites);
     smartRender("light");
     if (APP.currentSpot?.id === id) showSpotDetail(APP.currentSpot);
@@ -989,22 +831,15 @@
   // ═══════════════════════════════════════════════════════════════════════════
 
   function exportUserData() {
-    return {
-      version:    2,
-      exportedAt: new Date().toISOString(),
-      region:     APP_SPOTS.region || "unknown",
-      favorites:  [...APP.favorites],
-      planner:    clone(APP.planner)
-    };
+    return { version: 2, exportedAt: new Date().toISOString(), region: APP_SPOTS.region || "unknown", favorites: [...APP.favorites], planner: clone(APP.planner) };
   }
 
   function downloadUserData() {
-    const data     = exportUserData();
-    const blob     = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url      = URL.createObjectURL(blob);
-    const a        = document.createElement("a");
-    a.href         = url;
-    a.download     = `travel-planner-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    const blob = new Blob([JSON.stringify(exportUserData(), null, 2)], { type: "application/json" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `travel-planner-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 5000);
     toast("Backup scaricato");
@@ -1012,20 +847,13 @@
 
   function importUserData(jsonString) {
     let data;
-    try { data = JSON.parse(jsonString); }
-    catch { return { ok: false, error: "JSON non valido" }; }
-
-    if (!data || typeof data !== "object") {
-      return { ok: false, error: "Struttura non riconosciuta" };
-    }
-
+    try { data = JSON.parse(jsonString); } catch { return { ok: false, error: "JSON non valido" }; }
+    if (!data || typeof data !== "object") return { ok: false, error: "Struttura non riconosciuta" };
     const validIds = new Set(getBaseSpots().map(s => s.id));
-
     if (Array.isArray(data.favorites)) {
       APP.favorites = data.favorites.filter(id => typeof id === "string" && validIds.has(id));
       saveJson(STORAGE_KEYS.favorites, APP.favorites);
     }
-
     if (data.planner && typeof data.planner === "object") {
       const np = clone(DEFAULT_PLANNER);
       for (const slot of ["alba", "main", "tramonto"]) {
@@ -1035,7 +863,6 @@
       APP.planner = np;
       saveJson(STORAGE_KEYS.planner, APP.planner);
     }
-
     smartRender("full");
     toast("Dati importati con successo");
     return { ok: true };
@@ -1043,11 +870,8 @@
 
   function importUserDataFromFile(file) {
     if (!file) return;
-    const reader   = new FileReader();
-    reader.onload  = e => {
-      const result = importUserData(e.target.result);
-      if (!result.ok) toast(`Errore importazione: ${result.error}`);
-    };
+    const reader  = new FileReader();
+    reader.onload = e => { const r = importUserData(e.target.result); if (!r.ok) toast(`Errore importazione: ${r.error}`); };
     reader.onerror = () => toast("Errore nella lettura del file");
     reader.readAsText(file);
   }
@@ -1058,64 +882,24 @@
 
   function getSunPhaseInfo() {
     if (!APP.sunTimes?.sunset) {
-      return {
-        clockText: "Tramonto —",
-        phaseText: "Luce da leggere",
-        mainText:  "Sto leggendo la luce di oggi",
-        subText:   "Fra poco trovi countdown e stato tramonto.",
-        timeText:  "—"
-      };
+      return { clockText: "Tramonto —", phaseText: "Luce da leggere", mainText: "Sto leggendo la luce di oggi", subText: "Fra poco trovi countdown e stato tramonto.", timeText: "—" };
     }
-
     const now         = new Date();
-    const sunrise     = APP.sunTimes.sunrise;
-    const sunset      = APP.sunTimes.sunset;
+    const { sunrise, sunset } = APP.sunTimes;
     const goldenStart = new Date(sunset.getTime() - 60 * 60000);
     const blueEnd     = new Date(sunset.getTime() + 40 * 60000);
-
-    if (now < sunrise) return {
-      clockText: `Tramonto ${formatTime(sunset)}`,
-      phaseText: "Prima dell'alba",
-      mainText:  "Luce ancora chiusa",
-      subText:   "La giornata deve ancora aprirsi. Per spot alba, stai già guardando la finestra giusta.",
-      timeText:  formatCountdown(getMinutesDiff(now, sunrise))
-    };
-    if (now < goldenStart) return {
-      clockText: `Tramonto ${formatTime(sunset)}`,
-      phaseText: "Prima della golden hour",
-      mainText:  "La luce migliore arriva più tardi",
-      subText:   "Hai ancora margine. Inizia a muoverti quando la luce comincia a scaldarsi.",
-      timeText:  formatCountdown(getMinutesDiff(now, goldenStart))
-    };
-    if (now >= goldenStart && now < sunset) return {
-      clockText: `Tramonto ${formatTime(sunset)}`,
-      phaseText: "Golden hour in corso",
-      mainText:  "Se vuoi il tramonto, questo è il momento",
-      subText:   "La luce è nella fascia giusta. Adesso conviene già essere sul posto.",
-      timeText:  formatCountdown(getMinutesDiff(now, sunset))
-    };
-    if (now >= sunset && now < blueEnd) return {
-      clockText: `Tramonto ${formatTime(sunset)}`,
-      phaseText: "Blue hour",
-      mainText:  "Il sole è appena sceso",
-      subText:   "Hai ancora una finestra breve e molto bella per skyline e luci.",
-      timeText:  formatCountdown(getMinutesDiff(now, blueEnd))
-    };
-    return {
-      clockText: `Tramonto ${formatTime(sunset)}`,
-      phaseText: "Dopo il tramonto",
-      mainText:  "La finestra serale è finita",
-      subText:   "Guarda già domani o prepara una partenza all'alba.",
-      timeText:  "chiuso"
-    };
+    const ct = `Tramonto ${formatTime(sunset)}`;
+    if (now < sunrise)     return { clockText: ct, phaseText: "Prima dell'alba",       mainText: "Luce ancora chiusa",                    subText: "La giornata deve ancora aprirsi. Per spot alba, stai già guardando la finestra giusta.", timeText: formatCountdown(getMinutesDiff(now, sunrise)) };
+    if (now < goldenStart) return { clockText: ct, phaseText: "Prima della golden hour", mainText: "La luce migliore arriva più tardi",   subText: "Hai ancora margine. Inizia a muoverti quando la luce comincia a scaldarsi.", timeText: formatCountdown(getMinutesDiff(now, goldenStart)) };
+    if (now < sunset)      return { clockText: ct, phaseText: "Golden hour in corso",  mainText: "Se vuoi il tramonto, questo è il momento", subText: "La luce è nella fascia giusta. Adesso conviene già essere sul posto.", timeText: formatCountdown(getMinutesDiff(now, sunset)) };
+    if (now < blueEnd)     return { clockText: ct, phaseText: "Blue hour",             mainText: "Il sole è appena sceso",                subText: "Hai ancora una finestra breve e molto bella per skyline e luci.", timeText: formatCountdown(getMinutesDiff(now, blueEnd)) };
+    return { clockText: ct, phaseText: "Dopo il tramonto", mainText: "La finestra serale è finita", subText: "Guarda già domani o prepara una partenza all'alba.", timeText: "chiuso" };
   }
 
   function startSunsetCountdown() {
     if (APP.sunsetTimer) clearInterval(APP.sunsetTimer);
     if (window.UI?.renderSunPhase) window.UI.renderSunPhase(APP);
-    APP.sunsetTimer = setInterval(() => {
-      if (window.UI?.renderSunPhase) window.UI.renderSunPhase(APP);
-    }, 30000);
+    APP.sunsetTimer = setInterval(() => { if (window.UI?.renderSunPhase) window.UI.renderSunPhase(APP); }, 30000);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1124,20 +908,20 @@
 
   function getNext12Hours(hourly, marineHourly) {
     if (!hourly?.time) return [];
-    const now    = new Date();
-    const merged = hourly.time.map((time, i) => ({
-      date:          new Date(time),
-      temp:          hourly.temperature_2m?.[i]            ?? 0,
-      wind:          hourly.wind_speed_10m?.[i]            ?? 0,
-      windDir:       hourly.wind_direction_10m?.[i]        ?? 0,
-      gust:          hourly.wind_gusts_10m?.[i]            ?? 0,
-      rain:          hourly.precipitation_probability?.[i] ?? 0,
-      cloud:         hourly.cloud_cover?.[i]               ?? 0,
-      waveHeight:    marineHourly?.wave_height?.[i]        ?? 0,
-      waveDirection: marineHourly?.wave_direction?.[i]     ?? 0,
-      wavePeriod:    marineHourly?.wave_period?.[i]        ?? 0
-    }));
-    return merged
+    const now = new Date();
+    return hourly.time
+      .map((time, i) => ({
+        date:          new Date(time),
+        temp:          hourly.temperature_2m?.[i]            ?? 0,
+        wind:          hourly.wind_speed_10m?.[i]            ?? 0,
+        windDir:       hourly.wind_direction_10m?.[i]        ?? 0,
+        gust:          hourly.wind_gusts_10m?.[i]            ?? 0,
+        rain:          hourly.precipitation_probability?.[i] ?? 0,
+        cloud:         hourly.cloud_cover?.[i]               ?? 0,
+        waveHeight:    marineHourly?.wave_height?.[i]        ?? 0,
+        waveDirection: marineHourly?.wave_direction?.[i]     ?? 0,
+        wavePeriod:    marineHourly?.wave_period?.[i]        ?? 0
+      }))
       .filter(item => item.date.getTime() >= now.getTime() - 30 * 60 * 1000)
       .slice(0, 12);
   }
@@ -1146,66 +930,35 @@
     try {
       const lat = APP_SPOTS.center?.[0] || 45.885;
       const lon = APP_SPOTS.center?.[1] || 10.842;
-
       const [forecastRes, marineRes] = await Promise.all([
-        fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-          `&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover` +
-          `&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,precipitation_probability` +
-          `&daily=sunrise,sunset&forecast_days=2&timezone=auto`
-        ),
-        fetch(
-          `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +
-          `&current=wave_height,wave_direction,wave_period` +
-          `&hourly=wave_height,wave_direction,wave_period&timezone=auto`
-        )
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,precipitation_probability&daily=sunrise,sunset&forecast_days=2&timezone=auto`),
+        fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&current=wave_height,wave_direction,wave_period&hourly=wave_height,wave_direction,wave_period&timezone=auto`)
       ]);
-
       const forecast = await forecastRes.json();
       const marine   = await marineRes.json();
-
       const temp    = forecast?.current?.temperature_2m     ?? 0;
       const wind    = forecast?.current?.wind_speed_10m     ?? 0;
       const windDir = forecast?.current?.wind_direction_10m ?? 0;
       const gust    = forecast?.current?.wind_gusts_10m     ?? 0;
       const cloud   = forecast?.current?.cloud_cover        ?? 0;
-
       const now = new Date();
       const idx = (forecast?.hourly?.time || []).findIndex(t => {
         const d = new Date(t);
         return d.getHours() === now.getHours() && d.toDateString() === now.toDateString();
       });
-      const rain = idx >= 0
-        ? (forecast?.hourly?.precipitation_probability?.[idx] ?? 0)
-        : (forecast?.hourly?.precipitation_probability?.[0]  ?? 0);
-
-      const sunrise = parseSunTime(forecast?.daily?.sunrise?.[0]);
-      const sunset  = parseSunTime(forecast?.daily?.sunset?.[0]);
-      APP.sunTimes  = { sunrise, sunset };
-
-      let headline = "Meteo aggiornato";
-      let advice   = "Controlla rapidamente la situazione della giornata.";
+      const rain = idx >= 0 ? (forecast?.hourly?.precipitation_probability?.[idx] ?? 0) : (forecast?.hourly?.precipitation_probability?.[0] ?? 0);
+      APP.sunTimes      = { sunrise: parseSunTime(forecast?.daily?.sunrise?.[0]), sunset: parseSunTime(forecast?.daily?.sunset?.[0]) };
+      let headline = "Meteo aggiornato", advice = "Controlla rapidamente la situazione della giornata.";
       if (rain >= 55)                    { headline = "Pioggia probabile";     advice = "Meglio spot riparati o attività flessibili."; }
       else if (wind >= 32)               { headline = "Vento forte";           advice = "Attenzione ai punti molto esposti."; }
       else if (cloud <= 35 && rain < 25) { headline = "Finestra interessante"; advice = "Buona giornata per spot aperti e luce più pulita."; }
-
       APP.weatherData   = { temp, wind, windDir, gust, cloud, rain, period: currentPeriod(), headline, advice };
       APP._weatherStamp = Date.now();
-      APP.marineData    = {
-        waveHeight:    marine?.current?.wave_height    ?? 0,
-        waveDirection: marine?.current?.wave_direction ?? 0,
-        wavePeriod:    marine?.current?.wave_period    ?? 0
-      };
-      APP.hourlyData = getNext12Hours(forecast.hourly, marine.hourly);
-
+      APP.marineData    = { waveHeight: marine?.current?.wave_height ?? 0, waveDirection: marine?.current?.wave_direction ?? 0, wavePeriod: marine?.current?.wave_period ?? 0 };
+      APP.hourlyData    = getNext12Hours(forecast.hourly, marine.hourly);
     } catch {
-      APP.weatherData   = null;
-      APP._weatherStamp = null;
-      APP.marineData    = null;
-      APP.hourlyData    = [];
-      APP.sunTimes      = null;
+      APP.weatherData = null; APP._weatherStamp = null; APP.marineData = null; APP.hourlyData = []; APP.sunTimes = null;
     }
-
     smartRender("full");
     startSunsetCountdown();
   }
@@ -1223,28 +976,41 @@
 
   function createMarkerIcon(color) {
     return L.divIcon({
-      className:   "",
-      html:        `<div style="width:18px;height:18px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 6px rgba(0,0,0,.14),0 0 18px ${color}55;"></div>`,
-      iconSize:    [18, 18],
-      iconAnchor:  [9, 9],
-      popupAnchor: [0, -10]
+      className: "",
+      html: `<div style="width:18px;height:18px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 6px rgba(0,0,0,.14),0 0 18px ${color}55;"></div>`,
+      iconSize: [18, 18], iconAnchor: [9, 9], popupAnchor: [0, -10]
     });
   }
 
   function initMap() {
     const mapEl = $("map");
     if (!mapEl || typeof L === "undefined") return;
-    APP.map = L.map("map", { zoomControl: true }).setView(
-      APP_SPOTS.center || [45.885, 10.842],
-      APP_SPOTS.zoom   || 11
-    );
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 18, attribution: "&copy; OpenStreetMap"
-    }).addTo(APP.map);
+    APP.map = L.map("map", { zoomControl: true }).setView(APP_SPOTS.center || [45.885, 10.842], APP_SPOTS.zoom || 11);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap" }).addTo(APP.map);
     APP.gpsLine = L.polyline([], { color: "#7dc4ff", weight: 4, opacity: 0.9 }).addTo(APP.map);
     renderMarkers();
   }
 
+  // Pallino posizione utente — separato dai marker spot
+  function updateUserMarker() {
+    if (!APP.map || typeof L === "undefined") return;
+    if (!APP.userPos) {
+      if (APP.userMarker) { APP.map.removeLayer(APP.userMarker); APP.userMarker = null; }
+      return;
+    }
+    const { lat, lon } = APP.userPos;
+    if (!APP.userMarker) {
+      APP.userMarker = L.circleMarker([lat, lon], {
+        radius: 10, color: "#ffffff", weight: 2,
+        fillColor: "#2d8eff", fillOpacity: 1, zIndexOffset: 1000
+      }).addTo(APP.map);
+      APP.userMarker.bindPopup('<div style="font-size:13px;font-weight:700">La tua posizione</div>');
+    } else {
+      APP.userMarker.setLatLng([lat, lon]);
+    }
+  }
+
+  // renderMarkers aggiorna solo i marker spot + userMarker, NON ricrea la mappa
   function renderMarkers() {
     if (!APP.map) return;
     APP.markers.forEach(m => APP.map.removeLayer(m));
@@ -1256,12 +1022,7 @@
 
     items.forEach(spot => {
       const marker = L.marker([spot.lat, spot.lon], { icon: createMarkerIcon(markerColor(spot)) }).addTo(APP.map);
-      marker.bindPopup(`
-        <div style="min-width:180px">
-          <div style="font-weight:800;font-size:15px;margin-bottom:6px">${escapeHtml(spot.name)}</div>
-          <div style="font-size:12px;color:#cfe0ef">${escapeHtml(spot.desc || "")}</div>
-        </div>
-      `);
+      marker.bindPopup(`<div style="min-width:180px"><div style="font-weight:800;font-size:15px;margin-bottom:6px">${escapeHtml(spot.name)}</div><div style="font-size:12px;color:#cfe0ef">${escapeHtml(spot.desc || "")}</div></div>`);
       marker.on("click", () => showSpotDetail(spot));
       APP.markers.push(marker);
       APP.markerBySpotId.set(spot.id, marker);
@@ -1272,6 +1033,8 @@
       APP.map.fitBounds(L.latLngBounds(latlngs).pad(0.18));
       APP._mapInitialized = true;
     }
+
+    updateUserMarker();
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1289,22 +1052,19 @@
     switchPage("map");
     setTimeout(() => {
       APP.map.setView([spot.lat, spot.lon], 13, { animate: true });
-      const marker = APP.markerBySpotId.get(id);
-      if (marker) marker.openPopup();
+      APP.markerBySpotId.get(id)?.openPopup();
     }, 180);
     showSpotDetail(spot);
   }
 
   function switchPage(pageName) {
     APP.activePage = pageName;
-    document.querySelectorAll(".page").forEach(page => {
-      page.classList.toggle("active", page.id === `page-${pageName}`);
-    });
-    document.querySelectorAll(".nav-btn").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.page === pageName);
-    });
+    document.querySelectorAll(".page").forEach(p => p.classList.toggle("active", p.id === `page-${pageName}`));
+    document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.page === pageName));
     window.scrollTo({ top: 0, behavior: "smooth" });
-    if (pageName === "map" && APP.map) setTimeout(() => APP.map.invalidateSize(), 220);
+    if (pageName === "map" && APP.map) {
+      setTimeout(() => { APP.map.invalidateSize(); updateUserMarker(); }, 220);
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1312,17 +1072,15 @@
   // ═══════════════════════════════════════════════════════════════════════════
 
   function updateModeUI() {
-    const toggle = $("sailModeToggle");
-    const main   = $("modeLabelMain");
-    const sub    = $("modeLabelSub");
-    const hero   = $("heroDescription");
-    if (toggle) toggle.checked   = APP.mode === "sail";
-    if (main)   main.textContent = APP.mode === "sail" ? "Sail Mode" : "Travel Mode";
-    if (sub)    sub.textContent  = APP.mode === "sail" ? "Sail mode ON" : "Sail mode OFF";
-    if (hero)   hero.textContent = APP.mode === "sail"
+    const toggle = $("sailModeToggle"), main = $("modeLabelMain"), sub = $("modeLabelSub"), hero = $("heroDescription");
+    const isSail = APP.mode === "sail";
+    if (toggle) toggle.checked   = isSail;
+    if (main)   main.textContent = isSail ? "Sail Mode"   : "Travel Mode";
+    if (sub)    sub.textContent  = isSail ? "Sail mode ON" : "Sail mode OFF";
+    if (hero)   hero.textContent = isSail
       ? "Modalità vela attiva: vento, onde, rotta live e spot compatibili quando presenti nei dati."
       : "Guida travel e outdoor con mappa, spot wow, tramonti, vai ora intelligente, planner giornata e preferiti personali.";
-    document.body.classList.toggle("mode-sail", APP.mode === "sail");
+    document.body.classList.toggle("mode-sail", isSail);
   }
 
   function toggleMode(forceMode) {
@@ -1345,14 +1103,8 @@
     APP.search = q;
     smartRender("light");
     const found = getBaseSpots().find(s => smartSearchMatch(s, q));
-    if (found) {
-      showSpotDetail(found);
-      switchPage("detail");
-      toast("Spot trovato");
-    } else {
-      switchPage("spots");
-      toast("Nessuno spot trovato per quella ricerca");
-    }
+    if (found) { showSpotDetail(found); switchPage("detail"); toast("Spot trovato"); }
+    else       { switchPage("spots"); toast("Nessuno spot trovato per quella ricerca"); }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1366,40 +1118,36 @@
       pos => {
         const lat      = pos.coords.latitude;
         const lon      = pos.coords.longitude;
-        const speedMs  = (typeof pos.coords.speed    === "number") ? pos.coords.speed    : null;
-        const heading  = (typeof pos.coords.heading  === "number") ? pos.coords.heading  : null;
-        const altitude = (typeof pos.coords.altitude === "number") ? pos.coords.altitude : null;
+        const speedMs  = typeof pos.coords.speed    === "number" ? pos.coords.speed    : null;
+        const heading  = typeof pos.coords.heading  === "number" ? pos.coords.heading  : null;
+        const altitude = typeof pos.coords.altitude === "number" ? pos.coords.altitude : null;
 
         APP.liveGpsData = { lat, lon, speedMs, heading, altitude, timestamp: Date.now() };
-
-        APP.userPos = { lat, lon, accuracy: pos.coords.accuracy, altitude };
+        APP.userPos     = { lat, lon, accuracy: pos.coords.accuracy, altitude };
 
         APP.gpsPath.push([lat, lon]);
         if (APP.gpsLine) APP.gpsLine.setLatLngs(APP.gpsPath);
 
+        // Marker rotta GPS (cerchio piccolo animato lungo il percorso)
         if (!APP.gpsMarker) {
           APP.gpsMarker = L.circleMarker([lat, lon], {
             radius: 8, color: "#dff3ff", weight: 2, fillColor: "#59b6ff", fillOpacity: 1
           }).addTo(APP.map);
         } else {
-          const current   = APP.gpsMarker.getLatLng();
-          const smoothLat = current.lat + (lat - current.lat) * 0.3;
-          const smoothLon = current.lng + (lon - current.lng) * 0.3;
-          APP.gpsMarker.setLatLng([smoothLat, smoothLon]);
+          const cur = APP.gpsMarker.getLatLng();
+          APP.gpsMarker.setLatLng([cur.lat + (lat - cur.lat) * 0.3, cur.lng + (lon - cur.lng) * 0.3]);
         }
 
         if (APP.map && APP.gpsMarker) {
-          const mapCenter = APP.map.getCenter();
-          const dist = Math.abs(mapCenter.lat - lat) + Math.abs(mapCenter.lng - lon);
-          if (dist > 0.01) {
+          const c = APP.map.getCenter();
+          if (Math.abs(c.lat - lat) + Math.abs(c.lng - lon) > 0.01) {
             APP.map.panTo([lat, lon], { animate: true, duration: 0.5 });
           }
         }
 
+        updateUserMarker();
         APP._nearbyCache = getClosestSpots(3);
-
         if (window.UI?.renderGpsBox) window.UI.renderGpsBox(APP, APP.liveGpsData);
-
         renderNearbyPage();
 
         if (!APP._lastMarkerUpdate || Date.now() - APP._lastMarkerUpdate > 4000) {
@@ -1418,31 +1166,21 @@
 
   function resetGPSRoute() {
     stopGPSRoute();
-    APP.gpsPath      = [];
-    APP.liveGpsData  = null;
-    APP._nearbyCache = null;
-    if (APP.gpsLine)           APP.gpsLine.setLatLngs([]);
+    APP.gpsPath = []; APP.liveGpsData = null; APP._nearbyCache = null;
+    if (APP.gpsLine)              APP.gpsLine.setLatLngs([]);
     if (APP.gpsMarker && APP.map) { APP.map.removeLayer(APP.gpsMarker); APP.gpsMarker = null; }
-    if (window.UI?.renderGpsBox) window.UI.renderGpsBox(APP, null);
+    if (window.UI?.renderGpsBox)  window.UI.renderGpsBox(APP, null);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SEZIONE 17 — RENDER HELPERS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  function renderPlannerBox() {
-    if (window.UI?.renderPlannerBox) window.UI.renderPlannerBox(APP);
-  }
+  function renderPlannerBox() { if (window.UI?.renderPlannerBox) window.UI.renderPlannerBox(APP); }
 
-  function renderAll() {
-    smartRender("full");
-    renderMarkers();
-    renderNearbyPage();
-  }
+  function renderAll() { smartRender("full"); renderMarkers(); renderNearbyPage(); }
 
-  function toast(message) {
-    if (window.UI?.toast) window.UI.toast(message);
-  }
+  function toast(message) { if (window.UI?.toast) window.UI.toast(message); }
 
   function runGoNow() {
     const result = getGoNowSuggestions();
@@ -1457,10 +1195,7 @@
   // ═══════════════════════════════════════════════════════════════════════════
 
   function bindEvents() {
-    const modeToggle = $("sailModeToggle");
-    if (modeToggle) {
-      modeToggle.addEventListener("change", () => toggleMode(modeToggle.checked ? "sail" : "travel"));
-    }
+    $("sailModeToggle")?.addEventListener("change", e => toggleMode(e.target.checked ? "sail" : "travel"));
 
     document.querySelectorAll(".nav-btn").forEach(btn => {
       btn.addEventListener("click", () => switchPage(btn.dataset.page));
@@ -1486,8 +1221,9 @@
             lat:      pos.coords.latitude,
             lon:      pos.coords.longitude,
             accuracy: pos.coords.accuracy,
-            altitude: (typeof pos.coords.altitude === "number" ? pos.coords.altitude : null)
+            altitude: typeof pos.coords.altitude === "number" ? pos.coords.altitude : null
           };
+          updateUserMarker();
           smartRender("full");
           toast("Posizione aggiornata");
         },
@@ -1506,14 +1242,15 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 19 — INIT
+  // SEZIONE 19 — INIT  (no Service Worker)
   // ═══════════════════════════════════════════════════════════════════════════
 
   function startLightUpdateLoop() {
     if (APP._lightUpdateTimer) clearInterval(APP._lightUpdateTimer);
+    // 3000ms — più leggero su mobile rispetto a 1500ms
     APP._lightUpdateTimer = setInterval(() => {
       if (window.UI?.smartRender) window.UI.smartRender(APP, "light");
-    }, 1500);
+    }, 3000);
   }
 
   function initApp() {
@@ -1530,35 +1267,14 @@
           lat:      pos.coords.latitude,
           lon:      pos.coords.longitude,
           accuracy: pos.coords.accuracy,
-          altitude: (typeof pos.coords.altitude === "number" ? pos.coords.altitude : null)
+          altitude: typeof pos.coords.altitude === "number" ? pos.coords.altitude : null
         };
+        updateUserMarker();
         smartRender("full");
       },
       () => {},
       { enableHighAccuracy: true, timeout: 8000 }
     );
-
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        const toUnregister = registrations.filter(r =>
-          r.active?.scriptURL &&
-          !r.active.scriptURL.endsWith(`sw-${SW_VERSION}.js`)
-        );
-        return Promise.all(toUnregister.map(r => r.unregister()));
-      }).then(() => {
-        return navigator.serviceWorker.register(`sw-${SW_VERSION}.js`);
-      }).then(reg => {
-        reg.update();
-        reg.onupdatefound = () => {
-          const newWorker = reg.installing;
-          newWorker.onstatechange = () => {
-            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-              window.location.reload();
-            }
-          };
-        };
-      }).catch(() => {});
-    }
 
     window.addEventListener("load", () => {
       setTimeout(() => $("splash")?.classList.add("hide"), 850);
@@ -1570,59 +1286,26 @@
   // ═══════════════════════════════════════════════════════════════════════════
 
   window.APP_UTILS = {
-    $,
-    escapeHtml,
-    normalizeText,
-    formatTime,
-    formatCountdown,
-    currentPeriod,
-    displayDistance,
-    getSpotImage,
-    isMorningLike,
-    isEveningLike,
-    getCoords,
-    matchValue,
-    distanceFilterKm,
+    $, escapeHtml, normalizeText, formatTime, formatCountdown,
+    currentPeriod, displayDistance, getSpotImage, isMorningLike, isEveningLike,
+    getCoords, matchValue, distanceFilterKm,
 
-    smartSearchMatch,
-    buildHaystack,
-    evaluateConstraint,
+    smartSearchMatch, buildHaystack, evaluateConstraint,
 
-    getBaseSpots,
-    getSpotById,
-    getAllSpotsWithMeta,
-    getFilteredSpots,
-    getMapFilteredSpots,
+    getBaseSpots, getSpotById, getAllSpotsWithMeta, getFilteredSpots, getMapFilteredSpots,
 
-    getBestSpotToday,
-    getBestWowSpot,
-    getBestSunsetSpot,
-    getClosestSpot,
-    getClosestSpots,
+    getBestSpotToday, getBestWowSpot, getBestSunsetSpot, getClosestSpot, getClosestSpots,
 
-    getGoNowSuggestions,
-    explainGoNow,
-    rankSpotForGoNow,
+    getGoNowSuggestions, explainGoNow, rankSpotForGoNow,
 
     getSunPhaseInfo,
 
-    isFavorite,
-    toggleFavorite,
-    setPlannerSlot,
-    clearPlannerSlot,
-    clearPlannerAll,
+    isFavorite, toggleFavorite, setPlannerSlot, clearPlannerSlot, clearPlannerAll,
 
-    exportUserData,
-    downloadUserData,
-    importUserData,
-    importUserDataFromFile,
+    exportUserData, downloadUserData, importUserData, importUserDataFromFile,
 
-    showSpotDetail,
-    switchPage,
-    centerSpot,
-    renderPlannerBox,
-    renderAll,
-    toggleMode
+    showSpotDetail, switchPage, centerSpot, renderPlannerBox, renderAll,
+    renderMarkers, updateUserMarker, toggleMode
   };
 
   document.addEventListener("DOMContentLoaded", initApp);
