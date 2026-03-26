@@ -53,18 +53,25 @@
         Guida travel e outdoor con mappa, spot wow, tramonti, vai ora intelligente, planner giornata e preferiti personali.
       </p>
 
+      <!-- Hero actions: gerarchia azioni prima, search secondaria -->
       <div class="hero-actions">
-        <div class="search-box glass">
-          <input id="searchInput" type="text"
-            placeholder="Cerca spot, zona, attività, tag… (es: tramonto facile, trekking wow, acqua calma)">
-          <button class="btn btn-primary tap" id="searchBtn" type="button">Cerca</button>
-          <button class="btn btn-secondary tap" id="goNowBtn" type="button">Vai ora</button>
+
+        <!-- Azioni principali -->
+        <div class="panel glass side-actions">
+          <button class="btn btn-primary tap btn-large" id="goNowBtn" type="button">⚡ Vai ora</button>
+          <button class="btn btn-gold tap" id="autofillPlannerBtn" type="button">📅 Pianifica giornata</button>
+          <button class="btn btn-secondary tap" id="gpsBtn" type="button">📍 Usa GPS</button>
         </div>
 
-        <div class="panel glass side-actions">
-          <button class="btn btn-gold tap" id="autofillPlannerBtn" type="button">Pianifica giornata</button>
-          <button class="btn btn-secondary tap" id="gpsBtn" type="button">Usa GPS</button>
+        <!-- Search box: visibile SOLO in home (gestita con classe .home-only) -->
+        <div class="search-box glass home-only" id="searchBoxWrapper">
+          <input id="searchInput" type="text"
+            placeholder="Cerca spot, zona, attività… (es: tramonto facile)">
+          <div class="search-row">
+            <button class="btn btn-secondary tap btn-compact" id="searchBtn" type="button">Cerca</button>
+          </div>
         </div>
+
       </div>
     </section>
 

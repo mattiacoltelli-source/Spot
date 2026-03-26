@@ -54,6 +54,7 @@
     gpsMarker:         null,
     liveGpsData:       null,
     _lightUpdateTimer: null,
+    _weatherRefreshTimer: null,
     _nearbyCache:      null,
     _weatherStamp:     null
   };
@@ -399,124 +400,87 @@
     const result =
       score >= 7   ? { score, label: "ottimo oggi",  cls: "green" } :
       score >= 3   ? { score, label: "molto valido", cls: "gold"  } :
-      score <= -3  ? { score, label: "meno ideale",  cls: "pink"  } :
-                     { score, label: "così così",    cls: "blue"  };
-    spot._weatherFit   = result;
+      score >= -1  ? { score, label: "nella norma",  cls: "blue"  } :
+      score >= -4  ? { score, label: "poco adatto",  cls: "pink"  } :
+                     { score, label: "sconsigliato", cls: "danger" };
+
+    spot._weatherFit  = result;
     spot._weatherStamp = APP._weatherStamp;
     return result;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 4 — SPOT POOL & META
+  // SEZIONE 4 — SPOT META / FILTERING
   // ═══════════════════════════════════════════════════════════════════════════
 
   function getAllSpotsWithMeta() {
-    return getBaseSpots().map(s => {
-      const [slat, slon] = getCoords(s);
-      const dist = APP.userPos ? distKm(APP.userPos.lat, APP.userPos.lon, slat, slon) : null;
-      return {
-        ...s,
-        lat:        slat,
-        lon:        slon,
-        _distance:  dist,
-        distance:   dist,
-        altitude:   (typeof s.alt === "number" ? s.alt : (typeof s.altitude === "number" ? s.altitude : null)),
-        weatherFit: weatherSuitability(s),
-        sailMeta:   window.SAIL ? window.SAIL.getSpotSailMeta(s, APP) : null
-      };
+    return getBaseSpots().map(spot => {
+      const enriched = { ...spot };
+      if (APP.userPos) {
+        enriched.distance = distKm(APP.userPos.lat, APP.userPos.lon, spot.lat, spot.lon);
+        spot._distance    = enriched.distance;
+      } else {
+        enriched.distance = null;
+        spot._distance    = null;
+      }
+      enriched.weatherFit = weatherSuitability(spot);
+      if (window.SAIL && APP.mode === "sail") {
+        enriched.sailMeta = window.SAIL.getSpotSailMeta(spot, APP);
+      }
+      return enriched;
     });
   }
 
   function getFilteredSpots() {
-    const maxKm = distanceFilterKm();
-    let items = getAllSpotsWithMeta().filter(s =>
-      (APP.level           === "all" || s.level === APP.level) &&
-      lightMatchesFilter(s.light, APP.light) &&
-      (APP.zone            === "all" || s.zone === APP.zone) &&
-      matchValue(s.activity, APP.activity) &&
-      (APP.favoritesFilter === "all" || isFavorite(s.id)) &&
-      (maxKm === null || (s.distance != null && s.distance <= maxKm)) &&
-      smartSearchMatch(s, APP.search)
-    );
-    if (APP.mode === "sail" && window.SAIL) {
-      items = items.filter(s => window.SAIL.filterSpotForSailMode(s, APP));
-    }
-    return items.sort((a, b) => {
-      if (APP.mode === "sail") {
-        const sd = (b.sailMeta?.score || 0) - (a.sailMeta?.score || 0);
-        if (sd !== 0) return sd;
-      }
-      const lo = { core: 0, secondary: 1, extra: 2 };
-      if (b.weatherFit.score !== a.weatherFit.score) return b.weatherFit.score - a.weatherFit.score;
-      if ((lo[a.level] ?? 9) !== (lo[b.level] ?? 9)) return (lo[a.level] ?? 9) - (lo[b.level] ?? 9);
-      if (a.distance == null && b.distance == null) return a.name.localeCompare(b.name, "it");
-      if (a.distance == null) return 1;
-      if (b.distance == null) return -1;
-      if (a.distance !== b.distance) return a.distance - b.distance;
-      return a.name.localeCompare(b.name, "it");
-    });
-  }
-
-  function getMapFilteredSpots() {
-    const maxKm = distanceFilterKm();
     let items = getAllSpotsWithMeta();
-    if (APP.level !== "all") items = items.filter(s => s.level === APP.level);
-    if (maxKm !== null)      items = items.filter(s => s.distance != null && s.distance <= maxKm);
+    if (APP.search) items = items.filter(s => smartSearchMatch(s, APP.search));
     if (APP.mode === "sail" && window.SAIL) {
-      items = items.filter(s => window.SAIL.filterSpotForSailMode(s, APP));
+      if (APP.sailFilter !== "all") items = items.filter(s => window.SAIL.filterSpotForSailMode(s, APP));
+    } else {
+      if (APP.level    !== "all") items = items.filter(s => s.level    === APP.level);
+      if (APP.zone     !== "all") items = items.filter(s => s.zone     === APP.zone);
+      if (APP.activity !== "all") items = items.filter(s => matchValue(s.activity, APP.activity));
+      if (APP.light    !== "all") items = items.filter(s => lightMatchesFilter(s.light, APP.light));
+      if (APP.favoritesFilter === "favorites") items = items.filter(s => APP.favorites.includes(s.id));
+      const maxKm = distanceFilterKm();
+      if (maxKm !== null && APP.userPos) items = items.filter(s => s.distance != null && s.distance <= maxKm);
     }
-    if (APP.mapQuickFilter === "wow")       return items.filter(s => (APP_SPOTS.topWowNames || []).includes(s.name));
-    if (APP.mapQuickFilter === "sunset")    return items.filter(s => isEveningLike(s.light));
-    if (APP.mapQuickFilter === "alba")      return items.filter(s => isMorningLike(s.light));
-    if (APP.mapQuickFilter === "favorites") return items.filter(s => isFavorite(s.id));
     return items;
   }
 
-  function sortBestPool(pool) {
-    return [...pool].sort((a, b) => {
-      if (b.weatherFit.score !== a.weatherFit.score) return b.weatherFit.score - a.weatherFit.score;
-      const lo = { core: 0, secondary: 1, extra: 2 };
-      if ((lo[a.level] ?? 9) !== (lo[b.level] ?? 9)) return (lo[a.level] ?? 9) - (lo[b.level] ?? 9);
-      return (a.distance ?? 999999) - (b.distance ?? 999999) || a.name.localeCompare(b.name, "it");
-    });
+  function getMapFilteredSpots() {
+    let items = getAllSpotsWithMeta();
+    if (APP.mapQuickFilter === "wow")       items = items.filter(s => (APP_SPOTS.topWowNames || []).includes(s.name));
+    if (APP.mapQuickFilter === "sunset")    items = items.filter(s => isEveningLike(s.light));
+    if (APP.mapQuickFilter === "alba")      items = items.filter(s => isMorningLike(s.light));
+    if (APP.mapQuickFilter === "favorites") items = items.filter(s => APP.favorites.includes(s.id));
+    return items;
   }
 
   function getBestSpotToday() {
-    if (APP.mode === "sail" && window.SAIL) return window.SAIL.getBestSailSpot(APP);
-    const desired = currentPeriod();
-    let pool = getAllSpotsWithMeta();
-    if (APP.level !== "all") pool = pool.filter(s => s.level === APP.level);
-    let pp = pool.filter(s => lightMatchesFilter(s.light, desired));
-    if (!pp.length && desired === "giorno")   pp = pool.filter(s => lightMatchesFilter(s.light, "giorno") || isMorningLike(s.light));
-    if (!pp.length && desired === "tramonto") pp = pool.filter(s => isEveningLike(s.light));
-    if (!pp.length && desired === "alba")     pp = pool.filter(s => isMorningLike(s.light));
-    if (!pp.length) pp = pool;
-    return sortBestPool(pp)[0] || null;
+    const pool = getAllSpotsWithMeta();
+    return pool.sort((a, b) => (b.weatherFit?.score || 0) - (a.weatherFit?.score || 0))[0] || null;
   }
 
   function getBestWowSpot() {
-    let pool = getAllSpotsWithMeta().filter(s => (APP_SPOTS.topWowNames || []).includes(s.name));
-    if (APP.level !== "all") pool = pool.filter(s => s.level === APP.level);
-    return sortBestPool(pool)[0] || null;
+    return getBaseSpots().reduce((best, s) => (!best || (s.experience?.wow || 0) > (best.experience?.wow || 0)) ? s : best, null);
   }
 
   function getBestSunsetSpot() {
-    if (APP.mode === "sail" && window.SAIL) return window.SAIL.getBestSailSunsetSpot(APP);
-    let pool = getAllSpotsWithMeta().filter(s => isEveningLike(s.light));
-    if (APP.level !== "all") pool = pool.filter(s => s.level === APP.level);
-    return sortBestPool(pool)[0] || null;
+    const names = APP_SPOTS.topSunsetNames;
+    if (names?.length) {
+      const found = names.map(n => getBaseSpots().find(s => s.name === n)).filter(Boolean);
+      if (found.length) return found[0];
+    }
+    return getBaseSpots()
+      .filter(s => isEveningLike(s.light))
+      .sort((a, b) => (b.experience?.wow || 0) - (a.experience?.wow || 0))[0] || null;
   }
 
   function getClosestSpot() {
     if (!APP.userPos) return null;
-    let pool = getAllSpotsWithMeta().filter(s => s.distance != null);
-    if (APP.level !== "all") pool = pool.filter(s => s.level === APP.level);
-    if (APP.mode === "sail" && window.SAIL) pool = pool.filter(s => window.SAIL.filterSpotForSailMode(s, APP));
-    if (!pool.length) return null;
-    pool.sort((a, b) => a.distance - b.distance);
-    const nearest = pool[0];
-    if (nearest.weatherFit.cls !== "pink") return nearest;
-    return pool.find(s => s.weatherFit.cls !== "pink" && s.distance <= nearest.distance + 12) || nearest;
+    const pool = getAllSpotsWithMeta().filter(s => s.distance != null);
+    return pool.sort((a, b) => a.distance - b.distance)[0] || null;
   }
 
   function getClosestSpots(limit = 5) {
@@ -763,6 +727,18 @@
   // SEZIONE 7 — PLANNER BUILDER
   // ═══════════════════════════════════════════════════════════════════════════
 
+  function sortBestPool(pool) {
+    return pool.sort((a, b) => {
+      const wA = a.weatherFit?.score || 0;
+      const wB = b.weatherFit?.score || 0;
+      const lvA = { core: 2, secondary: 1, extra: 0 }[a.level] || 0;
+      const lvB = { core: 2, secondary: 1, extra: 0 }[b.level] || 0;
+      const wowA = a.experience?.wow || 0;
+      const wowB = b.experience?.wow || 0;
+      return (wB * 10 + lvB * 5 + wowB) - (wA * 10 + lvA * 5 + wowA);
+    });
+  }
+
   function bestSpotForSlot(options) {
     let pool = getAllSpotsWithMeta();
     if (options.light)         pool = pool.filter(s => lightMatchesFilter(s.light, options.light));
@@ -896,14 +872,17 @@
     return { clockText: ct, phaseText: "Dopo il tramonto", mainText: "La finestra serale è finita", subText: "Guarda già domani o prepara una partenza all'alba.", timeText: "chiuso" };
   }
 
+  // ── SUN PHASE TIMER: 5 secondi, no flicker ────────────────────────────────
   function startSunsetCountdown() {
     if (APP.sunsetTimer) clearInterval(APP.sunsetTimer);
     if (window.UI?.renderSunPhase) window.UI.renderSunPhase(APP);
-    APP.sunsetTimer = setInterval(() => { if (window.UI?.renderSunPhase) window.UI.renderSunPhase(APP); }, 30000);
+    APP.sunsetTimer = setInterval(() => {
+      if (window.UI?.renderSunPhase) window.UI.renderSunPhase(APP);
+    }, 5000); // aggiornato ogni 5 secondi
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 11 — WEATHER LOADING
+  // SEZIONE 11 — WEATHER LOADING  (+ auto-refresh ogni 5 minuti)
   // ═══════════════════════════════════════════════════════════════════════════
 
   function getNext12Hours(hourly, marineHourly) {
@@ -963,6 +942,14 @@
     startSunsetCountdown();
   }
 
+  // Auto-refresh meteo ogni 5 minuti senza ricaricare l'app
+  function startWeatherRefreshLoop() {
+    if (APP._weatherRefreshTimer) clearInterval(APP._weatherRefreshTimer);
+    APP._weatherRefreshTimer = setInterval(() => {
+      loadWeather();
+    }, 5 * 60 * 1000); // 5 minuti
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // SEZIONE 12 — MAPPA
   // ═══════════════════════════════════════════════════════════════════════════
@@ -982,6 +969,40 @@
     });
   }
 
+  // ── Marker posizione utente: pin stile Google Maps (punto blu con alone) ──
+  function createUserMarkerIcon() {
+    return L.divIcon({
+      className: "",
+      html: `
+        <div style="position:relative;width:24px;height:24px">
+          <!-- Alone esterno pulsante -->
+          <div style="
+            position:absolute;inset:-8px;
+            border-radius:50%;
+            background:rgba(45,142,255,.18);
+            animation:userPulse 2s ease-in-out infinite;
+          "></div>
+          <!-- Cerchio bianco esterno -->
+          <div style="
+            position:absolute;inset:0;
+            border-radius:50%;
+            background:#fff;
+            box-shadow:0 2px 8px rgba(0,0,0,.38);
+          "></div>
+          <!-- Punto blu interno -->
+          <div style="
+            position:absolute;inset:4px;
+            border-radius:50%;
+            background:#2d8eff;
+          "></div>
+        </div>
+      `,
+      iconSize:    [24, 24],
+      iconAnchor:  [12, 12],
+      popupAnchor: [0, -14]
+    });
+  }
+
   function initMap() {
     const mapEl = $("map");
     if (!mapEl || typeof L === "undefined") return;
@@ -991,7 +1012,7 @@
     renderMarkers();
   }
 
-  // Pallino posizione utente — separato dai marker spot
+  // Marker posizione utente — punto blu stile Google Maps, z-index alto
   function updateUserMarker() {
     if (!APP.map || typeof L === "undefined") return;
     if (!APP.userPos) {
@@ -999,18 +1020,30 @@
       return;
     }
     const { lat, lon } = APP.userPos;
+
+    // Testo altitudine solo se disponibile
+    const altText = APP.userPos.altitude != null
+      ? `<div style="font-size:12px;color:#8fc9f8;margin-top:2px">${Math.round(APP.userPos.altitude)} m s.l.m.</div>`
+      : "";
+
     if (!APP.userMarker) {
-      APP.userMarker = L.circleMarker([lat, lon], {
-        radius: 10, color: "#ffffff", weight: 2,
-        fillColor: "#2d8eff", fillOpacity: 1, zIndexOffset: 1000
+      APP.userMarker = L.marker([lat, lon], {
+        icon:        createUserMarkerIcon(),
+        zIndexOffset: 2000  // sempre sopra gli altri marker
       }).addTo(APP.map);
-      APP.userMarker.bindPopup('<div style="font-size:13px;font-weight:700">La tua posizione</div>');
+      APP.userMarker.bindPopup(
+        `<div style="font-size:13px;font-weight:700">La tua posizione</div>${altText}`
+      );
     } else {
       APP.userMarker.setLatLng([lat, lon]);
+      APP.userMarker.setIcon(createUserMarkerIcon());
+      // Aggiorna popup altitudine live
+      APP.userMarker.setPopupContent(
+        `<div style="font-size:13px;font-weight:700">La tua posizione</div>${altText}`
+      );
     }
   }
 
-  // renderMarkers aggiorna solo i marker spot + userMarker, NON ricrea la mappa
   function renderMarkers() {
     if (!APP.map) return;
     APP.markers.forEach(m => APP.map.removeLayer(m));
@@ -1061,6 +1094,13 @@
     APP.activePage = pageName;
     document.querySelectorAll(".page").forEach(p => p.classList.toggle("active", p.id === `page-${pageName}`));
     document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.page === pageName));
+
+    // Mostra/nascondi search box solo su Home
+    const searchWrapper = $("searchBoxWrapper");
+    if (searchWrapper) {
+      searchWrapper.style.display = pageName === "home" ? "" : "none";
+    }
+
     window.scrollTo({ top: 0, behavior: "smooth" });
     if (pageName === "map" && APP.map) {
       setTimeout(() => { APP.map.invalidateSize(); updateUserMarker(); }, 220);
@@ -1128,7 +1168,6 @@
         APP.gpsPath.push([lat, lon]);
         if (APP.gpsLine) APP.gpsLine.setLatLngs(APP.gpsPath);
 
-        // Marker rotta GPS (cerchio piccolo animato lungo il percorso)
         if (!APP.gpsMarker) {
           APP.gpsMarker = L.circleMarker([lat, lon], {
             radius: 8, color: "#dff3ff", weight: 2, fillColor: "#59b6ff", fillOpacity: 1
@@ -1225,7 +1264,10 @@
           };
           updateUserMarker();
           smartRender("full");
-          toast("Posizione aggiornata");
+          const altMsg = APP.userPos.altitude != null
+            ? ` · altitudine ${Math.round(APP.userPos.altitude)} m`
+            : "";
+          toast(`Posizione aggiornata${altMsg}`);
         },
         () => toast("Permesso GPS negato"),
         { enableHighAccuracy: true, timeout: 8000 }
@@ -1242,15 +1284,15 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 19 — INIT  (no Service Worker)
+  // SEZIONE 19 — INIT
   // ═══════════════════════════════════════════════════════════════════════════
 
+  // Light update loop: 5 secondi per sun phase reattiva, render leggero
   function startLightUpdateLoop() {
     if (APP._lightUpdateTimer) clearInterval(APP._lightUpdateTimer);
-    // 3000ms — più leggero su mobile rispetto a 1500ms
     APP._lightUpdateTimer = setInterval(() => {
       if (window.UI?.smartRender) window.UI.smartRender(APP, "light");
-    }, 3000);
+    }, 5000); // 5 secondi
   }
 
   function initApp() {
@@ -1260,6 +1302,11 @@
     smartRender("full");
     loadWeather();
     startLightUpdateLoop();
+    startWeatherRefreshLoop(); // auto-refresh meteo ogni 5 minuti
+
+    // Stato iniziale search box (home attivo di default)
+    const searchWrapper = $("searchBoxWrapper");
+    if (searchWrapper) searchWrapper.style.display = "";
 
     navigator.geolocation?.getCurrentPosition(
       pos => {
