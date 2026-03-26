@@ -14,9 +14,11 @@
   // ─── STORAGE KEYS ─────────────────────────────────────────────────────────
 
   const STORAGE_KEYS = {
-    favorites: APP_SPOTS.storageKeys?.favorites || "travel_sail_favorites_v1",
-    planner:   APP_SPOTS.storageKeys?.planner   || "travel_sail_planner_v1",
-    mode:      "travel_sail_mode_v1"
+    favorites:    APP_SPOTS.storageKeys?.favorites || "travel_sail_favorites_v1",
+    planner:      APP_SPOTS.storageKeys?.planner   || "travel_sail_planner_v1",
+    mode:         "travel_sail_mode_v1",
+    weatherCache: "weather_cache",
+    lastPosition: "last_position"
   };
 
   const DEFAULT_PLANNER = { alba: null, main: null, tramonto: null };
@@ -935,10 +937,11 @@
       APP._weatherStamp = Date.now();
       APP.marineData    = { waveHeight: marine?.current?.wave_height ?? 0, waveDirection: marine?.current?.wave_direction ?? 0, wavePeriod: marine?.current?.wave_period ?? 0 };
       APP.hourlyData    = getNext12Hours(forecast.hourly, marine.hourly);
+      saveWeatherCache(); // salva in cache dopo fetch riuscito
     } catch {
       APP.weatherData = null; APP._weatherStamp = null; APP.marineData = null; APP.hourlyData = []; APP.sunTimes = null;
     }
-    smartRender("full");
+    smartRender("light"); // render leggero dopo fetch: evita refresh completo
     startSunsetCountdown();
   }
 
@@ -948,6 +951,69 @@
     APP._weatherRefreshTimer = setInterval(() => {
       loadWeather();
     }, 5 * 60 * 1000); // 5 minuti
+  }
+
+  // ── CACHE METEO ────────────────────────────────────────────────────────────
+
+  function saveWeatherCache() {
+    try {
+      const sunTimesRaw = APP.sunTimes
+        ? { sunrise: APP.sunTimes.sunrise?.toISOString() || null, sunset: APP.sunTimes.sunset?.toISOString() || null }
+        : null;
+      const cache = {
+        timestamp:   Date.now(),
+        weatherData: APP.weatherData,
+        marineData:  APP.marineData,
+        hourlyData:  APP.hourlyData.map(item => ({ ...item, date: item.date.toISOString() })),
+        sunTimes:    sunTimesRaw
+      };
+      localStorage.setItem(STORAGE_KEYS.weatherCache, JSON.stringify(cache));
+    } catch { /* silenzioso: la cache è opzionale */ }
+  }
+
+  function loadWeatherFromCache() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.weatherCache);
+      if (!raw) return false;
+      const cache = JSON.parse(raw);
+      if (!cache || !cache.timestamp || !cache.weatherData) return false;
+      // Valida: max 3 ore
+      if (Date.now() - cache.timestamp > 3 * 60 * 60 * 1000) return false;
+      APP.weatherData   = cache.weatherData;
+      APP.marineData    = cache.marineData  || null;
+      APP.hourlyData    = (cache.hourlyData || []).map(item => ({ ...item, date: new Date(item.date) }));
+      APP.sunTimes      = cache.sunTimes
+        ? { sunrise: parseSunTime(cache.sunTimes.sunrise), sunset: parseSunTime(cache.sunTimes.sunset) }
+        : null;
+      APP._weatherStamp = cache.timestamp;
+      return true;
+    } catch { return false; }
+  }
+
+  // ── CACHE POSIZIONE ────────────────────────────────────────────────────────
+
+  function saveLastPosition(pos) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.lastPosition, JSON.stringify({
+        timestamp: Date.now(),
+        lat:       pos.lat,
+        lon:       pos.lon,
+        altitude:  pos.altitude ?? null
+      }));
+    } catch { /* silenzioso */ }
+  }
+
+  function loadLastPosition() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.lastPosition);
+      if (!raw) return false;
+      const pos = JSON.parse(raw);
+      if (!pos || !pos.lat || !pos.lon || !pos.timestamp) return false;
+      // Valida: max 2 ore
+      if (Date.now() - pos.timestamp > 2 * 60 * 60 * 1000) return false;
+      APP.userPos = { lat: pos.lat, lon: pos.lon, accuracy: null, altitude: pos.altitude ?? null };
+      return true;
+    } catch { return false; }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1164,6 +1230,7 @@
 
         APP.liveGpsData = { lat, lon, speedMs, heading, altitude, timestamp: Date.now() };
         APP.userPos     = { lat, lon, accuracy: pos.coords.accuracy, altitude };
+        saveLastPosition(APP.userPos); // aggiorna cache posizione live
 
         APP.gpsPath.push([lat, lon]);
         if (APP.gpsLine) APP.gpsLine.setLatLngs(APP.gpsPath);
@@ -1262,6 +1329,7 @@
             accuracy: pos.coords.accuracy,
             altitude: typeof pos.coords.altitude === "number" ? pos.coords.altitude : null
           };
+          saveLastPosition(APP.userPos); // salva in cache
           updateUserMarker();
           smartRender("full");
           const altMsg = APP.userPos.altitude != null
@@ -1299,15 +1367,27 @@
     updateModeUI();
     bindEvents();
     initMap();
+
+    // 1) Carica cache meteo e posizione PRIMA del render → nessun loading visibile
+    loadWeatherFromCache();
+    loadLastPosition();
+
+    // 2) Primo render con i dati già disponibili (cache o vuoti)
+    if (APP.userPos) updateUserMarker();
     smartRender("full");
-    loadWeather();
+
+    // 3) Carica meteo reale in background dopo il render: non blocca UI
+    setTimeout(() => loadWeather(), 0);
+
     startLightUpdateLoop();
-    startWeatherRefreshLoop(); // auto-refresh meteo ogni 5 minuti
+    startWeatherRefreshLoop(); // auto-refresh ogni 5 minuti
+    if (APP.sunTimes) startSunsetCountdown(); // avvia countdown se cache disponibile
 
     // Stato iniziale search box (home attivo di default)
     const searchWrapper = $("searchBoxWrapper");
     if (searchWrapper) searchWrapper.style.display = "";
 
+    // GPS fresco in background — sovrascrive cache se disponibile
     navigator.geolocation?.getCurrentPosition(
       pos => {
         APP.userPos = {
@@ -1316,6 +1396,7 @@
           accuracy: pos.coords.accuracy,
           altitude: typeof pos.coords.altitude === "number" ? pos.coords.altitude : null
         };
+        saveLastPosition(APP.userPos); // aggiorna cache posizione
         updateUserMarker();
         smartRender("full");
       },
