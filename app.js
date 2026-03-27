@@ -874,13 +874,12 @@
     return { clockText: ct, phaseText: "Dopo il tramonto", mainText: "La finestra serale è finita", subText: "Guarda già domani o prepara una partenza all'alba.", timeText: "chiuso" };
   }
 
-  // ── SUN PHASE TIMER: 5 secondi, no flicker ────────────────────────────────
+  // ── SUN PHASE TIMER: render iniziale solo, countdown gestito da UI ──────────
   function startSunsetCountdown() {
     if (APP.sunsetTimer) clearInterval(APP.sunsetTimer);
-    if (window.UI?.renderSunPhase) window.UI.renderSunPhase(APP);
-    APP.sunsetTimer = setInterval(() => {
-      if (window.UI?.renderSunPhase) window.UI.renderSunPhase(APP);
-    }, 5000); // aggiornato ogni 5 secondi
+    if (window.UI?.renderSunPhase) {
+      window.UI.renderSunPhase(APP);
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -961,6 +960,7 @@
         ? { sunrise: APP.sunTimes.sunrise?.toISOString() || null, sunset: APP.sunTimes.sunset?.toISOString() || null }
         : null;
       const cache = {
+        version:     1,
         timestamp:   Date.now(),
         weatherData: APP.weatherData,
         marineData:  APP.marineData,
@@ -977,6 +977,7 @@
       if (!raw) return false;
       const cache = JSON.parse(raw);
       if (!cache || !cache.timestamp || !cache.weatherData) return false;
+      if (cache.version !== 1) return false;
       // Valida: max 3 ore
       if (Date.now() - cache.timestamp > 3 * 60 * 60 * 1000) return false;
       APP.weatherData   = cache.weatherData;
@@ -1256,6 +1257,11 @@
         if (window.UI?.renderGpsBox) window.UI.renderGpsBox(APP, APP.liveGpsData);
         renderNearbyPage();
 
+        if (!APP._lastUiUpdate || Date.now() - APP._lastUiUpdate > 3000) {
+          smartRender("light");
+          APP._lastUiUpdate = Date.now();
+        }
+
         if (!APP._lastMarkerUpdate || Date.now() - APP._lastMarkerUpdate > 4000) {
           renderMarkers();
           APP._lastMarkerUpdate = Date.now();
@@ -1360,7 +1366,7 @@
     if (APP._lightUpdateTimer) clearInterval(APP._lightUpdateTimer);
     APP._lightUpdateTimer = setInterval(() => {
       if (window.UI?.smartRender) window.UI.smartRender(APP, "light");
-    }, 5000); // 5 secondi
+    }, 15000); // 15 secondi
   }
 
   function initApp() {
@@ -1388,21 +1394,23 @@
     if (searchWrapper) searchWrapper.style.display = "";
 
     // GPS fresco in background — sovrascrive cache se disponibile
-    navigator.geolocation?.getCurrentPosition(
-      pos => {
-        APP.userPos = {
-          lat:      pos.coords.latitude,
-          lon:      pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-          altitude: typeof pos.coords.altitude === "number" ? pos.coords.altitude : null
-        };
-        saveLastPosition(APP.userPos); // aggiorna cache posizione
-        updateUserMarker();
-        smartRender("full");
-      },
-      () => {},
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
+    if (!APP.userPos) {
+      navigator.geolocation?.getCurrentPosition(
+        pos => {
+          APP.userPos = {
+            lat:      pos.coords.latitude,
+            lon:      pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+            altitude: typeof pos.coords.altitude === "number" ? pos.coords.altitude : null
+          };
+          saveLastPosition(APP.userPos); // aggiorna cache posizione
+          updateUserMarker();
+          smartRender("light");
+        },
+        () => {},
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
 
     window.addEventListener("load", () => {
       setTimeout(() => $("splash")?.classList.add("hide"), 850);

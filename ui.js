@@ -219,11 +219,15 @@
         <div class="stat"><div class="k">Onde</div><div class="v">${app.marineData ? Number(app.marineData.waveHeight || 0).toFixed(1) + " m" : "—"}</div></div>
       `;
     } else {
+      const altCard = (app.userPos && app.userPos.altitude != null)
+        ? `<div class="stat"><div class="k">Altitudine</div><div class="v">${Math.round(app.userPos.altitude)} m</div></div>`
+        : "";
       box.innerHTML = `
         <div class="stat"><div class="k">Temperatura</div><div class="v">${Math.round(app.weatherData.temp)}°</div></div>
         <div class="stat"><div class="k">Vento</div><div class="v">${Math.round(app.weatherData.wind)} km/h</div></div>
         <div class="stat"><div class="k">Nuvole</div><div class="v">${Math.round(app.weatherData.cloud)}%</div></div>
         <div class="stat"><div class="k">Pioggia</div><div class="v">${Math.round(app.weatherData.rain)}%</div></div>
+        ${altCard}
       `;
     }
   }
@@ -237,7 +241,35 @@
     const ids  = ["sunsetClockChip","sunPhaseChip","sunsetCountdownMain","sunsetCountdownSub","sunsetCountdownTime"];
     const vals = [data.clockText, data.phaseText, data.mainText, data.subText, data.timeText];
     ids.forEach((id, i) => { const el = $(id); if (el) el.textContent = vals[i]; });
+    // Avvia (o riavvia) il tick fluido per il solo numero countdown
+    _startSunCountdownTick();
   };
+
+  // Aggiorna SOLO il numero del countdown ogni secondo, senza re-render dell'intera UI
+  let _sunCountdownInterval = null;
+  function _startSunCountdownTick() {
+    if (_sunCountdownInterval) return; // già in esecuzione
+    _sunCountdownInterval = setInterval(_tickSunCountdown, 1000);
+  }
+
+  function _tickSunCountdown() {
+    const el = $("sunsetCountdownTime");
+    if (!el) return;
+    const sunTimes = window.APP && window.APP.sunTimes;
+    if (!sunTimes) return;
+    const now     = new Date();
+    const sunset  = sunTimes.sunset instanceof Date ? sunTimes.sunset : new Date(sunTimes.sunset);
+    const diffMs  = sunset - now;
+    if (isNaN(diffMs)) return;
+    if (diffMs <= 0) {
+      el.textContent = "Tramontato";
+      return;
+    }
+    const totalMin = Math.floor(diffMs / 60000);
+    const h        = Math.floor(totalMin / 60);
+    const m        = totalMin % 60;
+    el.textContent = h > 0 ? `${h}h ${m}m` : `${m}m`;
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HOURLY STRIP
@@ -750,6 +782,95 @@
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // NEARBY PANEL
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function renderNearbyPanel(app) {
+    // Trova o crea il pannello
+    let panel = $("nearbyPanel");
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.id        = "nearbyPanel";
+      panel.className = "panel glass";
+      // Inserisce dopo il plannerBox o alla fine della home
+      const anchor = $("plannerBox")?.closest(".panel.glass") || $("dataPanel") || null;
+      if (anchor) anchor.insertAdjacentElement("afterend", panel);
+      else {
+        const homeSection = document.querySelector(".page-home") || document.querySelector("#pageHome");
+        if (homeSection) homeSection.appendChild(panel);
+      }
+    }
+
+    // Caso: GPS non disponibile
+    if (!app.userPos) {
+      panel.innerHTML = `
+        <div class="panel-head">
+          <h2>📍 Vicino a te</h2>
+          <span class="tiny muted">GPS</span>
+        </div>
+        <div class="detail-empty" style="padding:12px 0">Attiva il GPS per vedere gli spot vicini</div>
+      `;
+      return;
+    }
+
+    // GPS disponibile: ottieni i 3 spot più vicini
+    const closest = window.APP_UTILS.getClosestSpots ? window.APP_UTILS.getClosestSpots(3) : [];
+
+    // Caso: utente lontano dagli spot (> 200 km)
+    if (!closest.length || closest[0].distance > 200) {
+      panel.innerHTML = `
+        <div class="panel-head">
+          <h2>📍 Vicino a te</h2>
+          <span class="tiny muted">GPS attivo</span>
+        </div>
+        <div class="detail-empty" style="padding:12px 0">Sei lontano dalla zona degli spot</div>
+      `;
+      return;
+    }
+
+    // Caso normale: mostra lista spot
+    const allMeta  = window.APP_UTILS.getAllSpotsWithMeta();
+    const metaById = new Map(allMeta.map(s => [s.id, s]));
+
+    const rows = closest.map(spot => {
+      const meta    = metaById.get(spot.id) || spot;
+      const fit     = meta.weatherFit || null;
+      const distLbl = window.APP_UTILS.displayDistance(spot.distance);
+      const altLine = spot.altitude != null ? `<span class="tag">${Math.round(spot.altitude)} m</span>` : "";
+      const fitLine = fit ? `<span class="tag ${chipClassFromFit(fit)}">${esc(fit.label)}</span>` : "";
+      return `
+        <div class="spot-card glass tap" data-nearby-id="${esc(spot.id)}" style="margin-bottom:10px">
+          <div class="spot-head">
+            <div>
+              <div class="spot-name">${esc(spot.name)}</div>
+              <div class="spot-sub">${esc(distLbl)}</div>
+            </div>
+          </div>
+          <div class="spot-meta">
+            ${fitLine}
+            ${altLine}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    panel.innerHTML = `
+      <div class="panel-head">
+        <h2>📍 Vicino a te</h2>
+        <span class="tiny muted">Spot più vicini</span>
+      </div>
+      ${rows}
+    `;
+
+    panel.querySelectorAll("[data-nearby-id]").forEach(card => {
+      card.addEventListener("click", () => {
+        const spot = APP_SPOTS.spots.find(s => s.id === card.dataset.nearbyId);
+        if (spot) { window.APP_UTILS.showSpotDetail(spot); window.APP_UTILS.switchPage("detail"); }
+      });
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // EXPORT / IMPORT UI
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -871,6 +992,7 @@
       renderTopLists(app);
       UI.renderGpsBox(app, app.liveGpsData || null);
       renderDataPanel();
+      renderNearbyPanel(app);
 
       if ($("weatherAlert")) {
         if (!app.weatherData) {
