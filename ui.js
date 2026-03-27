@@ -106,12 +106,17 @@
     `;
 
     // ── Due card alternative ───────────────────────────────────────────────
+    const alt1Explain = alt1 ? window.APP_UTILS.explainGoNow(alt1) : "";
+    const alt2Explain = alt2 ? window.APP_UTILS.explainGoNow(alt2) : "";
+
     const altCards = (alt1 || alt2) ? `
       <div class="go-now-alts">
         ${alt1 ? `
           <div class="go-now-alt glass tap" data-quick-id="${esc(alt1.id)}">
             <div class="quick-label go-now-alt-label">👌 Ottima alternativa</div>
             <div class="go-now-alt-name">${esc(alt1.name)}</div>
+            ${alt1Explain ? `<div class="go-now-alt-explain">${esc(alt1Explain)}</div>` : ""}
+            <div class="quick-desc go-now-alt-desc">${esc(getBestPracticalLine(alt1))}</div>
             <div class="sunset-chip-row">
               ${getDistanceLabel(alt1) ? `<div class="mini-chip blue">${esc(getDistanceLabel(alt1))}</div>` : ""}
               ${alt1.weatherFit ? `<div class="mini-chip ${chipClassFromFit(alt1.weatherFit)}">${esc(alt1.weatherFit.label)}</div>` : ""}
@@ -121,8 +126,10 @@
         ` : ""}
         ${alt2 ? `
           <div class="go-now-alt glass tap" data-quick-id="${esc(alt2.id)}">
-            <div class="quick-label go-now-alt-label">👌 Ottima alternativa</div>
+            <div class="quick-label go-now-alt-label">👍 Piano B</div>
             <div class="go-now-alt-name">${esc(alt2.name)}</div>
+            ${alt2Explain ? `<div class="go-now-alt-explain">${esc(alt2Explain)}</div>` : ""}
+            <div class="quick-desc go-now-alt-desc">${esc(getBestPracticalLine(alt2))}</div>
             <div class="sunset-chip-row">
               ${getDistanceLabel(alt2) ? `<div class="mini-chip blue">${esc(getDistanceLabel(alt2))}</div>` : ""}
               ${alt2.weatherFit ? `<div class="mini-chip ${chipClassFromFit(alt2.weatherFit)}">${esc(alt2.weatherFit.label)}</div>` : ""}
@@ -329,8 +336,8 @@
 
     strip.innerHTML = app.hourlyData.slice(0, 12).map(item => {
       const mood = hourlyMood(item);
-      const h    = new Date(item.time);
-      const hStr = h.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+      const d    = item.date instanceof Date ? item.date : new Date(item.date || item.time || 0);
+      const hStr = isNaN(d.getTime()) ? "—" : d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
       return `
         <div class="hour-card ${mood.cls}">
           <div class="hour-top">
