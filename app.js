@@ -505,6 +505,10 @@
       box.innerHTML = `<div class="detail-empty">Nessuno spot trovato nelle vicinanze.</div>`;
       return;
     }
+    if (items[0].distance == null || items[0].distance > 200) {
+      box.innerHTML = `<div class="detail-empty">Sei lontano dalla zona degli spot.</div>`;
+      return;
+    }
     box.innerHTML = items.map(s => `
       <div class="spot-card glass tap" data-nearby-id="${escapeHtml(s.id)}">
         <div class="spot-head">
@@ -1254,10 +1258,11 @@
 
         updateUserMarker();
         APP._nearbyCache = getClosestSpots(3);
-        if (window.UI?.renderGpsBox) window.UI.renderGpsBox(APP, APP.liveGpsData);
 
-        if (!APP._lastUiUpdate || Date.now() - APP._lastUiUpdate > 5000) {
-          smartRender("full");
+        if (!APP._lastUiUpdate || Date.now() - APP._lastUiUpdate > 15000) {
+          if (window.UI?.renderGpsBox) {
+            window.UI.renderGpsBox(APP, APP.liveGpsData);
+          }
           APP._lastUiUpdate = Date.now();
         }
 
@@ -1336,7 +1341,8 @@
           };
           saveLastPosition(APP.userPos); // salva in cache
           updateUserMarker();
-          smartRender("full");
+          smartRender("light");
+          if (typeof renderNearbyPage === "function") renderNearbyPage();
           const altMsg = APP.userPos.altitude != null
             ? ` · altitudine ${Math.round(APP.userPos.altitude)} m`
             : "";
@@ -1405,6 +1411,7 @@
           saveLastPosition(APP.userPos); // aggiorna cache posizione
           updateUserMarker();
           if (window.UI?.smartRender) window.UI.smartRender(APP, "light");
+          if (typeof renderNearbyPage === "function") renderNearbyPage();
         },
         () => {},
         { enableHighAccuracy: true, timeout: 8000 }
