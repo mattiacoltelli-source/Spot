@@ -80,43 +80,61 @@
   // ═══════════════════════════════════════════════════════════════════════════
 
   function buildTravelQuickCards(app) {
-    const goNow       = window.APP_UTILS.getGoNowSuggestions();
-    const bestNow     = goNow?.best || null;
-    const alt1        = goNow?.alternatives?.[0] || null;
-    const alt2        = goNow?.alternatives?.[1] || null;
-    const bestSunset  = window.APP_UTILS.getBestSunsetSpot();
-    let closestSpot = window.APP_UTILS.getClosestSpot();
+    const goNow      = window.APP_UTILS.getGoNowSuggestions();
+    const bestNow    = goNow?.best || null;
+    const alt1       = goNow?.alternatives?.[0] || null;
+    const alt2       = goNow?.alternatives?.[1] || null;
+    const bestSunset = window.APP_UTILS.getBestSunsetSpot();
 
-    const goNowExplanation      = bestNow ? window.APP_UTILS.explainGoNow(bestNow) : "";
-    const closestFit            = closestSpot?.weatherFit || null;
-    const closestQualityChipCls = chipClassFromFit(closestFit);
-    const closestQualityLabel   = closestFit ? closestFit.label : "stato n/d";
+    const goNowExplanation = bestNow ? window.APP_UTILS.explainGoNow(bestNow) : "";
 
-    return `
-      <div class="quick-card glass best tap" data-quick-id="${bestNow ? esc(bestNow.id) : ""}">
-        <div class="quick-label">Vai ora</div>
-        <div class="quick-title">${bestNow ? esc(bestNow.name) : "—"}</div>
-        ${goNowExplanation ? `<div class="quick-explain">${esc(goNowExplanation)}</div>` : ""}
-        <div class="quick-desc">${bestNow ? esc(getBestPracticalLine(bestNow)) : "Sto leggendo il miglior spot del momento."}</div>
-        <div class="sunset-chip-row">
-          ${bestNow && getDistanceLabel(bestNow) ? `<div class="mini-chip blue">${esc(getDistanceLabel(bestNow))}</div>` : ""}
-          <div class="mini-chip ${chipClassFromFit(bestNow?.weatherFit)}">${bestNow?.weatherFit?.label || "lettura in corso"}</div>
+    // ── Card principale "Vai ora" ──────────────────────────────────────────
+    const mainCard = `
+      <div class="go-now-main glass best tap" data-quick-id="${bestNow ? esc(bestNow.id) : ""}">
+        <div class="go-now-main-header">
+          <div class="quick-label go-now-fire">🔥 Perfetto adesso</div>
           ${bestNow?.experience?.wow ? `<div class="mini-chip gold">Wow ${esc(String(bestNow.experience.wow))}/10</div>` : ""}
         </div>
-        ${(alt1 || alt2) ? `<div class="quick-desc" style="margin-top:12px">Alternative: ${[alt1?.name, alt2?.name].filter(Boolean).map(esc).join(" · ")}</div>` : ""}
-      </div>
-
-      <div class="quick-card glass tap" data-quick-id="${closestSpot ? esc(closestSpot.id) : ""}">
-        <div class="quick-label">Spot vicino a te</div>
-        <div class="quick-title">${closestSpot ? esc(closestSpot.name) : "—"}</div>
-        <div class="quick-desc">${closestSpot ? esc(getClosestPracticalLine(closestSpot)) : "Attiva il GPS per vedere lo spot più vicino."}</div>
+        <div class="go-now-title">${bestNow ? esc(bestNow.name) : "Lettura in corso…"}</div>
+        ${goNowExplanation ? `<div class="quick-explain">${esc(goNowExplanation)}</div>` : ""}
+        <div class="quick-desc">${bestNow ? esc(getBestPracticalLine(bestNow)) : "Sto calcolando il miglior spot del momento."}</div>
         <div class="sunset-chip-row">
-          ${closestSpot && getDistanceLabel(closestSpot) ? `<div class="mini-chip blue">${esc(getDistanceLabel(closestSpot))}</div>` : ""}
-          ${closestSpot?.zone ? `<div class="mini-chip gold">${esc(pretty(closestSpot.zone))}</div>` : ""}
-          ${closestSpot ? `<div class="mini-chip ${esc(closestQualityChipCls)}">${esc(closestQualityLabel)}</div>` : ""}
+          ${bestNow && getDistanceLabel(bestNow) ? `<div class="mini-chip blue">📍 ${esc(getDistanceLabel(bestNow))}</div>` : ""}
+          <div class="mini-chip ${chipClassFromFit(bestNow?.weatherFit)}">${bestNow?.weatherFit?.label || "meteo in lettura"}</div>
         </div>
       </div>
+    `;
 
+    // ── Due card alternative ───────────────────────────────────────────────
+    const altCards = (alt1 || alt2) ? `
+      <div class="go-now-alts">
+        ${alt1 ? `
+          <div class="go-now-alt glass tap" data-quick-id="${esc(alt1.id)}">
+            <div class="quick-label go-now-alt-label">👌 Ottima alternativa</div>
+            <div class="go-now-alt-name">${esc(alt1.name)}</div>
+            <div class="sunset-chip-row">
+              ${getDistanceLabel(alt1) ? `<div class="mini-chip blue">${esc(getDistanceLabel(alt1))}</div>` : ""}
+              ${alt1.weatherFit ? `<div class="mini-chip ${chipClassFromFit(alt1.weatherFit)}">${esc(alt1.weatherFit.label)}</div>` : ""}
+              ${alt1.experience?.wow ? `<div class="mini-chip gold">Wow ${esc(String(alt1.experience.wow))}</div>` : ""}
+            </div>
+          </div>
+        ` : ""}
+        ${alt2 ? `
+          <div class="go-now-alt glass tap" data-quick-id="${esc(alt2.id)}">
+            <div class="quick-label go-now-alt-label">👌 Ottima alternativa</div>
+            <div class="go-now-alt-name">${esc(alt2.name)}</div>
+            <div class="sunset-chip-row">
+              ${getDistanceLabel(alt2) ? `<div class="mini-chip blue">${esc(getDistanceLabel(alt2))}</div>` : ""}
+              ${alt2.weatherFit ? `<div class="mini-chip ${chipClassFromFit(alt2.weatherFit)}">${esc(alt2.weatherFit.label)}</div>` : ""}
+              ${alt2.experience?.wow ? `<div class="mini-chip gold">Wow ${esc(String(alt2.experience.wow))}</div>` : ""}
+            </div>
+          </div>
+        ` : ""}
+      </div>
+    ` : "";
+
+    // ── Card tramonto ──────────────────────────────────────────────────────
+    const sunsetCard = `
       <div class="quick-card glass sunset-card tap" data-quick-id="${bestSunset ? esc(bestSunset.id) : ""}">
         <div class="quick-label">Tramonto premium</div>
         <div class="quick-title">${bestSunset ? esc(bestSunset.name) : "—"}</div>
@@ -135,6 +153,8 @@
         </div>
       </div>
     `;
+
+    return mainCard + altCards + sunsetCard;
   }
 
   function buildSailQuickCards(app) {
@@ -241,11 +261,9 @@
     const ids  = ["sunsetClockChip","sunPhaseChip","sunsetCountdownMain","sunsetCountdownSub","sunsetCountdownTime"];
     const vals = [data.clockText, data.phaseText, data.mainText, data.subText, data.timeText];
     ids.forEach((id, i) => { const el = $(id); if (el) el.textContent = vals[i]; });
-    // Avvia (o riavvia) il tick fluido per il solo numero countdown
     _startSunCountdownTick();
   };
 
-  // Aggiorna SOLO il numero del countdown ogni secondo, senza re-render dell'intera UI
   let _sunCountdownInterval = null;
   function _startSunCountdownTick() {
     if (_sunCountdownInterval) clearInterval(_sunCountdownInterval);
@@ -261,10 +279,7 @@
     const sunset  = sunTimes.sunset instanceof Date ? sunTimes.sunset : new Date(sunTimes.sunset);
     const diffMs  = sunset - now;
     if (isNaN(diffMs)) return;
-    if (diffMs <= 0) {
-      el.textContent = "Tramontato";
-      return;
-    }
+    if (diffMs <= 0) { el.textContent = "Tramontato"; return; }
     const totalMin = Math.floor(diffMs / 60000);
     const h        = Math.floor(totalMin / 60);
     const m        = totalMin % 60;
@@ -300,46 +315,51 @@
       if (sub)  sub.textContent  = "Non sono riuscito a leggere le prossime ore.";
       return;
     }
-    const hh = String(app.hourlyData[0].date.getHours()).padStart(2, "0") + ":00";
-    if (main) main.textContent = app.mode === "sail" ? `Finestra letta: ${hh} · vento, direzione e onde` : `Finestra letta: ${hh} · prossime 12 ore`;
-    if (sub)  sub.textContent  = app.mode === "sail" ? "In Sail mode leggi soprattutto vento, direzione e altezza onde." : "Lettura rapida di meteo e comfort delle prossime ore.";
-    strip.style.display = "flex"; strip.style.flexWrap = "nowrap"; strip.style.overflowX = "auto"; strip.style.overflowY = "hidden";
-    strip.innerHTML = app.hourlyData.map(item => {
-      const mood     = hourlyMood(item);
-      const hourText = `${String(item.date.getHours()).padStart(2, "0")}:00`;
-      const extra    = app.mode === "sail" ? `
-        <div class="hour-line"><span class="hour-label">Dir</span><strong>${Math.round(item.windDir)}°</strong></div>
-        <div class="hour-line"><span class="hour-label">Onde</span><strong>${Number(item.waveHeight || 0).toFixed(1)} m</strong></div>
-        <div class="hour-line"><span class="hour-label">Periodo</span><strong>${Number(item.wavePeriod || 0).toFixed(1)} s</strong></div>
-        <div class="hour-pill ${mood.cls}">${mood.label}</div>
-      ` : `<div class="hour-pill ${mood.cls}">${mood.label}</div>`;
+
+    const good  = app.hourlyData.filter(h => hourlyMood(h).cls === "good").length;
+    const total = app.hourlyData.length;
+    if (main) main.textContent = good >= total * 0.6
+      ? `Prossime ore favorevoli — ${good} finestre buone su ${total}`
+      : good >= total * 0.3
+        ? `Giornata mista — alcune finestre buone`
+        : `Condizioni difficili nelle prossime ore`;
+    if (sub) sub.textContent = app.hourlyData[0]
+      ? `Ora: ${Math.round(app.hourlyData[0].temp)}° · vento ${Math.round(app.hourlyData[0].wind)} km/h · pioggia ${Math.round(app.hourlyData[0].rain)}%`
+      : "";
+
+    strip.innerHTML = app.hourlyData.slice(0, 12).map(item => {
+      const mood = hourlyMood(item);
+      const h    = new Date(item.time);
+      const hStr = h.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
       return `
-        <div class="hour-card ${mood.cls}" style="flex:0 0 150px;min-width:150px;max-width:150px;scroll-snap-align:start;">
-          <div class="hour-top"><div class="hour-time">${hourText}</div><div class="hour-emoji">${mood.emoji}</div></div>
+        <div class="hour-card ${mood.cls}">
+          <div class="hour-top">
+            <span class="hour-time">${hStr}</span>
+            <span class="hour-emoji">${mood.emoji}</span>
+          </div>
           <div class="hour-line"><span class="hour-label">Temp</span><strong>${Math.round(item.temp)}°</strong></div>
           <div class="hour-line"><span class="hour-label">Vento</span><strong>${Math.round(item.wind)} km/h</strong></div>
           <div class="hour-line"><span class="hour-label">Pioggia</span><strong>${Math.round(item.rain)}%</strong></div>
-          <div class="hour-line"><span class="hour-label">Nuvole</span><strong>${Math.round(item.cloud)}%</strong></div>
-          ${extra}
+          <div class="hour-pill ${mood.cls}">${mood.label}</div>
         </div>
       `;
     }).join("");
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // FILTER BARS — fix mappa: ogni chip chiama renderMarkers() direttamente
+  // FILTER BARS
   // ═══════════════════════════════════════════════════════════════════════════
 
   function getAvailableZones() {
-    if (Array.isArray(APP_SPOTS.zones) && APP_SPOTS.zones.length) return APP_SPOTS.zones;
-    return [...new Set((APP_SPOTS.spots || []).map(s => s.zone).filter(Boolean))].sort()
-      .map(id => ({ id, label: id.charAt(0).toUpperCase() + id.slice(1) }));
+    const zones    = APP_SPOTS.zones || [];
+    const spotZones = new Set((APP_SPOTS.spots || []).map(s => s.zone).filter(Boolean));
+    return zones.filter(z => spotZones.has(z.id));
   }
 
   function getAvailableActivities() {
-    if (Array.isArray(APP_SPOTS.activities) && APP_SPOTS.activities.length) return APP_SPOTS.activities;
-    return [...new Set((APP_SPOTS.spots || []).map(s => s.activity).filter(Boolean))].sort()
-      .map(id => ({ id, label: id.charAt(0).toUpperCase() + id.slice(1) }));
+    const activities    = APP_SPOTS.activities || [];
+    const spotActivities = new Set((APP_SPOTS.spots || []).map(s => s.activity).filter(Boolean));
+    return activities.filter(a => spotActivities.has(a.id));
   }
 
   function renderFilterBars(app) {
@@ -349,10 +369,9 @@
     const zoneChips       = $("zoneChips");
     const activityChips   = $("activityChips");
     const favoriteChips   = $("favoriteChips");
-    const sailChips       = $("sailChips");
     const distanceChips   = $("distanceChips");
+    const sailChips       = $("sailChips");
 
-    // ── Mappa rapida — FIX: chiama renderMarkers() per aggiornare i marker ──
     if (mapQuickFilters) {
       mapQuickFilters.innerHTML = `
         <button class="chip ${app.mapQuickFilter === "all"       ? "active" : ""}" data-mapquick="all"       type="button">Tutti</button>
@@ -364,15 +383,12 @@
       mapQuickFilters.querySelectorAll("[data-mapquick]").forEach(btn => {
         btn.addEventListener("click", () => {
           app.mapQuickFilter = btn.dataset.mapquick;
-          // Aggiorna subito i marker senza full render
           if (window.APP_UTILS?.renderMarkers) window.APP_UTILS.renderMarkers();
-          // Aggiorna solo i chip della barra mappa
           mapQuickFilters.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c.dataset.mapquick === app.mapQuickFilter));
         });
       });
     }
 
-    // ── Livello ───────────────────────────────────────────────────────────
     if (levelChips) {
       levelChips.innerHTML = `
         <button class="chip ${app.level === "all"       ? "active" : ""}" data-level="all"       type="button">Tutti</button>
@@ -385,7 +401,6 @@
       });
     }
 
-    // ── Luce ──────────────────────────────────────────────────────────────
     if (lightChips) {
       lightChips.innerHTML = `
         <button class="chip ${app.light === "all"      ? "active" : ""}" data-light="all"      type="button">Tutta la luce</button>
@@ -398,7 +413,6 @@
       });
     }
 
-    // ── Zone — dinamiche ──────────────────────────────────────────────────
     if (zoneChips) {
       const zones = getAvailableZones();
       zoneChips.innerHTML =
@@ -409,7 +423,6 @@
       });
     }
 
-    // ── Attività — dinamiche con emoji ────────────────────────────────────
     if (activityChips) {
       const activities = getAvailableActivities();
       activityChips.innerHTML =
@@ -420,7 +433,6 @@
       });
     }
 
-    // ── Preferiti ─────────────────────────────────────────────────────────
     if (favoriteChips) {
       favoriteChips.innerHTML = `
         <button class="chip ${app.favoritesFilter === "all"       ? "active" : ""}" data-favoritesfilter="all"       type="button">Tutti</button>
@@ -431,7 +443,6 @@
       });
     }
 
-    // ── Distanza (solo se GPS attivo) ─────────────────────────────────────
     if (distanceChips) {
       if (!app.userPos) {
         distanceChips.innerHTML = `<span style="font-size:12px;color:var(--muted);padding:4px 0">Attiva GPS per filtrare per distanza</span>`;
@@ -448,7 +459,6 @@
       }
     }
 
-    // ── Sail ──────────────────────────────────────────────────────────────
     if (sailChips) {
       sailChips.innerHTML = `
         <button class="chip ${app.sailFilter === "all"       ? "active" : ""}" data-sailfilter="all"       type="button">Tutti</button>
@@ -664,50 +674,49 @@
   function renderArrayAsList(title, arr) {
     if (!arr?.length) return "";
     return `
-      <div class="detail-section"><h3>${esc(title)}</h3>
-        <ul style="margin:0;padding-left:18px;color:var(--muted);font-size:14px;line-height:1.6">
-          ${arr.map(item => `<li>${esc(item)}</li>`).join("")}
-        </ul>
+      <div class="detail-section"><h3>${title}</h3>
+        <ul>${arr.map(item => `<li style="color:var(--muted);font-size:14px;line-height:1.5;margin-bottom:4px">${esc(item)}</li>`).join("")}</ul>
       </div>
     `;
   }
 
   function renderSpotTags(spot) {
-    const tags  = spot.tags  || [];
-    const alias = spot.alias || [];
-    if (!tags.length && !alias.length) return "";
+    if (!spot.tags?.length) return "";
     return `
       <div class="detail-section"><h3>Tag</h3>
-        <div class="spot-meta" style="margin-top:6px">
-          ${tags.map(t  => `<span class="tag spot-tag">${esc(t)}</span>`).join("")}
-          ${alias.map(a => `<span class="tag" style="opacity:.6">${esc(a)}</span>`).join("")}
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${spot.tags.map(t => `<span class="tag spot-tag">${esc(t)}</span>`).join("")}
         </div>
       </div>
     `;
   }
 
-  UI.renderSpotDetail = function (app, rawSpot) {
-    const box = $("spotDetail");
-    if (!box || !rawSpot) return;
+  UI.renderSpotDetail = function (app, spot) {
+    const box = $("detailBox");
+    if (!box || !spot) return;
 
-    const spot = (rawSpot.weatherFit != null)
-      ? rawSpot
-      : (window.APP_UTILS.getAllSpotsWithMeta().find(s => s.id === rawSpot.id) || rawSpot);
-
-    const sail = spot.sailMeta || (window.SAIL ? window.SAIL.getSpotSailMeta(spot, app) : null);
     const fit  = spot.weatherFit || null;
-    const dist = spot.distance ?? null;
+    const dist = spot.distance   != null ? spot.distance : null;
+    const sail = spot.sailMeta   || null;
 
     box.innerHTML = `
-      <div class="detail-hero" style="background-image:url('${esc(spot.image || "")}')">
-        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.45) 0%,rgba(0,0,0,.62) 100%);border-radius:inherit;pointer-events:none"></div>
-        <div class="detail-hero-inner" style="position:relative;z-index:1">
-          <h2 class="detail-title">${esc(spot.name)}</h2>
-          <div class="detail-sub">${esc(pretty(spot.zone))} · ${esc(pretty(spot.activity))} · ${esc(pretty(spot.light))}</div>
+      ${spot.image ? `
+        <div class="detail-hero" style="background-image:url('${esc(spot.image)}')">
+          <div class="detail-hero-inner">
+            <h2 class="detail-title">${esc(spot.name)}</h2>
+            <div class="detail-sub">${esc(pretty(spot.zone))} · ${esc(pretty(spot.activity))}</div>
+          </div>
         </div>
-      </div>
+      ` : `
+        <div style="margin-bottom:12px">
+          <h2 class="detail-title" style="margin:0 0 4px">${esc(spot.name)}</h2>
+          <div class="detail-sub">${esc(pretty(spot.zone))} · ${esc(pretty(spot.activity))}</div>
+        </div>
+      `}
 
       <div class="detail-grid">
+        <div class="detail-box"><div class="k">Zona</div><div class="v">${esc(pretty(spot.zone))}</div></div>
+        <div class="detail-box"><div class="k">Luce</div><div class="v">${esc(pretty(spot.light))}</div></div>
         <div class="detail-box"><div class="k">Livello</div><div class="v">${esc(pretty(spot.level))}</div></div>
         <div class="detail-box"><div class="k">Difficoltà</div><div class="v">${esc(pretty(spot.difficulty || "—"))}</div></div>
         ${fit  ? `<div class="detail-box"><div class="k">Meteo adesso</div><div class="v">${esc(fit.label)}</div></div>` : ""}
@@ -782,17 +791,15 @@
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // NEARBY PANEL
+  // NEARBY PANEL — versione premium
   // ═══════════════════════════════════════════════════════════════════════════
 
   function renderNearbyPanel(app) {
-    // Trova o crea il pannello
     let panel = $("nearbyPanel");
     if (!panel) {
       panel = document.createElement("div");
       panel.id        = "nearbyPanel";
       panel.className = "panel glass";
-      // Inserisce dopo il plannerBox o alla fine della home
       const anchor = $("plannerBox")?.closest(".panel.glass") || $("dataPanel") || null;
       if (anchor) anchor.insertAdjacentElement("afterend", panel);
       else {
@@ -801,7 +808,7 @@
       }
     }
 
-    // Caso: GPS non disponibile o posizione non valida
+    // GPS non disponibile
     if (!app.userPos || !Number.isFinite(app.userPos.lat) || !Number.isFinite(app.userPos.lon)) {
       panel.innerHTML = `
         <div class="panel-head">
@@ -813,12 +820,10 @@
       return;
     }
 
-    // GPS disponibile: ottieni i 3 spot più vicini
     const closest = app._nearbyCache && app._nearbyCache.length
       ? app._nearbyCache
       : (window.APP_UTILS.getClosestSpots ? window.APP_UTILS.getClosestSpots(3) : []);
 
-    // Nessuno spot disponibile
     if (!closest.length) {
       panel.innerHTML = `
         <div class="panel-head">
@@ -830,28 +835,29 @@
       return;
     }
 
-    // Caso normale: mostra lista spot
     const allMeta  = window.APP_UTILS.getAllSpotsWithMeta();
     const metaById = new Map(allMeta.map(s => [s.id, s]));
 
     const rows = closest.map(spot => {
-      const meta    = metaById.get(spot.id) || spot;
-      const fit     = meta.weatherFit || null;
-      const distLbl = window.APP_UTILS.displayDistance(spot.distance);
-      const altLine = spot.altitude != null ? `<span class="tag">${Math.round(spot.altitude)} m</span>` : "";
-      const fitLine = fit ? `<span class="tag ${chipClassFromFit(fit)}">${esc(fit.label)}</span>` : "";
+      const meta      = metaById.get(spot.id) || spot;
+      const fit       = meta.weatherFit || null;
+      const distLbl   = window.APP_UTILS.displayDistance(spot.distance);
+      const zoneLbl   = spot.zone     ? pretty(spot.zone)     : null;
+      const actLbl    = spot.activity ? pretty(spot.activity) : null;
+      const shortDesc = spot.tip || spot.desc || null;
+
       return `
-        <div class="spot-card glass tap" data-nearby-id="${esc(spot.id)}" style="margin-bottom:10px">
-          <div class="spot-head">
-            <div>
-              <div class="spot-name">${esc(spot.name)}</div>
-              <div class="spot-sub">${esc(distLbl)}</div>
-            </div>
+        <div class="nearby-card glass tap" data-nearby-id="${esc(spot.id)}">
+          <div class="nearby-card-top">
+            <div class="nearby-card-name">${esc(spot.name)}</div>
+            ${fit ? `<div class="mini-chip ${chipClassFromFit(fit)}">${esc(fit.label)}</div>` : ""}
           </div>
-          <div class="spot-meta">
-            ${fitLine}
-            ${altLine}
+          ${(zoneLbl || actLbl) ? `<div class="nearby-card-sub">${[zoneLbl, actLbl].filter(Boolean).map(esc).join(" · ")}</div>` : ""}
+          <div class="nearby-card-badges">
+            <div class="mini-chip blue">📍 ${esc(distLbl)}</div>
+            ${spot.altitude != null ? `<div class="mini-chip">${Math.round(spot.altitude)} m</div>` : ""}
           </div>
+          ${shortDesc ? `<div class="nearby-card-desc">${esc(shortDesc)}</div>` : ""}
         </div>
       `;
     }).join("");
@@ -861,7 +867,7 @@
         <h2>📍 Vicino a te</h2>
         <span class="tiny muted">Spot più vicini</span>
       </div>
-      ${rows}
+      <div class="nearby-list">${rows}</div>
     `;
 
     panel.querySelectorAll("[data-nearby-id]").forEach(card => {
