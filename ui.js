@@ -86,7 +86,8 @@
     const alt2        = goNow?.alternatives?.[1] || null;
     const bestSunset  = window.APP_UTILS.getBestSunsetSpot();
     let closestSpot = window.APP_UTILS.getClosestSpot();
-    if (closestSpot && closestSpot.distance > 200) {
+    const closestTooFar = closestSpot && closestSpot.distance > 200;
+    if (closestTooFar) {
       closestSpot = null;
     }
 
@@ -112,7 +113,7 @@
       <div class="quick-card glass tap" data-quick-id="${closestSpot ? esc(closestSpot.id) : ""}">
         <div class="quick-label">Spot vicino a te</div>
         <div class="quick-title">${closestSpot ? esc(closestSpot.name) : "—"}</div>
-        <div class="quick-desc">${closestSpot ? esc(getClosestPracticalLine(closestSpot)) : "Attiva il GPS per vedere lo spot più vicino."}</div>
+        <div class="quick-desc">${closestSpot ? esc(getClosestPracticalLine(closestSpot)) : closestTooFar ? "Sei lontano dalla zona degli spot." : "Attiva il GPS per vedere lo spot più vicino."}</div>
         <div class="sunset-chip-row">
           ${closestSpot && getDistanceLabel(closestSpot) ? `<div class="mini-chip blue">${esc(getDistanceLabel(closestSpot))}</div>` : ""}
           ${closestSpot?.zone ? `<div class="mini-chip gold">${esc(pretty(closestSpot.zone))}</div>` : ""}
@@ -804,8 +805,8 @@
       }
     }
 
-    // Caso: GPS non disponibile
-    if (!app.userPos) {
+    // Caso: GPS non disponibile o posizione non valida
+    if (!app.userPos || !Number.isFinite(app.userPos.lat) || !Number.isFinite(app.userPos.lon)) {
       panel.innerHTML = `
         <div class="panel-head">
           <h2>📍 Vicino a te</h2>
@@ -817,7 +818,9 @@
     }
 
     // GPS disponibile: ottieni i 3 spot più vicini
-    const closest = window.APP_UTILS.getClosestSpots ? window.APP_UTILS.getClosestSpots(3) : [];
+    const closest = app._nearbyCache && app._nearbyCache.length
+      ? app._nearbyCache
+      : (window.APP_UTILS.getClosestSpots ? window.APP_UTILS.getClosestSpots(3) : []);
 
     // Caso: utente lontano dagli spot (> 200 km)
     if (!closest.length || closest[0].distance == null || closest[0].distance > 200) {

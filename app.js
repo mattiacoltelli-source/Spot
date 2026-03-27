@@ -217,9 +217,6 @@
     } else if (window.UI?.renderAll) {
       window.UI.renderAll(APP);
     }
-    if (typeof renderNearbyPage === "function") {
-      renderNearbyPage();
-    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -499,13 +496,13 @@
   function renderNearbyPage() {
     const box = $("nearbyList");
     if (!box) return;
-    if (!APP.userPos) {
+    if (!APP.userPos || !Number.isFinite(APP.userPos.lat) || !Number.isFinite(APP.userPos.lon)) {
       box.innerHTML = `<div class="detail-empty">Attiva il GPS per vedere gli spot vicini.</div>`;
       return;
     }
     const items = getClosestSpots(5);
-    if (!items.length) {
-      box.innerHTML = `<div class="detail-empty">Nessuno spot trovato nelle vicinanze.</div>`;
+    if (!items || !items.length) {
+      box.innerHTML = `<div class="detail-empty">Sto cercando spot vicini...</div>`;
       return;
     }
     if (items[0].distance == null || items[0].distance > 200) {
@@ -1344,6 +1341,7 @@
           };
           saveLastPosition(APP.userPos); // salva in cache
           updateUserMarker();
+          APP._nearbyCache = null;
           smartRender("light");
           const altMsg = APP.userPos.altitude != null
             ? ` · altitudine ${Math.round(APP.userPos.altitude)} m`
