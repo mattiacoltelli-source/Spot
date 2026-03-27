@@ -86,7 +86,7 @@
     const alt2        = goNow?.alternatives?.[1] || null;
     const bestSunset  = window.APP_UTILS.getBestSunsetSpot();
     let closestSpot = window.APP_UTILS.getClosestSpot();
-    const closestTooFar = closestSpot && closestSpot.distance > 200;
+    const closestTooFar = closestSpot && (closestSpot.distance == null || closestSpot.distance > 200);
     if (closestTooFar) {
       closestSpot = null;
     }
@@ -112,7 +112,7 @@
 
       <div class="quick-card glass tap" data-quick-id="${closestSpot ? esc(closestSpot.id) : ""}">
         <div class="quick-label">Spot vicino a te</div>
-        <div class="quick-title">${closestSpot ? esc(closestSpot.name) : "—"}</div>
+        <div class="quick-title">${closestSpot ? esc(closestSpot.name) : closestTooFar ? "Zona lontana" : "—"}</div>
         <div class="quick-desc">${closestSpot ? esc(getClosestPracticalLine(closestSpot)) : closestTooFar ? "Sei lontano dalla zona degli spot." : "Attiva il GPS per vedere lo spot più vicino."}</div>
         <div class="sunset-chip-row">
           ${closestSpot && getDistanceLabel(closestSpot) ? `<div class="mini-chip blue">${esc(getDistanceLabel(closestSpot))}</div>` : ""}
