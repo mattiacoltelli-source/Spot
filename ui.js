@@ -699,7 +699,7 @@
   }
 
   UI.renderSpotDetail = function (app, spot) {
-    const box = $("detailBox");
+    const box = $("spotDetail") || $("detailBox");
     if (!box || !spot) return;
 
     const fit  = spot.weatherFit || null;
