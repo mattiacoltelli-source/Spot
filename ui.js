@@ -86,10 +86,6 @@
     const alt2        = goNow?.alternatives?.[1] || null;
     const bestSunset  = window.APP_UTILS.getBestSunsetSpot();
     let closestSpot = window.APP_UTILS.getClosestSpot();
-    const closestTooFar = closestSpot && (closestSpot.distance == null || closestSpot.distance > 200);
-    if (closestTooFar) {
-      closestSpot = null;
-    }
 
     const goNowExplanation      = bestNow ? window.APP_UTILS.explainGoNow(bestNow) : "";
     const closestFit            = closestSpot?.weatherFit || null;
@@ -112,8 +108,8 @@
 
       <div class="quick-card glass tap" data-quick-id="${closestSpot ? esc(closestSpot.id) : ""}">
         <div class="quick-label">Spot vicino a te</div>
-        <div class="quick-title">${closestSpot ? esc(closestSpot.name) : closestTooFar ? "Zona lontana" : "—"}</div>
-        <div class="quick-desc">${closestSpot ? esc(getClosestPracticalLine(closestSpot)) : closestTooFar ? "Sei lontano dalla zona degli spot." : "Attiva il GPS per vedere lo spot più vicino."}</div>
+        <div class="quick-title">${closestSpot ? esc(closestSpot.name) : "—"}</div>
+        <div class="quick-desc">${closestSpot ? esc(getClosestPracticalLine(closestSpot)) : "Attiva il GPS per vedere lo spot più vicino."}</div>
         <div class="sunset-chip-row">
           ${closestSpot && getDistanceLabel(closestSpot) ? `<div class="mini-chip blue">${esc(getDistanceLabel(closestSpot))}</div>` : ""}
           ${closestSpot?.zone ? `<div class="mini-chip gold">${esc(pretty(closestSpot.zone))}</div>` : ""}
@@ -361,8 +357,8 @@
       mapQuickFilters.innerHTML = `
         <button class="chip ${app.mapQuickFilter === "all"       ? "active" : ""}" data-mapquick="all"       type="button">Tutti</button>
         <button class="chip ${app.mapQuickFilter === "wow"       ? "active" : ""}" data-mapquick="wow"       type="button">Wow</button>
-        <button class="chip ${app.mapQuickFilter === "sunset"    ? "active" : ""}" data-mapquick="sunset"    type="button">Tramonti</button>
-        <button class="chip ${app.mapQuickFilter === "alba"      ? "active" : ""}" data-mapquick="alba"      type="button">Albe</button>
+        <button class="chip ${app.mapQuickFilter === "sunset"    ? "active" : ""}" data-mapquick="sunset"    type="button">Tramonto</button>
+        <button class="chip ${app.mapQuickFilter === "alba"      ? "active" : ""}" data-mapquick="alba"      type="button">Alba</button>
         <button class="chip ${app.mapQuickFilter === "favorites" ? "active" : ""}" data-mapquick="favorites" type="button">Preferiti</button>
       `;
       mapQuickFilters.querySelectorAll("[data-mapquick]").forEach(btn => {
@@ -483,7 +479,7 @@
       `
       : `
         <div class="legend-item"><span class="legend-dot legend-gold"></span> Wow</div>
-        <div class="legend-item"><span class="legend-dot legend-pink"></span> Tramonto</div>
+        <div class="legend-item"><span class="legend-dot legend-pink"></span> Tramonto / Alba</div>
         <div class="legend-item"><span class="legend-dot legend-blue"></span> Altri spot</div>
         <div class="legend-item"><span class="legend-dot" style="background:#2d8eff;border:2px solid white"></span> La tua posizione</div>
       `;
@@ -822,14 +818,14 @@
       ? app._nearbyCache
       : (window.APP_UTILS.getClosestSpots ? window.APP_UTILS.getClosestSpots(3) : []);
 
-    // Caso: utente lontano dagli spot (> 200 km)
-    if (!closest.length || closest[0].distance == null || closest[0].distance > 200) {
+    // Nessuno spot disponibile
+    if (!closest.length) {
       panel.innerHTML = `
         <div class="panel-head">
           <h2>📍 Vicino a te</h2>
           <span class="tiny muted">GPS attivo</span>
         </div>
-        <div class="detail-empty" style="padding:12px 0">Sei lontano dalla zona degli spot</div>
+        <div class="detail-empty" style="padding:12px 0">Sto cercando spot vicini...</div>
       `;
       return;
     }
