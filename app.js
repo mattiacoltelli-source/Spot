@@ -650,7 +650,25 @@
     pool = pool.map(s => ({ ...s, goNowScore: rankSpotForGoNow(s) }))
                .sort((a, b) => b.goNowScore - a.goNowScore);
     const best = pool[0] || null;
-    return { best, alternatives: pool.filter(s => !best || s.id !== best.id).slice(0, 2) };
+    const bestLight = best ? normalizeLight((Array.isArray(best.light) ? best.light[0] : best.light) || "") : null;
+
+    // Alt1: miglior spot dopo il best (qualsiasi categoria)
+    const remaining = pool.filter(s => !best || s.id !== best.id);
+    const alt1 = remaining[0] || null;
+
+    // Alt2: prova a trovare uno spot di light diversa per diversificare
+    // Fallback al secondo in classifica se non esiste nulla di diverso
+    let alt2 = null;
+    if (bestLight) {
+      alt2 = remaining.find(s =>
+        s.id !== alt1?.id &&
+        normalizeLight((Array.isArray(s.light) ? s.light[0] : s.light) || "") !== bestLight
+      ) || remaining.find(s => s.id !== alt1?.id) || null;
+    } else {
+      alt2 = remaining.find(s => s.id !== alt1?.id) || null;
+    }
+
+    return { best, alternatives: [alt1, alt2].filter(Boolean) };
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
