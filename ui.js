@@ -85,7 +85,10 @@
     const alt1        = goNow?.alternatives?.[0] || null;
     const alt2        = goNow?.alternatives?.[1] || null;
     const bestSunset  = window.APP_UTILS.getBestSunsetSpot();
-    const closestSpot = window.APP_UTILS.getClosestSpot();
+    let closestSpot = window.APP_UTILS.getClosestSpot();
+    if (closestSpot && closestSpot.distance > 200) {
+      closestSpot = null;
+    }
 
     const goNowExplanation      = bestNow ? window.APP_UTILS.explainGoNow(bestNow) : "";
     const closestFit            = closestSpot?.weatherFit || null;
@@ -219,7 +222,7 @@
         <div class="stat"><div class="k">Onde</div><div class="v">${app.marineData ? Number(app.marineData.waveHeight || 0).toFixed(1) + " m" : "—"}</div></div>
       `;
     } else {
-      const altCard = (app.userPos && app.userPos.altitude != null)
+      const altCard = (app.userPos && typeof app.userPos.altitude === "number")
         ? `<div class="stat"><div class="k">Altitudine</div><div class="v">${Math.round(app.userPos.altitude)} m</div></div>`
         : "";
       box.innerHTML = `
@@ -248,7 +251,7 @@
   // Aggiorna SOLO il numero del countdown ogni secondo, senza re-render dell'intera UI
   let _sunCountdownInterval = null;
   function _startSunCountdownTick() {
-    if (_sunCountdownInterval) return; // già in esecuzione
+    if (_sunCountdownInterval) clearInterval(_sunCountdownInterval);
     _sunCountdownInterval = setInterval(_tickSunCountdown, 1000);
   }
 
@@ -796,7 +799,7 @@
       const anchor = $("plannerBox")?.closest(".panel.glass") || $("dataPanel") || null;
       if (anchor) anchor.insertAdjacentElement("afterend", panel);
       else {
-        const homeSection = document.querySelector(".page-home") || document.querySelector("#pageHome");
+        const homeSection = document.querySelector("#page-home") || document.querySelector("#pageHome");
         if (homeSection) homeSection.appendChild(panel);
       }
     }
@@ -817,7 +820,7 @@
     const closest = window.APP_UTILS.getClosestSpots ? window.APP_UTILS.getClosestSpots(3) : [];
 
     // Caso: utente lontano dagli spot (> 200 km)
-    if (!closest.length || closest[0].distance > 200) {
+    if (!closest.length || closest[0].distance == null || closest[0].distance > 200) {
       panel.innerHTML = `
         <div class="panel-head">
           <h2>📍 Vicino a te</h2>
@@ -1020,6 +1023,7 @@
   UI.renderLight = function (app) {
     renderQuickGrid(app);
     renderSpotList(app);
+    renderNearbyPanel(app);
     if (app.currentSpot) UI.renderSpotDetail(app, app.currentSpot);
   };
 

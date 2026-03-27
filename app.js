@@ -1255,10 +1255,9 @@
         updateUserMarker();
         APP._nearbyCache = getClosestSpots(3);
         if (window.UI?.renderGpsBox) window.UI.renderGpsBox(APP, APP.liveGpsData);
-        renderNearbyPage();
 
-        if (!APP._lastUiUpdate || Date.now() - APP._lastUiUpdate > 3000) {
-          smartRender("light");
+        if (!APP._lastUiUpdate || Date.now() - APP._lastUiUpdate > 5000) {
+          smartRender("full");
           APP._lastUiUpdate = Date.now();
         }
 
@@ -1405,7 +1404,7 @@
           };
           saveLastPosition(APP.userPos); // aggiorna cache posizione
           updateUserMarker();
-          smartRender("light");
+          if (window.UI?.smartRender) window.UI.smartRender(APP, "light");
         },
         () => {},
         { enableHighAccuracy: true, timeout: 8000 }
