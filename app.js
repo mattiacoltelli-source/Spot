@@ -217,6 +217,9 @@
     } else if (window.UI?.renderAll) {
       window.UI.renderAll(APP);
     }
+    if (typeof renderNearbyPage === "function") {
+      renderNearbyPage();
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1342,7 +1345,6 @@
           saveLastPosition(APP.userPos); // salva in cache
           updateUserMarker();
           smartRender("light");
-          if (typeof renderNearbyPage === "function") renderNearbyPage();
           const altMsg = APP.userPos.altitude != null
             ? ` · altitudine ${Math.round(APP.userPos.altitude)} m`
             : "";
@@ -1370,7 +1372,7 @@
   function startLightUpdateLoop() {
     if (APP._lightUpdateTimer) clearInterval(APP._lightUpdateTimer);
     APP._lightUpdateTimer = setInterval(() => {
-      if (window.UI?.smartRender) window.UI.smartRender(APP, "light");
+      smartRender("light");
     }, 15000); // 15 secondi
   }
 
@@ -1410,8 +1412,7 @@
           };
           saveLastPosition(APP.userPos); // aggiorna cache posizione
           updateUserMarker();
-          if (window.UI?.smartRender) window.UI.smartRender(APP, "light");
-          if (typeof renderNearbyPage === "function") renderNearbyPage();
+          smartRender("light");
         },
         () => {},
         { enableHighAccuracy: true, timeout: 8000 }
