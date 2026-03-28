@@ -845,10 +845,22 @@
     const allMeta  = window.APP_UTILS.getAllSpotsWithMeta();
     const metaById = new Map(allMeta.map(s => [s.id, s]));
 
+    function estimateDriveTime(spot) {
+      if (spot.distance == null) return null;
+      const avgSpeed = { montagna: 25, nord: 30, est: 35, ovest: 35, sud: 40 };
+      const speed    = avgSpeed[spot.zone] || 38;
+      const min      = Math.round((spot.distance / speed) * 60);
+      if (min < 60) return `~${min} min`;
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      return m > 0 ? `~${h}h ${m}m` : `~${h}h`;
+    }
+
     const rows = closest.map(spot => {
       const meta      = metaById.get(spot.id) || spot;
       const fit       = meta.weatherFit || null;
       const distLbl   = window.APP_UTILS.displayDistance(spot.distance);
+      const driveLbl  = estimateDriveTime(spot);
       const zoneLbl   = spot.zone     ? pretty(spot.zone)     : null;
       const actLbl    = spot.activity ? pretty(spot.activity) : null;
       const shortDesc = spot.tip || spot.desc || null;
@@ -862,6 +874,7 @@
           ${(zoneLbl || actLbl) ? `<div class="nearby-card-sub">${[zoneLbl, actLbl].filter(Boolean).map(esc).join(" · ")}</div>` : ""}
           <div class="nearby-card-badges">
             <div class="mini-chip blue">📍 ${esc(distLbl)}</div>
+            ${driveLbl ? `<div class="mini-chip">🚗 ${esc(driveLbl)}</div>` : ""}
             ${spot.altitude != null ? `<div class="mini-chip">${Math.round(spot.altitude)} m</div>` : ""}
           </div>
           ${shortDesc ? `<div class="nearby-card-desc">${esc(shortDesc)}</div>` : ""}
