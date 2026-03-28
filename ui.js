@@ -83,29 +83,57 @@
   function buildSmartSignals(spot, app) {
     if (!spot) return "";
     const signals = [];
-    const w   = app.weatherData;
-    const now = new Date();
+    const w      = app.weatherData;
+    const now    = new Date();
     const sunset = app.sunTimes?.sunset;
 
+    // Meteo
     if (w) {
-      if (w.cloud <= 30 && w.rain < 20)      signals.push("🌤 cielo pulito");
-      else if (w.cloud <= 60)                 signals.push("⛅ parzialmente nuvoloso");
-      if (w.wind <= 15)                       signals.push("💨 vento basso");
-      else if (w.wind >= 30)                  signals.push("💨 vento forte");
+      if (w.cloud <= 30 && w.rain < 20)        signals.push("cielo pulito");
+      else if (w.cloud <= 60)                  signals.push("parzialmente nuvoloso");
+      if (w.wind <= 15)                        signals.push("vento basso");
+      else if (w.wind >= 30)                   signals.push("vento forte");
     }
 
+    // Tramonto countdown
     if (sunset instanceof Date) {
       const diffMin = Math.floor((sunset - now) / 60000);
-      if (diffMin > 0 && diffMin <= 90)       signals.push(`🌅 tramonto tra ${diffMin} min`);
-      else if (diffMin > 90 && diffMin <= 180) signals.push(`🌅 tramonto tra ${Math.round(diffMin/60*10)/10}h`);
+      if (diffMin > 0 && diffMin <= 90)        signals.push("tramonto tra " + diffMin + " min");
+      else if (diffMin > 90 && diffMin <= 180) signals.push("tramonto tra " + Math.round(diffMin/60*10)/10 + "h");
     }
 
-    if (spot.distance != null) {
-      if (spot.distance <= 5)                 signals.push(`📍 ${spot.distance.toFixed(1)} km`);
-      else if (spot.distance <= 15)           signals.push(`📍 ${Math.round(spot.distance)} km`);
+    // Spot-specifici
+    const wow  = spot.experience?.wow || 0;
+    const tipo = spot.experience?.tipo || null;
+    const mood = spot.experience?.mood || null;
+    const best = spot.whenToGo?.best  || null;
+    const act  = (Array.isArray(spot.activity) ? spot.activity[0] : spot.activity) || null;
+    const diff = spot.difficulty || null;
+
+    if (tipo && signals.length < 3)            signals.push(tipo);
+    else if (mood && signals.length < 3)       signals.push(mood);
+    else if (best && signals.length < 3) {
+      const bm = { alba: "ideale all'alba", tramonto: "ideale al tramonto", giorno: "ottimo di giorno", mattina: "meglio la mattina", sera: "bello la sera" };
+      if (bm[best]) signals.push(bm[best]);
     }
 
-    if ((spot.experience?.wow || 0) >= 9)     signals.push("🔥 spot forte");
+    if (diff && diff !== "medio" && signals.length < 3) {
+      if (diff === "facile")                   signals.push("accesso facile");
+      else if (diff === "impegnativo")         signals.push("impegnativo");
+    }
+
+    if (act && signals.length < 3) {
+      const am = { water: "spot acqua", trekking: "trekking", relax: "relax", mtb: "MTB" };
+      if (am[act]) signals.push(am[act]);
+    }
+
+    if (wow >= 10 && signals.length < 3)       signals.push("wow factor massimo");
+    else if (wow >= 9 && signals.length < 3)   signals.push("spot forte");
+
+    if (spot.distance != null && signals.length < 3) {
+      if (spot.distance <= 5)                  signals.push(spot.distance.toFixed(1) + " km da te");
+      else if (spot.distance <= 15)            signals.push(Math.round(spot.distance) + " km da te");
+    }
 
     return signals.slice(0, 3).join(" · ");
   }
