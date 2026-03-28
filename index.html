@@ -53,17 +53,14 @@
         Guida travel e outdoor con mappa, spot wow, tramonti, vai ora intelligente, planner giornata e preferiti personali.
       </p>
 
-      <!-- Hero actions: gerarchia azioni prima, search secondaria -->
       <div class="hero-actions">
 
-        <!-- Azioni principali -->
         <div class="panel glass side-actions">
           <button class="btn btn-primary tap btn-large" id="goNowBtn" type="button">⚡ Vai ora</button>
           <button class="btn btn-gold tap" id="autofillPlannerBtn" type="button">📅 Pianifica giornata</button>
           <button class="btn btn-secondary tap" id="gpsBtn" type="button">📍 Usa GPS</button>
         </div>
 
-        <!-- Search box: visibile SOLO in home (gestita con classe .home-only) -->
         <div class="search-box glass home-only" id="searchBoxWrapper">
           <input id="searchInput" type="text"
             placeholder="Cerca spot, zona, attività… (es: tramonto facile)">
@@ -77,8 +74,15 @@
 
     <section id="page-home" class="page active">
       <div class="stack">
+
+        <!-- 1. Vai ora + alternative -->
         <div class="quick-grid" id="quickGrid"></div>
 
+        <!-- 2. Vicino a te (generato da ui.js in #nearbyPanel) -->
+
+        <!-- 3. Tramonto premium (generato da ui.js dentro quickGrid, già incluso) -->
+
+        <!-- 4. Meteo -->
         <div class="panel glass">
           <div class="panel-head">
             <h2 id="conditionsTitle">Meteo e mood del giorno</h2>
@@ -102,6 +106,7 @@
           <div class="hourly-strip" id="hourlyStrip"></div>
         </div>
 
+        <!-- Sail only -->
         <div class="panel glass sail-only" id="sailHomePanel">
           <div class="panel-head">
             <h2>Modalità rotta live</h2>
@@ -120,7 +125,8 @@
           </div>
         </div>
 
-        <div class="panel glass">
+        <!-- 5. Planner -->
+        <div class="panel glass" id="plannerPanel">
           <h2>Planner giornata</h2>
           <div class="planner-box" id="plannerBox"></div>
           <div class="planner-actions">
@@ -128,6 +134,9 @@
             <button class="btn btn-danger tap" id="clearPlannerBtn" type="button">Svuota planner</button>
           </div>
         </div>
+
+        <!-- 6. Dati personali (generato da ui.js in #dataPanel) -->
+
       </div>
     </section>
 

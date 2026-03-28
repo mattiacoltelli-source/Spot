@@ -807,11 +807,12 @@
       panel = document.createElement("div");
       panel.id        = "nearbyPanel";
       panel.className = "panel glass";
-      const anchor = $("plannerBox")?.closest(".panel.glass") || $("dataPanel") || null;
+      // Inserisce dopo quickGrid, prima del meteo
+      const anchor = $("quickGrid");
       if (anchor) anchor.insertAdjacentElement("afterend", panel);
       else {
-        const homeSection = document.querySelector("#page-home") || document.querySelector("#pageHome");
-        if (homeSection) homeSection.appendChild(panel);
+        const homeSection = document.querySelector("#page-home .stack");
+        if (homeSection) homeSection.prepend(panel);
       }
     }
 
@@ -827,11 +828,9 @@
       return;
     }
 
-    const closest = app._nearbyCache && app._nearbyCache.length
-      ? app._nearbyCache
-      : (window.APP_UTILS.getClosestSpots ? window.APP_UTILS.getClosestSpots(3) : []);
+    const allClosest = window.APP_UTILS.getClosestSpots ? window.APP_UTILS.getClosestSpots(10) : [];
 
-    if (!closest.length) {
+    if (!allClosest.length) {
       panel.innerHTML = `
         <div class="panel-head">
           <h2>📍 Vicino a te</h2>
@@ -856,7 +855,7 @@
       return m > 0 ? `~${h}h ${m}m` : `~${h}h`;
     }
 
-    const rows = closest.map(spot => {
+    function buildRow(spot) {
       const meta      = metaById.get(spot.id) || spot;
       const fit       = meta.weatherFit || null;
       const distLbl   = window.APP_UTILS.displayDistance(spot.distance);
@@ -864,7 +863,6 @@
       const zoneLbl   = spot.zone     ? pretty(spot.zone)     : null;
       const actLbl    = spot.activity ? pretty(spot.activity) : null;
       const shortDesc = spot.tip || spot.desc || null;
-
       return `
         <div class="nearby-card glass tap" data-nearby-id="${esc(spot.id)}">
           <div class="nearby-card-top">
@@ -880,20 +878,51 @@
           ${shortDesc ? `<div class="nearby-card-desc">${esc(shortDesc)}</div>` : ""}
         </div>
       `;
-    }).join("");
+    }
+
+    const first3  = allClosest.slice(0, 3);
+    const rest    = allClosest.slice(3);
+    const hasMore = rest.length > 0;
 
     panel.innerHTML = `
       <div class="panel-head">
         <h2>📍 Vicino a te</h2>
         <span class="tiny muted">Spot più vicini</span>
       </div>
-      <div class="nearby-list">${rows}</div>
+      <div class="nearby-list" id="nearbyList">
+        ${first3.map(buildRow).join("")}
+      </div>
+      ${hasMore ? `
+        <div style="margin-top:12px;text-align:center">
+          <button class="nearby-expand-btn tap" id="nearbyExpandBtn" type="button">
+            Vedi altri spot
+          </button>
+        </div>
+      ` : ""}
     `;
 
+    // Click spot
     panel.querySelectorAll("[data-nearby-id]").forEach(card => {
       card.addEventListener("click", () => {
         const spot = APP_SPOTS.spots.find(s => s.id === card.dataset.nearbyId);
         if (spot) { window.APP_UTILS.showSpotDetail(spot); window.APP_UTILS.switchPage("detail"); }
+      });
+    });
+
+    // Espandi a 10
+    $("nearbyExpandBtn")?.addEventListener("click", () => {
+      const list = $("nearbyList");
+      if (!list) return;
+      list.insertAdjacentHTML("beforeend", rest.map(buildRow).join(""));
+      $("nearbyExpandBtn").style.display = "none";
+      // Bind click sui nuovi card
+      list.querySelectorAll("[data-nearby-id]").forEach(card => {
+        if (card._bound) return;
+        card._bound = true;
+        card.addEventListener("click", () => {
+          const spot = APP_SPOTS.spots.find(s => s.id === card.dataset.nearbyId);
+          if (spot) { window.APP_UTILS.showSpotDetail(spot); window.APP_UTILS.switchPage("detail"); }
+        });
       });
     });
   }
