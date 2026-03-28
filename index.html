@@ -59,15 +59,22 @@
 
           <!-- Blocco "Cosa faccio ora" -->
           <div class="cosa-ora-block">
-            <div class="cosa-ora-label">Hai poco tempo?</div>
-            <div class="cosa-ora-times" id="cosaOraTimePicker">
-              <button class="cosa-ora-time active" data-min="30" type="button">30 min</button>
-              <button class="cosa-ora-time" data-min="60" type="button">1h</button>
-              <button class="cosa-ora-time" data-min="90" type="button">1h 30</button>
-              <button class="cosa-ora-time" data-min="120" type="button">2h</button>
+            <div class="cosa-ora-row">
+              <button class="btn btn-primary tap btn-large cosa-ora-main" id="cosaOraBtn" type="button">⚡ Cosa faccio ora</button>
+              <div class="cosa-ora-dropdown-wrap" id="cosaOraDropdownWrap">
+                <button class="cosa-ora-trigger tap" id="cosaOraTrigger" type="button">
+                  <span id="cosaOraSelected">30 min</span>
+                  <span class="cosa-ora-arrow">▾</span>
+                </button>
+                <div class="cosa-ora-menu glass" id="cosaOraMenu">
+                  <button class="cosa-ora-option active" data-min="30" type="button">30 min</button>
+                  <button class="cosa-ora-option" data-min="60" type="button">1h</button>
+                  <button class="cosa-ora-option" data-min="90" type="button">1h 30</button>
+                  <button class="cosa-ora-option" data-min="120" type="button">2h</button>
+                </div>
+              </div>
             </div>
-            <button class="btn btn-primary tap btn-large" id="cosaOraBtn" type="button">⚡ Cosa faccio ora</button>
-            <div class="cosa-ora-gps-hint" id="cosaOraGpsHint">📍 Attiva posizione per risultati migliori</div>
+            <div class="cosa-ora-gps-hint" id="cosaOraGpsHint">📍 Posizione non disponibile — risultati generali</div>
           </div>
 
           <button class="btn btn-gold tap" id="autofillPlannerBtn" type="button">📅 Pianifica giornata</button>

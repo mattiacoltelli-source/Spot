@@ -1329,12 +1329,12 @@
   const COSA_ORA_DIST = { 30: 5, 60: 15, 90: 30, 120: 50 };
 
   function runCosaOra() {
-    const activeBtn = document.querySelector(".cosa-ora-time.active");
+    const activeBtn = document.querySelector(".cosa-ora-option.active");
     const minutes   = parseInt(activeBtn?.dataset.min || "30", 10);
     const maxKm     = COSA_ORA_DIST[minutes] || 5;
     const hint      = $("cosaOraGpsHint");
 
-    // Mostra hint GPS se posizione non disponibile, ma non blocca
+    // Mostra hint solo se GPS ha fallito dopo il tentativo automatico
     if (!APP.userPos) {
       if (hint) hint.classList.add("visible");
     } else {
@@ -1387,16 +1387,33 @@
     $("plannerOpenBtn")?.addEventListener("click",     () => switchPage("home"));
     $("clearPlannerBtn")?.addEventListener("click",    clearPlannerAll);
 
-    // Time picker "Cosa faccio ora"
-    document.querySelectorAll(".cosa-ora-time").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".cosa-ora-time").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        // Nascondi hint GPS se era visibile
-        const hint = $("cosaOraGpsHint");
-        if (hint) hint.classList.remove("visible");
+    // Dropdown "Cosa faccio ora" — apri/chiudi
+    const trigger = $("cosaOraTrigger");
+    const menu    = $("cosaOraMenu");
+    if (trigger && menu) {
+      trigger.addEventListener("click", e => {
+        e.stopPropagation();
+        menu.classList.toggle("open");
+        trigger.classList.toggle("open");
       });
-    });
+      document.addEventListener("click", () => {
+        menu.classList.remove("open");
+        trigger.classList.remove("open");
+      });
+      menu.querySelectorAll(".cosa-ora-option").forEach(opt => {
+        opt.addEventListener("click", e => {
+          e.stopPropagation();
+          menu.querySelectorAll(".cosa-ora-option").forEach(o => o.classList.remove("active"));
+          opt.classList.add("active");
+          const label = $("cosaOraSelected");
+          if (label) label.textContent = opt.textContent;
+          menu.classList.remove("open");
+          trigger.classList.remove("open");
+          const hint = $("cosaOraGpsHint");
+          if (hint) hint.classList.remove("visible");
+        });
+      });
+    }
 
     // GPS silenzioso in background al click su cosaOraBtn se non disponibile
     $("cosaOraBtn")?.addEventListener("click", () => {
@@ -1418,7 +1435,7 @@
           { enableHighAccuracy: true, timeout: 5000 }
         );
       }
-    }, true); // capture: true → gira PRIMA di runCosaOra
+    }, true);
 
     $("gpsStartBtn")?.addEventListener("click", startGPSRoute);
     $("gpsStopBtn")?.addEventListener("click",  stopGPSRoute);
