@@ -1324,6 +1324,45 @@
     toast("Ti ho scelto lo spot migliore di adesso");
   }
 
+  // ─── COSA FACCIO ORA ──────────────────────────────────────────────────────
+  // Mappa tempo (minuti) → distanza massima km
+  const COSA_ORA_DIST = { 30: 5, 60: 15, 90: 30, 120: 50 };
+
+  function runCosaOra() {
+    const activeBtn = document.querySelector(".cosa-ora-time.active");
+    const minutes   = parseInt(activeBtn?.dataset.min || "30", 10);
+    const maxKm     = COSA_ORA_DIST[minutes] || 5;
+    const hint      = $("cosaOraGpsHint");
+
+    // Mostra hint GPS se posizione non disponibile, ma non blocca
+    if (!APP.userPos) {
+      if (hint) hint.classList.add("visible");
+    } else {
+      if (hint) hint.classList.remove("visible");
+    }
+
+    // Filtra per distanza se posizione disponibile, altrimenti usa tutti
+    let pool = getAllSpotsWithMeta();
+    if (APP.userPos) {
+      const filtered = pool.filter(s => s.distance != null && s.distance <= maxKm);
+      if (filtered.length > 0) pool = filtered;
+      // Se nessuno spot nel raggio, allarga silenziosamente (non blocca)
+    }
+
+    // Usa ranking esistente
+    const ranked = pool
+      .map(s => ({ ...s, goNowScore: rankSpotForGoNow(s) }))
+      .sort((a, b) => b.goNowScore - a.goNowScore);
+
+    const best = ranked[0] || null;
+    if (!best) { toast("Nessuno spot disponibile"); return; }
+
+    showSpotDetail(best);
+    switchPage("detail");
+    const label = minutes < 60 ? `${minutes} min` : minutes === 60 ? "1h" : minutes === 90 ? "1h 30" : "2h";
+    toast(`Spot perfetto per ${label} — eccolo`);
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // SEZIONE 18 — EVENTS
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1343,33 +1382,43 @@
 
     $("searchBtn")?.addEventListener("click",          searchSpot);
     $("goNowBtn")?.addEventListener("click",           runGoNow);
+    $("cosaOraBtn")?.addEventListener("click",         runCosaOra);
     $("autofillPlannerBtn")?.addEventListener("click", buildDayPlanner);
     $("plannerOpenBtn")?.addEventListener("click",     () => switchPage("home"));
     $("clearPlannerBtn")?.addEventListener("click",    clearPlannerAll);
 
-    $("gpsBtn")?.addEventListener("click", () => {
-      if (!navigator.geolocation) { toast("GPS non disponibile"); return; }
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          APP.userPos = {
-            lat:      pos.coords.latitude,
-            lon:      pos.coords.longitude,
-            accuracy: pos.coords.accuracy,
-            altitude: typeof pos.coords.altitude === "number" ? pos.coords.altitude : null
-          };
-          saveLastPosition(APP.userPos); // salva in cache
-          updateUserMarker();
-          APP._nearbyCache = null;
-          smartRender("light");
-          const altMsg = APP.userPos.altitude != null
-            ? ` · altitudine ${Math.round(APP.userPos.altitude)} m`
-            : "";
-          toast(`Posizione aggiornata${altMsg}`);
-        },
-        () => toast("Permesso GPS negato"),
-        { enableHighAccuracy: true, timeout: 8000 }
-      );
+    // Time picker "Cosa faccio ora"
+    document.querySelectorAll(".cosa-ora-time").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".cosa-ora-time").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        // Nascondi hint GPS se era visibile
+        const hint = $("cosaOraGpsHint");
+        if (hint) hint.classList.remove("visible");
+      });
     });
+
+    // GPS silenzioso in background al click su cosaOraBtn se non disponibile
+    $("cosaOraBtn")?.addEventListener("click", () => {
+      if (!APP.userPos && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            APP.userPos = {
+              lat:      pos.coords.latitude,
+              lon:      pos.coords.longitude,
+              accuracy: pos.coords.accuracy,
+              altitude: typeof pos.coords.altitude === "number" ? pos.coords.altitude : null
+            };
+            saveLastPosition(APP.userPos);
+            updateUserMarker();
+            APP._nearbyCache = null;
+            smartRender("light");
+          },
+          () => {},
+          { enableHighAccuracy: true, timeout: 5000 }
+        );
+      }
+    }, true); // capture: true → gira PRIMA di runCosaOra
 
     $("gpsStartBtn")?.addEventListener("click", startGPSRoute);
     $("gpsStopBtn")?.addEventListener("click",  stopGPSRoute);

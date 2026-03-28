@@ -56,9 +56,21 @@
       <div class="hero-actions">
 
         <div class="panel glass side-actions">
-          <button class="btn btn-primary tap btn-large" id="goNowBtn" type="button">⚡ Vai ora</button>
+
+          <!-- Blocco "Cosa faccio ora" -->
+          <div class="cosa-ora-block">
+            <div class="cosa-ora-label">Hai poco tempo?</div>
+            <div class="cosa-ora-times" id="cosaOraTimePicker">
+              <button class="cosa-ora-time active" data-min="30" type="button">30 min</button>
+              <button class="cosa-ora-time" data-min="60" type="button">1h</button>
+              <button class="cosa-ora-time" data-min="90" type="button">1h 30</button>
+              <button class="cosa-ora-time" data-min="120" type="button">2h</button>
+            </div>
+            <button class="btn btn-primary tap btn-large" id="cosaOraBtn" type="button">⚡ Cosa faccio ora</button>
+            <div class="cosa-ora-gps-hint" id="cosaOraGpsHint">📍 Attiva posizione per risultati migliori</div>
+          </div>
+
           <button class="btn btn-gold tap" id="autofillPlannerBtn" type="button">📅 Pianifica giornata</button>
-          <button class="btn btn-secondary tap" id="gpsBtn" type="button">📍 Usa GPS</button>
         </div>
 
         <div class="search-box glass home-only" id="searchBoxWrapper">
