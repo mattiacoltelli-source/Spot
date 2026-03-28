@@ -79,6 +79,37 @@
   // QUICK GRID
   // ═══════════════════════════════════════════════════════════════════════════
 
+  // ── SMART SIGNALS — segnali contestuali per ogni spot ─────────────────────
+  function buildSmartSignals(spot, app) {
+    if (!spot) return "";
+    const signals = [];
+    const w   = app.weatherData;
+    const now = new Date();
+    const sunset = app.sunTimes?.sunset;
+
+    if (w) {
+      if (w.cloud <= 30 && w.rain < 20)      signals.push("🌤 cielo pulito");
+      else if (w.cloud <= 60)                 signals.push("⛅ parzialmente nuvoloso");
+      if (w.wind <= 15)                       signals.push("💨 vento basso");
+      else if (w.wind >= 30)                  signals.push("💨 vento forte");
+    }
+
+    if (sunset instanceof Date) {
+      const diffMin = Math.floor((sunset - now) / 60000);
+      if (diffMin > 0 && diffMin <= 90)       signals.push(`🌅 tramonto tra ${diffMin} min`);
+      else if (diffMin > 90 && diffMin <= 180) signals.push(`🌅 tramonto tra ${Math.round(diffMin/60*10)/10}h`);
+    }
+
+    if (spot.distance != null) {
+      if (spot.distance <= 5)                 signals.push(`📍 ${spot.distance.toFixed(1)} km`);
+      else if (spot.distance <= 15)           signals.push(`📍 ${Math.round(spot.distance)} km`);
+    }
+
+    if ((spot.experience?.wow || 0) >= 9)     signals.push("🔥 spot forte");
+
+    return signals.slice(0, 3).join(" · ");
+  }
+
   function buildTravelQuickCards(app) {
     const goNow      = window.APP_UTILS.getGoNowSuggestions();
     const bestNow    = goNow?.best || null;
@@ -86,7 +117,9 @@
     const alt2       = goNow?.alternatives?.[1] || null;
     const bestSunset = window.APP_UTILS.getBestSunsetSpot();
 
-    const goNowExplanation = bestNow ? window.APP_UTILS.explainGoNow(bestNow) : "";
+    const mainSignals = bestNow ? buildSmartSignals(bestNow, app) : "";
+    const alt1Signals = alt1    ? buildSmartSignals(alt1, app)    : "";
+    const alt2Signals = alt2    ? buildSmartSignals(alt2, app)    : "";
 
     // ── Card principale "Vai ora" ──────────────────────────────────────────
     const mainCard = `
@@ -96,7 +129,7 @@
           ${bestNow?.experience?.wow ? `<div class="mini-chip gold">Wow ${esc(String(bestNow.experience.wow))}/10</div>` : ""}
         </div>
         <div class="go-now-title">${bestNow ? esc(bestNow.name) : "Lettura in corso…"}</div>
-        ${goNowExplanation ? `<div class="quick-explain">${esc(goNowExplanation)}</div>` : ""}
+        ${mainSignals ? `<div class="quick-explain smart-signals">${esc(mainSignals)}</div>` : ""}
         <div class="quick-desc">${bestNow ? esc(getBestPracticalLine(bestNow)) : "Sto calcolando il miglior spot del momento."}</div>
         <div class="sunset-chip-row">
           ${bestNow && getDistanceLabel(bestNow) ? `<div class="mini-chip blue">📍 ${esc(getDistanceLabel(bestNow))}</div>` : ""}
@@ -106,16 +139,13 @@
     `;
 
     // ── Due card alternative ───────────────────────────────────────────────
-    const alt1Explain = alt1 ? window.APP_UTILS.explainGoNow(alt1) : "";
-    const alt2Explain = alt2 ? window.APP_UTILS.explainGoNow(alt2) : "";
-
     const altCards = (alt1 || alt2) ? `
       <div class="go-now-alts">
         ${alt1 ? `
           <div class="go-now-alt glass tap" data-quick-id="${esc(alt1.id)}">
             <div class="quick-label go-now-alt-label">👌 Ottima alternativa</div>
             <div class="go-now-alt-name">${esc(alt1.name)}</div>
-            ${alt1Explain ? `<div class="go-now-alt-explain">${esc(alt1Explain)}</div>` : ""}
+            ${alt1Signals ? `<div class="go-now-alt-explain smart-signals">${esc(alt1Signals)}</div>` : ""}
             <div class="quick-desc go-now-alt-desc">${esc(getBestPracticalLine(alt1))}</div>
             <div class="sunset-chip-row">
               ${getDistanceLabel(alt1) ? `<div class="mini-chip blue">${esc(getDistanceLabel(alt1))}</div>` : ""}
@@ -128,7 +158,7 @@
           <div class="go-now-alt glass tap" data-quick-id="${esc(alt2.id)}">
             <div class="quick-label go-now-alt-label">👍 Piano B</div>
             <div class="go-now-alt-name">${esc(alt2.name)}</div>
-            ${alt2Explain ? `<div class="go-now-alt-explain">${esc(alt2Explain)}</div>` : ""}
+            ${alt2Signals ? `<div class="go-now-alt-explain smart-signals">${esc(alt2Signals)}</div>` : ""}
             <div class="quick-desc go-now-alt-desc">${esc(getBestPracticalLine(alt2))}</div>
             <div class="sunset-chip-row">
               ${getDistanceLabel(alt2) ? `<div class="mini-chip blue">${esc(getDistanceLabel(alt2))}</div>` : ""}
