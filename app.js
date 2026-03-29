@@ -1181,8 +1181,18 @@
 
   function switchPage(pageName) {
     APP.activePage = pageName;
+    const activePage = document.querySelector(`#page-${pageName}`);
     document.querySelectorAll(".page").forEach(p => p.classList.toggle("active", p.id === `page-${pageName}`));
     document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.page === pageName));
+
+    // Fade in sulla pagina attiva
+    if (activePage) {
+      activePage.style.opacity = "0";
+      requestAnimationFrame(() => {
+        activePage.style.transition = "opacity 150ms ease";
+        activePage.style.opacity = "1";
+      });
+    }
 
     // Mostra/nascondi search box solo su Home
     const searchWrapper = $("searchBoxWrapper");
@@ -1462,6 +1472,20 @@
     updateModeUI();
     bindEvents();
     initMap();
+
+    // Inietta CSS fade pagine
+    const fadeStyle = document.createElement("style");
+    fadeStyle.textContent = ".page { transition: opacity 150ms ease; }";
+    document.head.appendChild(fadeStyle);
+
+    // Back button Android → home se in pagina interna, esce se già in home
+    history.pushState(null, "", location.href);
+    window.addEventListener("popstate", () => {
+      if (APP.activePage !== "home") {
+        history.pushState(null, "", location.href);
+        switchPage("home");
+      }
+    });
 
     // 1) Carica cache meteo e posizione PRIMA del render → nessun loading visibile
     loadWeatherFromCache();
