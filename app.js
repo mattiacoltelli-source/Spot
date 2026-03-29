@@ -1095,7 +1095,7 @@
   function initMap() {
     const mapEl = $("map");
     if (!mapEl || typeof L === "undefined") return;
-    APP.map = L.map("map", { zoomControl: true }).setView(APP_SPOTS.center || [45.885, 10.842], APP_SPOTS.zoom || 11);
+    APP.map = L.map("map", { zoomControl: true, touchZoom: true, dragging: true, tap: false, tapTolerance: 15 }).setView(APP_SPOTS.center || [45.885, 10.842], APP_SPOTS.zoom || 11);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap" }).addTo(APP.map);
     APP.gpsLine = L.polyline([], { color: "#7dc4ff", weight: 4, opacity: 0.9 }).addTo(APP.map);
     renderMarkers();
