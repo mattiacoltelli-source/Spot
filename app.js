@@ -950,10 +950,43 @@
       });
       const rain = idx >= 0 ? (forecast?.hourly?.precipitation_probability?.[idx] ?? 0) : (forecast?.hourly?.precipitation_probability?.[0] ?? 0);
       APP.sunTimes      = { sunrise: parseSunTime(forecast?.daily?.sunrise?.[0]), sunset: parseSunTime(forecast?.daily?.sunset?.[0]) };
-      let headline = "Meteo aggiornato", advice = "Controlla rapidamente la situazione della giornata.";
-      if (rain >= 55)                    { headline = "Pioggia probabile";     advice = "Meglio spot riparati o attività flessibili."; }
-      else if (wind >= 32)               { headline = "Vento forte";           advice = "Attenzione ai punti molto esposti."; }
-      else if (cloud <= 35 && rain < 25) { headline = "Finestra interessante"; advice = "Buona giornata per spot aperti e luce più pulita."; }
+      let headline, advice;
+      const _h = now.getHours();
+      const _pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+      if (rain >= 70) {
+        headline = "Pioggia in arrivo";
+        advice   = _pick(["Meglio restare al coperto o scegliere spot riparati.", "Giornata difficile — tieni un piano B al chiuso.", "Non è il momento per spot esposti."]);
+      } else if (rain >= 45) {
+        headline = "Pioggia possibile";
+        advice   = _pick(["Portati un layer impermeabile — potrebbe piovere.", "Fattibile, ma tieniti pronto a cambiare programma.", "Giornata incerta: scegli spot flessibili."]);
+      } else if (wind >= 40) {
+        headline = "Vento forte";
+        advice   = _pick(["Evita punti esposti — le raffiche sono serie.", "Stai lontano dalle creste oggi.", "Condizioni dure per chi sta fermo: meglio attività dinamiche."]);
+      } else if (wind >= 28) {
+        headline = "Vento sostenuto";
+        advice   = _pick(["Qualche disturbo in quota — scegli spot più riparati.", "Fattibile, ma non ideale per panorami aperti.", "Va bene per il movimento, meno per stare fermi."]);
+      } else if (cloud <= 25 && rain < 20) {
+        if (_h >= 16 && _h < 20) {
+          headline = "Luce ottima ora";
+          advice   = _pick(["Vai ora — la luce è quella giusta per i posti migliori.", "Finestra eccellente per tramonti e panorami. Non aspettare.", "Momento perfetto: cielo pulito e luce dorata."]);
+        } else if (_h >= 5 && _h < 9) {
+          headline = "Alba pulita";
+          advice   = _pick(["Se sei già sveglio, vale uscire — la luce è bellissima.", "Finestra d'alba interessante: cielo libero.", "Mattina limpida: ottimo per i primi spot della giornata."]);
+        } else {
+          headline = "Giornata pulita";
+          advice   = _pick(["Buona visibilità ovunque — scegli il posto che vuoi.", "Condizioni solide per tutta la giornata.", "Cielo libero: approfitta e muoviti."]);
+        }
+      } else if (cloud <= 60 && rain < 30) {
+        headline = "Condizioni discrete";
+        advice   = _pick(["Non perfetto, ma ci si può lavorare.", "Qualche nuvola, niente di bloccante — vai.", "Accettabile: pianifica e non aspettarti il massimo."]);
+      } else if (cloud > 80 && rain < 20) {
+        headline = "Coperto ma asciutto";
+        advice   = _pick(["Grigio ma senza pioggia — ok per trekking e natura.", "Luce piatta, buona per foreste e percorsi.", "Non ideale per panorami, ottimo per attività fisiche."]);
+      } else {
+        headline = "Meteo neutro";
+        advice   = _pick(["Niente di speciale oggi — scegli in base a cosa cerchi.", "Condizioni nella media: niente che spinga in una direzione.", "Giornata nella norma: dipende da quanto vuoi spingerti."]);
+      }
       APP.weatherData   = { temp, wind, windDir, gust, cloud, rain, period: currentPeriod(), headline, advice };
       APP._weatherStamp = Date.now();
       APP.marineData    = { waveHeight: marine?.current?.wave_height ?? 0, waveDirection: marine?.current?.wave_direction ?? 0, wavePeriod: marine?.current?.wave_period ?? 0 };
