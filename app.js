@@ -1098,6 +1098,8 @@
     APP.map = L.map("map", { zoomControl: true }).setView(APP_SPOTS.center || [45.885, 10.842], APP_SPOTS.zoom || 11);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap" }).addTo(APP.map);
     APP.gpsLine = L.polyline([], { color: "#7dc4ff", weight: 4, opacity: 0.9 }).addTo(APP.map);
+    // Blocca lo scroll della pagina quando il dito e' sulla mappa
+    APP.map.getContainer().addEventListener("touchmove", e => e.stopPropagation(), { passive: false });
     renderMarkers();
   }
 
