@@ -447,6 +447,7 @@
         <button class="chip ${app.mapQuickFilter === "wow"       ? "active" : ""}" data-mapquick="wow"       type="button">Wow</button>
         <button class="chip ${app.mapQuickFilter === "sunset"    ? "active" : ""}" data-mapquick="sunset"    type="button">Tramonto</button>
         <button class="chip ${app.mapQuickFilter === "alba"      ? "active" : ""}" data-mapquick="alba"      type="button">Alba</button>
+        <button class="chip ${app.mapQuickFilter === "giorno"    ? "active" : ""}" data-mapquick="giorno"    type="button">Giorno</button>
         <button class="chip ${app.mapQuickFilter === "favorites" ? "active" : ""}" data-mapquick="favorites" type="button">Preferiti</button>
       `;
       mapQuickFilters.querySelectorAll("[data-mapquick]").forEach(btn => {
@@ -558,8 +559,8 @@
       `
       : `
         <div class="legend-item"><span class="legend-dot legend-gold"></span> Wow</div>
-        <div class="legend-item"><span class="legend-dot legend-pink"></span> Tramonto / Alba</div>
-        <div class="legend-item"><span class="legend-dot legend-blue"></span> Altri spot</div>
+        <div class="legend-item"><span class="legend-dot legend-pink"></span> Tramonto / Sera</div>
+        <div class="legend-item"><span class="legend-dot legend-blue"></span> Alba / Altri spot</div>
         <div class="legend-item"><span class="legend-dot" style="background:#2d8eff;border:2px solid white"></span> La tua posizione</div>
       `;
   }

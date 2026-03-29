@@ -455,6 +455,7 @@
     if (APP.mapQuickFilter === "wow")       items = items.filter(s => (APP_SPOTS.topWowNames || []).includes(s.name));
     if (APP.mapQuickFilter === "sunset")    items = items.filter(s => isEveningLike(s.light));
     if (APP.mapQuickFilter === "alba")      items = items.filter(s => isMorningLike(s.light));
+    if (APP.mapQuickFilter === "giorno")    items = items.filter(s => !isEveningLike(s.light) && !isMorningLike(s.light));
     if (APP.mapQuickFilter === "favorites") items = items.filter(s => APP.favorites.includes(s.id));
     return items;
   }
@@ -656,16 +657,15 @@
     const remaining = pool.filter(s => !best || s.id !== best.id);
     const alt1 = remaining[0] || null;
 
-    // Alt2: prova a trovare uno spot di light diversa per diversificare
-    // Fallback al secondo in classifica se non esiste nulla di diverso
+    // Alt2: preferisci light diversa per diversificare, fallback al 3° in classifica
     let alt2 = null;
     if (bestLight) {
       alt2 = remaining.find(s =>
         s.id !== alt1?.id &&
         normalizeLight((Array.isArray(s.light) ? s.light[0] : s.light) || "") !== bestLight
-      ) || remaining.find(s => s.id !== alt1?.id) || null;
+      ) || remaining.find(s => s.id !== alt1?.id) || remaining[1] || null;
     } else {
-      alt2 = remaining.find(s => s.id !== alt1?.id) || null;
+      alt2 = remaining.find(s => s.id !== alt1?.id) || remaining[1] || null;
     }
 
     return { best, alternatives: [alt1, alt2].filter(Boolean) };
