@@ -3,20 +3,14 @@
    VISITED BUTTON — spunta curata e coerente
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Spunta nelle quick card (home) */
 .visited-btn {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   border: 2px solid rgba(255,255,255,.18);
   background: rgba(255,255,255,.07);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   color: rgba(255,255,255,.35);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   cursor: pointer;
   display: flex;
@@ -28,7 +22,6 @@
     color var(--fast),
     transform var(--fast),
     box-shadow var(--fast);
-  z-index: 10;
   flex-shrink: 0;
   line-height: 1;
 }
@@ -38,9 +31,7 @@
   color: #a4f4d6;
   transform: scale(1.08);
 }
-.visited-btn:active {
-  transform: scale(.92);
-}
+.visited-btn:active { transform: scale(.92); }
 .visited-btn.visited {
   background: rgba(69,211,154,.22);
   border-color: rgba(69,211,154,.55);
@@ -54,17 +45,7 @@
   box-shadow: none;
 }
 
-/* Card header wrapper per posizionamento relativo */
-.go-now-main-header,
-.go-now-alt-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-}
-
-/* Sunset card header */
+/* Sunset card header con spunta */
 .sunset-card-header {
   display: flex;
   justify-content: space-between;
@@ -72,7 +53,7 @@
   gap: 8px;
 }
 
-/* Spunta nel dettaglio spot */
+/* Bottone visitato nel dettaglio */
 .detail-visited-btn {
   display: flex;
   align-items: center;
@@ -87,6 +68,7 @@
   cursor: pointer;
   width: 100%;
   text-align: left;
+  margin-bottom: 10px;
   transition:
     background var(--fast),
     border-color var(--fast),
@@ -99,7 +81,7 @@
 }
 .detail-visited-btn.visited {
   background: rgba(69,211,154,.14);
-  border-color: rgba(69,211,154,.35);
+  border-color: rgba(69,211,154,.38);
   color: #45d39a;
 }
 .detail-visited-btn.visited:hover {
@@ -108,51 +90,52 @@
   color: #ff9090;
 }
 .detail-visited-icon {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   border: 2px solid currentColor;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 12px;
   flex-shrink: 0;
-  transition: background var(--fast);
 }
 .detail-visited-btn.visited .detail-visited-icon {
   background: rgba(69,211,154,.20);
 }
 
-/* Badge "visitato" nella spot list */
+/* Badge visitato nella lista spot */
 .spot-visited-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   font-size: 10px;
   font-weight: 700;
-  padding: 3px 8px;
+  padding: 2px 7px;
   border-radius: 999px;
   background: rgba(69,211,154,.14);
   border: 1px solid rgba(69,211,154,.28);
   color: #7eefc2;
-  letter-spacing: .04em;
+  vertical-align: middle;
+  margin-left: 6px;
 }
 
-/* Badge "visitato" nella featured card (Top list) */
+/* Badge visitato nelle featured card (Top) */
 .featured-card-visited {
   position: absolute;
   top: 8px;
   right: 8px;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: rgba(69,211,154,.85);
+  background: rgba(69,211,154,.90);
   border: 2px solid #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 10px;
   color: #0a2a1a;
-  font-weight: 800;
+  font-weight: 900;
   box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  z-index: 2;
 }

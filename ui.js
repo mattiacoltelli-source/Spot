@@ -305,13 +305,13 @@
       });
     });
 
-    // Click sul bottone ✓ visitato — toggle on/off
+    // Click sul bottone ✓ visitato
     box.querySelectorAll("[data-visited-id]").forEach(btn => {
       btn.addEventListener("click", e => {
         e.stopPropagation();
         const id = btn.dataset.visitedId;
         window.APP_UTILS.toggleVisited(id);
-        // toggleVisited salva e il smartRender aggiorna le card
+        // Dopo markVisited il smartRender aggiorna automaticamente le card
       });
     });
   }
@@ -629,7 +629,7 @@
       const fit  = meta?.weatherFit || null;
       return `
         <div class="featured-card tap" data-featured-id="${esc(spot.id)}" style="position:relative">
-          ${isVisited(spot.id) ? `<div class="featured-card-visited">✓</div>` : ""}
+          ${isVisited(spot.id) ? '<div class="featured-card-visited">✓</div>' : ""}
           <div class="featured-card-img" style="background-image:url('${esc(spot.image || "")}')"></div>
           <div class="featured-card-body">
             <div class="featured-card-name">${esc(spot.name)}</div>
@@ -688,7 +688,7 @@
         <div class="spot-card glass tap" data-spot-id="${esc(s.id)}">
           <div class="spot-head">
             <div>
-              <div class="spot-name">${esc(s.name)}${isVisited(s.id) ? ' <span class="spot-visited-badge">✓ visitato</span>' : ""}</div>
+              <div class="spot-name">${esc(s.name)}${isVisited(s.id) ? '<span class="spot-visited-badge">✓ visitato</span>' : ""}</div>
               <div class="spot-sub">${esc(pretty(s.zone))} · ${esc(pretty(s.activity))} · ${esc(pretty(s.light))}</div>
             </div>
             <button class="fav-btn tap" data-fav-id="${esc(s.id)}" type="button">${favIcon(s.id)}</button>
