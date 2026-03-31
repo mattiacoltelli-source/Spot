@@ -139,3 +139,21 @@
   box-shadow: 0 2px 8px rgba(0,0,0,.3);
   z-index: 2;
 }
+
+/* ── Fix spunta in alto a destra nelle card alternative ── */
+.go-now-alt {
+  position: relative; /* assicura il contesto per absolute */
+}
+.go-now-alt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+/* Nelle alt la spunta va in alto a destra assoluto come in "Perfetto adesso" */
+.go-now-alt .visited-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}

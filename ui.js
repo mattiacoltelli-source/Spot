@@ -184,10 +184,8 @@
       <div class="go-now-alts">
         ${alt1 ? `
           <div class="go-now-alt glass tap" data-quick-id="${esc(alt1.id)}">
-            <div class="go-now-alt-header">
-              <div class="quick-label go-now-alt-label">👌 Ottima alternativa</div>
-              ${visitedBtn(alt1.id)}
-            </div>
+            <div class="quick-label go-now-alt-label">👌 Ottima alternativa</div>
+            ${visitedBtn(alt1.id)}
             <div class="go-now-alt-name">${esc(alt1.name)}</div>
             ${alt1Signals ? `<div class="go-now-alt-explain smart-signals">${esc(alt1Signals)}</div>` : ""}
             <div class="quick-desc go-now-alt-desc">${esc(getBestPracticalLine(alt1))}</div>
@@ -200,10 +198,8 @@
         ` : ""}
         ${alt2 ? `
           <div class="go-now-alt glass tap" data-quick-id="${esc(alt2.id)}">
-            <div class="go-now-alt-header">
-              <div class="quick-label go-now-alt-label">👍 Piano B</div>
-              ${visitedBtn(alt2.id)}
-            </div>
+            <div class="quick-label go-now-alt-label">👍 Piano B</div>
+            ${visitedBtn(alt2.id)}
             <div class="go-now-alt-name">${esc(alt2.name)}</div>
             ${alt2Signals ? `<div class="go-now-alt-explain smart-signals">${esc(alt2Signals)}</div>` : ""}
             <div class="quick-desc go-now-alt-desc">${esc(getBestPracticalLine(alt2))}</div>
