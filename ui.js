@@ -183,9 +183,11 @@
     const altCards = (alt1 || alt2) ? `
       <div class="go-now-alts">
         ${alt1 ? `
-          <div class="go-now-alt glass tap" data-quick-id="${esc(alt1.id)}">
-            <div class="quick-label go-now-alt-label">👌 Ottima alternativa</div>
-            ${visitedBtn(alt1.id)}
+          <div class="go-now-alt glass tap" data-quick-id="${esc(alt1.id)}" style="position:relative">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px">
+              <div class="quick-label go-now-alt-label">👌 Ottima alternativa</div>
+              ${visitedBtn(alt1.id)}
+            </div>
             <div class="go-now-alt-name">${esc(alt1.name)}</div>
             ${alt1Signals ? `<div class="go-now-alt-explain smart-signals">${esc(alt1Signals)}</div>` : ""}
             <div class="quick-desc go-now-alt-desc">${esc(getBestPracticalLine(alt1))}</div>
@@ -197,9 +199,11 @@
           </div>
         ` : ""}
         ${alt2 ? `
-          <div class="go-now-alt glass tap" data-quick-id="${esc(alt2.id)}">
-            <div class="quick-label go-now-alt-label">👍 Piano B</div>
-            ${visitedBtn(alt2.id)}
+          <div class="go-now-alt glass tap" data-quick-id="${esc(alt2.id)}" style="position:relative">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px">
+              <div class="quick-label go-now-alt-label">👍 Piano B</div>
+              ${visitedBtn(alt2.id)}
+            </div>
             <div class="go-now-alt-name">${esc(alt2.name)}</div>
             ${alt2Signals ? `<div class="go-now-alt-explain smart-signals">${esc(alt2Signals)}</div>` : ""}
             <div class="quick-desc go-now-alt-desc">${esc(getBestPracticalLine(alt2))}</div>
@@ -306,8 +310,20 @@
       btn.addEventListener("click", e => {
         e.stopPropagation();
         const id = btn.dataset.visitedId;
-        window.APP_UTILS.toggleVisited(id);
-        // Dopo markVisited il smartRender aggiorna automaticamente le card
+        const alreadyVisited = window.APP_UTILS.isVisited(id);
+
+        if (!alreadyVisited) {
+          // Mostra spunta verde per 900ms poi aggiorna
+          btn.classList.add("visited");
+          btn.textContent = "✓";
+          btn.style.pointerEvents = "none";
+          setTimeout(() => {
+            window.APP_UTILS.toggleVisited(id);
+          }, 900);
+        } else {
+          // Rimozione immediata
+          window.APP_UTILS.toggleVisited(id);
+        }
       });
     });
   }
