@@ -157,3 +157,17 @@
   top: 12px;
   right: 12px;
 }
+
+/* Annulla position absolute nelle alt — ora è nel flex header */
+.go-now-alt .visited-btn {
+  position: static;
+  flex-shrink: 0;
+}
+
+/* Fix: no rosso su hover/touch — la rimozione è già chiara dal cambio di stato */
+.visited-btn.visited:hover {
+  background: rgba(69,211,154,.22);
+  border-color: rgba(69,211,154,.55);
+  color: #45d39a;
+  box-shadow: 0 0 12px rgba(69,211,154,.28);
+}
