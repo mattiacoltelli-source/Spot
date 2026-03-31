@@ -147,7 +147,7 @@
       data-visited-id="${esc(spotId)}"
       type="button"
       title="${visited ? "Rimuovi da visitati" : "Segna come visitato"}"
-    >${visited ? "✓" : "✓"}</button>`;
+    >${visited ? "✓" : "○"}</button>`;
   }
 
   function buildTravelQuickCards(app) {
@@ -220,7 +220,10 @@
     // ── Card tramonto ──────────────────────────────────────────────────────
     const sunsetCard = `
       <div class="quick-card glass sunset-card tap" data-quick-id="${bestSunset ? esc(bestSunset.id) : ""}">
-        <div class="quick-label">Tramonto premium</div>
+        <div class="sunset-card-header">
+          <div class="quick-label">🌅 Tramonto premium</div>
+          ${bestSunset ? visitedBtn(bestSunset.id) : ""}
+        </div>
         <div class="quick-title">${bestSunset ? esc(bestSunset.name) : "—"}</div>
         <div class="quick-desc">${bestSunset ? esc(bestSunset.tip || bestSunset.whenToGo?.note || bestSunset.desc || "") : "In attesa della lettura luce."}</div>
         <div class="sunset-chip-row" style="margin-top:12px">
@@ -302,13 +305,13 @@
       });
     });
 
-    // Click sul bottone ✓ visitato
+    // Click sul bottone ✓ visitato — toggle on/off
     box.querySelectorAll("[data-visited-id]").forEach(btn => {
       btn.addEventListener("click", e => {
         e.stopPropagation();
         const id = btn.dataset.visitedId;
-        window.APP_UTILS.markVisited(id);
-        // Dopo markVisited il smartRender aggiorna automaticamente le card
+        window.APP_UTILS.toggleVisited(id);
+        // toggleVisited salva e il smartRender aggiorna le card
       });
     });
   }
@@ -625,7 +628,8 @@
       const meta = metaById.get(spot.id);
       const fit  = meta?.weatherFit || null;
       return `
-        <div class="featured-card tap" data-featured-id="${esc(spot.id)}">
+        <div class="featured-card tap" data-featured-id="${esc(spot.id)}" style="position:relative">
+          ${isVisited(spot.id) ? `<div class="featured-card-visited">✓</div>` : ""}
           <div class="featured-card-img" style="background-image:url('${esc(spot.image || "")}')"></div>
           <div class="featured-card-body">
             <div class="featured-card-name">${esc(spot.name)}</div>
@@ -684,7 +688,7 @@
         <div class="spot-card glass tap" data-spot-id="${esc(s.id)}">
           <div class="spot-head">
             <div>
-              <div class="spot-name">${esc(s.name)}</div>
+              <div class="spot-name">${esc(s.name)}${isVisited(s.id) ? ' <span class="spot-visited-badge">✓ visitato</span>' : ""}</div>
               <div class="spot-sub">${esc(pretty(s.zone))} · ${esc(pretty(s.activity))} · ${esc(pretty(s.light))}</div>
             </div>
             <button class="fav-btn tap" data-fav-id="${esc(s.id)}" type="button">${favIcon(s.id)}</button>
@@ -841,6 +845,10 @@
       ${app.mode === "sail" && sail?.enabled ? `<div class="detail-section"><h3>Sezione vela</h3><p>${esc(sail.detailText || "Spot compatibile con modalità vela.")}</p></div>` : ""}
 
       <div class="detail-section"><h3>Azioni</h3>
+        <button class="detail-visited-btn${isVisited(spot.id) ? " visited" : ""}" id="detailVisitedBtn" type="button">
+          <span class="detail-visited-icon">${isVisited(spot.id) ? "✓" : "○"}</span>
+          <span id="detailVisitedLabel">${isVisited(spot.id) ? "Visitato — tocca per rimuovere" : "Segna come visitato"}</span>
+        </button>
         <div class="action-grid">
           <button class="btn btn-primary tap"  id="detailMapBtn"  type="button">Apri sulla mappa</button>
           <a class="btn btn-secondary tap" href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank" rel="noopener noreferrer">Apri in Google Maps</a>
@@ -852,6 +860,17 @@
 
     $("detailMapBtn")?.addEventListener("click", () => window.APP_UTILS.centerSpot(spot.id));
     $("detailFavBtn")?.addEventListener("click", () => window.APP_UTILS.toggleFavorite(spot.id));
+
+    $("detailVisitedBtn")?.addEventListener("click", () => {
+      window.APP_UTILS.toggleVisited(spot.id);
+      const nowVisited = window.APP_UTILS.isVisited(spot.id);
+      const btn   = $("detailVisitedBtn");
+      const label = $("detailVisitedLabel");
+      const icon  = btn?.querySelector(".detail-visited-icon");
+      if (btn)   btn.classList.toggle("visited", nowVisited);
+      if (icon)  icon.textContent = nowVisited ? "✓" : "○";
+      if (label) label.textContent = nowVisited ? "Visitato — tocca per rimuovere" : "Segna come visitato";
+    });
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
