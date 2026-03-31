@@ -18,7 +18,8 @@
     planner:      APP_SPOTS.storageKeys?.planner   || "travel_sail_planner_v1",
     mode:         "travel_sail_mode_v1",
     weatherCache: "weather_cache",
-    lastPosition: "last_position"
+    lastPosition: "last_position",
+    visited:      APP_SPOTS.storageKeys?.visited   || "travel_sail_visited_v1"
   };
 
   const DEFAULT_PLANNER = { alba: null, main: null, tramonto: null };
@@ -44,6 +45,7 @@
     sunTimes:          null,
     sunsetTimer:       null,
     favorites:         loadJson(STORAGE_KEYS.favorites, []),
+    visited:           loadJson(STORAGE_KEYS.visited, []),
     planner:           loadJson(STORAGE_KEYS.planner, DEFAULT_PLANNER),
     activePage:        "home",
     map:               null,
@@ -647,6 +649,12 @@
       return { best: window.SAIL.getBestSailSpot(APP) || null, alternatives: [] };
     }
     let pool = getAllSpotsWithMeta();
+
+    // ── Escludi spot già visitati ──────────────────────────────────────────
+    const notVisited = pool.filter(s => !APP.visited.includes(s.id));
+    // Se tutti visitati, ignora il filtro e usa tutto il pool
+    if (notVisited.length > 0) pool = notVisited;
+
     if (APP.level !== "all") pool = pool.filter(s => s.level === APP.level);
     pool = pool.map(s => ({ ...s, goNowScore: rankSpotForGoNow(s) }))
                .sort((a, b) => b.goNowScore - a.goNowScore);
@@ -827,6 +835,28 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // SEZIONE 8b — VISITED CRUD
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function isVisited(id) { return APP.visited.includes(id); }
+
+  function toggleVisited(id) {
+    APP.visited = isVisited(id)
+      ? APP.visited.filter(x => x !== id)
+      : [...APP.visited, id];
+    saveJson(STORAGE_KEYS.visited, APP.visited);
+    smartRender("light");
+  }
+
+  function markVisited(id) {
+    if (!isVisited(id)) {
+      APP.visited = [...APP.visited, id];
+      saveJson(STORAGE_KEYS.visited, APP.visited);
+    }
+    smartRender("light");
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // SEZIONE 9 — EXPORT / IMPORT DATI
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -882,120 +912,150 @@
 
   function getSunPhaseInfo() {
     if (!APP.sunTimes?.sunset) {
-      return { clockText: "Tramonto —", phaseText: "Luce da leggere", mainText: "Sto leggendo la luce di oggi", subText: "Fra poco trovi countdown e stato tramonto.", timeText: "—" };
+      return {
+        clockText: "Tramonto —",
+        phaseText: "Luce da leggere",
+        mainText:  "Caricamento in corso",
+        subText:   "Il meteo sta arrivando.",
+        timeText:  "—"
+      };
     }
-    const now         = new Date();
-    const { sunrise, sunset } = APP.sunTimes;
-    const goldenStart = new Date(sunset.getTime() - 60 * 60000);
-    const blueEnd     = new Date(sunset.getTime() + 40 * 60000);
-    const ct = `Tramonto ${formatTime(sunset)}`;
-    if (now < sunrise)     return { clockText: ct, phaseText: "Prima dell'alba",       mainText: "Luce ancora chiusa",                    subText: "La giornata deve ancora aprirsi. Per spot alba, stai già guardando la finestra giusta.", timeText: formatCountdown(getMinutesDiff(now, sunrise)) };
-    if (now < goldenStart) return { clockText: ct, phaseText: "Prima della golden hour", mainText: "La luce migliore arriva più tardi",   subText: "Hai ancora margine. Inizia a muoverti quando la luce comincia a scaldarsi.", timeText: formatCountdown(getMinutesDiff(now, goldenStart)) };
-    if (now < sunset)      return { clockText: ct, phaseText: "Golden hour in corso",  mainText: "Se vuoi il tramonto, questo è il momento", subText: "La luce è nella fascia giusta. Adesso conviene già essere sul posto.", timeText: formatCountdown(getMinutesDiff(now, sunset)) };
-    if (now < blueEnd)     return { clockText: ct, phaseText: "Blue hour",             mainText: "Il sole è appena sceso",                subText: "Hai ancora una finestra breve e molto bella per skyline e luci.", timeText: formatCountdown(getMinutesDiff(now, blueEnd)) };
-    return { clockText: ct, phaseText: "Dopo il tramonto", mainText: "La finestra serale è finita", subText: "Guarda già domani o prepara una partenza all'alba.", timeText: "chiuso" };
+
+    const now    = new Date();
+    const sunset = APP.sunTimes.sunset instanceof Date ? APP.sunTimes.sunset : new Date(APP.sunTimes.sunset);
+    const sunrise = APP.sunTimes.sunrise instanceof Date ? APP.sunTimes.sunrise : (APP.sunTimes.sunrise ? new Date(APP.sunTimes.sunrise) : null);
+
+    const diffMin = getMinutesDiff(now, sunset);
+    const clockText = `Tramonto ${formatTime(sunset)}`;
+
+    let phaseText, mainText, subText, timeText;
+
+    if (sunrise && now < sunrise) {
+      const minsToSunrise = getMinutesDiff(now, sunrise);
+      phaseText = "Notte / Pre-alba";
+      mainText  = "Prima dell'alba";
+      subText   = `Alba alle ${formatTime(sunrise)}`;
+      timeText  = formatCountdown(minsToSunrise);
+    } else if (diffMin > 90) {
+      phaseText = "Giorno pieno";
+      mainText  = "Giornata in corso";
+      subText   = `Tramonto fra ${formatCountdown(diffMin)}`;
+      timeText  = formatCountdown(diffMin);
+    } else if (diffMin > 30) {
+      phaseText = "Golden hour vicina";
+      mainText  = "La luce si fa interessante";
+      subText   = `Tramonto fra ${formatCountdown(diffMin)} — inizia a muoverti`;
+      timeText  = formatCountdown(diffMin);
+    } else if (diffMin > 0) {
+      phaseText = "🔥 Golden hour";
+      mainText  = "Adesso — luce al massimo";
+      subText   = `Tramonto fra ${formatCountdown(diffMin)} — vai subito`;
+      timeText  = formatCountdown(diffMin);
+    } else {
+      phaseText = "Tramonto passato";
+      mainText  = "Luce serale residua";
+      subText   = `Tramontato alle ${formatTime(sunset)}`;
+      timeText  = "Tramontato";
+    }
+
+    return { clockText, phaseText, mainText, subText, timeText };
   }
 
-  // ── SUN PHASE TIMER: render iniziale solo, countdown gestito da UI ──────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SEZIONE 11 — METEO
+  // ═══════════════════════════════════════════════════════════════════════════
+
   function startSunsetCountdown() {
     if (APP.sunsetTimer) clearInterval(APP.sunsetTimer);
-    if (window.UI?.renderSunPhase) {
-      window.UI.renderSunPhase(APP);
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 11 — WEATHER LOADING  (+ auto-refresh ogni 5 minuti)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  function getNext12Hours(hourly, marineHourly) {
-    if (!hourly?.time) return [];
-    const now = new Date();
-    return hourly.time
-      .map((time, i) => ({
-        date:          new Date(time),
-        temp:          hourly.temperature_2m?.[i]            ?? 0,
-        wind:          hourly.wind_speed_10m?.[i]            ?? 0,
-        windDir:       hourly.wind_direction_10m?.[i]        ?? 0,
-        gust:          hourly.wind_gusts_10m?.[i]            ?? 0,
-        rain:          hourly.precipitation_probability?.[i] ?? 0,
-        cloud:         hourly.cloud_cover?.[i]               ?? 0,
-        waveHeight:    marineHourly?.wave_height?.[i]        ?? 0,
-        waveDirection: marineHourly?.wave_direction?.[i]     ?? 0,
-        wavePeriod:    marineHourly?.wave_period?.[i]        ?? 0
-      }))
-      .filter(item => item.date.getTime() >= now.getTime() - 30 * 60 * 1000)
-      .slice(0, 12);
+    APP.sunsetTimer = setInterval(() => {
+      if (window.UI?.renderSunPhase) window.UI.renderSunPhase(APP);
+    }, 60000);
+    if (window.UI?.renderSunPhase) window.UI.renderSunPhase(APP);
   }
 
   async function loadWeather() {
-    try {
-      const lat = APP_SPOTS.center?.[0] || 45.885;
-      const lon = APP_SPOTS.center?.[1] || 10.842;
-      const [forecastRes, marineRes] = await Promise.all([
-        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,precipitation_probability&daily=sunrise,sunset&forecast_days=2&timezone=auto`),
-        fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&current=wave_height,wave_direction,wave_period&hourly=wave_height,wave_direction,wave_period&timezone=auto`)
-      ]);
-      const forecast = await forecastRes.json();
-      const marine   = await marineRes.json();
-      const temp    = forecast?.current?.temperature_2m     ?? 0;
-      const wind    = forecast?.current?.wind_speed_10m     ?? 0;
-      const windDir = forecast?.current?.wind_direction_10m ?? 0;
-      const gust    = forecast?.current?.wind_gusts_10m     ?? 0;
-      const cloud   = forecast?.current?.cloud_cover        ?? 0;
-      const now = new Date();
-      const idx = (forecast?.hourly?.time || []).findIndex(t => {
-        const d = new Date(t);
-        return d.getHours() === now.getHours() && d.toDateString() === now.toDateString();
-      });
-      const rain = idx >= 0 ? (forecast?.hourly?.precipitation_probability?.[idx] ?? 0) : (forecast?.hourly?.precipitation_probability?.[0] ?? 0);
-      APP.sunTimes      = { sunrise: parseSunTime(forecast?.daily?.sunrise?.[0]), sunset: parseSunTime(forecast?.daily?.sunset?.[0]) };
-      let headline, advice;
-      const _h = now.getHours();
-      const _pick = arr => arr[Math.floor(Math.random() * arr.length)];
+    const coords = APP_SPOTS.weatherCoords || APP_SPOTS.center;
+    if (!coords) return;
+    const [lat, lon] = coords;
 
-      if (rain >= 70) {
-        headline = "Pioggia in arrivo";
-        advice   = _pick(["Meglio restare al coperto o scegliere spot riparati.", "Giornata difficile — tieni un piano B al chiuso.", "Non è il momento per spot esposti."]);
-      } else if (rain >= 45) {
-        headline = "Pioggia possibile";
-        advice   = _pick(["Portati un layer impermeabile — potrebbe piovere.", "Fattibile, ma tieniti pronto a cambiare programma.", "Giornata incerta: scegli spot flessibili."]);
-      } else if (wind >= 40) {
-        headline = "Vento forte";
-        advice   = _pick(["Evita punti esposti — le raffiche sono serie.", "Stai lontano dalle creste oggi.", "Condizioni dure per chi sta fermo: meglio attività dinamiche."]);
-      } else if (wind >= 28) {
-        headline = "Vento sostenuto";
-        advice   = _pick(["Qualche disturbo in quota — scegli spot più riparati.", "Fattibile, ma non ideale per panorami aperti.", "Va bene per il movimento, meno per stare fermi."]);
-      } else if (cloud <= 25 && rain < 20) {
-        if (_h >= 16 && _h < 20) {
-          headline = "Luce ottima ora";
-          advice   = _pick(["Vai ora — la luce è quella giusta per i posti migliori.", "Finestra eccellente per tramonti e panorami. Non aspettare.", "Momento perfetto: cielo pulito e luce dorata."]);
-        } else if (_h >= 5 && _h < 9) {
-          headline = "Alba pulita";
-          advice   = _pick(["Se sei già sveglio, vale uscire — la luce è bellissima.", "Finestra d'alba interessante: cielo libero.", "Mattina limpida: ottimo per i primi spot della giornata."]);
-        } else {
-          headline = "Giornata pulita";
-          advice   = _pick(["Buona visibilità ovunque — scegli il posto che vuoi.", "Condizioni solide per tutta la giornata.", "Cielo libero: approfitta e muoviti."]);
-        }
-      } else if (cloud <= 60 && rain < 30) {
-        headline = "Condizioni discrete";
-        advice   = _pick(["Non perfetto, ma ci si può lavorare.", "Qualche nuvola, niente di bloccante — vai.", "Accettabile: pianifica e non aspettarti il massimo."]);
-      } else if (cloud > 80 && rain < 20) {
-        headline = "Coperto ma asciutto";
-        advice   = _pick(["Grigio ma senza pioggia — ok per trekking e natura.", "Luce piatta, buona per foreste e percorsi.", "Non ideale per panorami, ottimo per attività fisiche."]);
-      } else {
-        headline = "Meteo neutro";
-        advice   = _pick(["Niente di speciale oggi — scegli in base a cosa cerchi.", "Condizioni nella media: niente che spinga in una direzione.", "Giornata nella norma: dipende da quanto vuoi spingerti."]);
-      }
-      APP.weatherData   = { temp, wind, windDir, gust, cloud, rain, period: currentPeriod(), headline, advice };
+    try {
+      const [meteoRes, marineRes] = await Promise.all([
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,windspeed_10m,winddirection_10m,windgusts_10m,cloudcover,precipitation_probability&hourly=temperature_2m,windspeed_10m,precipitation_probability,cloudcover&forecast_days=1&timezone=auto`),
+        fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&current=wave_height,wave_direction,wave_period&timezone=auto`).catch(() => null)
+      ]);
+
+      if (!meteoRes.ok) throw new Error("Meteo non disponibile");
+      const meteo = await meteoRes.json();
+      const c     = meteo.current;
+
+      APP.weatherData = {
+        temp:     c.temperature_2m,
+        wind:     c.windspeed_10m,
+        windDir:  c.winddirection_10m,
+        gust:     c.windgusts_10m,
+        cloud:    c.cloudcover,
+        rain:     c.precipitation_probability,
+        headline: c.cloudcover < 30 && c.precipitation_probability < 20
+          ? "Cielo sereno — ottima giornata"
+          : c.precipitation_probability >= 60
+          ? "Pioggia probabile — scegli spot coperti"
+          : c.cloudcover >= 75
+          ? "Nuvoloso ma stabile"
+          : "Condizioni miste",
+        advice: c.windspeed_10m >= 35
+          ? "vento forte, evita quote alte"
+          : c.precipitation_probability >= 60
+          ? "porta impermeabile"
+          : c.cloudcover <= 25
+          ? "luce ottima per foto"
+          : "giornata standard"
+      };
+
       APP._weatherStamp = Date.now();
-      APP.marineData    = { waveHeight: marine?.current?.wave_height ?? 0, waveDirection: marine?.current?.wave_direction ?? 0, wavePeriod: marine?.current?.wave_period ?? 0 };
-      APP.hourlyData    = getNext12Hours(forecast.hourly, marine.hourly);
-      saveWeatherCache(); // salva in cache dopo fetch riuscito
+
+      // Marine
+      if (marineRes?.ok) {
+        const marine = await marineRes.json();
+        const mc = marine.current;
+        APP.marineData = mc ? {
+          waveHeight:    mc.wave_height,
+          waveDirection: mc.wave_direction,
+          wavePeriod:    mc.wave_period
+        } : null;
+      }
+
+      // Hourly
+      if (meteo.hourly) {
+        const times = meteo.hourly.time || [];
+        APP.hourlyData = times.slice(0, 12).map((t, i) => ({
+          date:  new Date(t),
+          temp:  meteo.hourly.temperature_2m?.[i] ?? 0,
+          wind:  meteo.hourly.windspeed_10m?.[i]  ?? 0,
+          rain:  meteo.hourly.precipitation_probability?.[i] ?? 0,
+          cloud: meteo.hourly.cloudcover?.[i] ?? 0
+        }));
+      }
+
+      // Sun times via sunrise-sunset.org
+      try {
+        const sunRes = await fetch(`https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&formatted=0`);
+        if (sunRes.ok) {
+          const sun = await sunRes.json();
+          if (sun.results) {
+            APP.sunTimes = {
+              sunrise: parseSunTime(sun.results.sunrise),
+              sunset:  parseSunTime(sun.results.sunset)
+            };
+          }
+        }
+      } catch { /* sun times non critici */ }
+
+      saveWeatherCache();
+
     } catch {
       APP.weatherData = null; APP._weatherStamp = null; APP.marineData = null; APP.hourlyData = []; APP.sunTimes = null;
     }
-    smartRender("light"); // render leggero dopo fetch: evita refresh completo
+    smartRender("light");
     startSunsetCountdown();
   }
 
@@ -1004,7 +1064,7 @@
     if (APP._weatherRefreshTimer) clearInterval(APP._weatherRefreshTimer);
     APP._weatherRefreshTimer = setInterval(() => {
       loadWeather();
-    }, 5 * 60 * 1000); // 5 minuti
+    }, 5 * 60 * 1000);
   }
 
   // ── CACHE METEO ────────────────────────────────────────────────────────────
@@ -1023,7 +1083,7 @@
         sunTimes:    sunTimesRaw
       };
       localStorage.setItem(STORAGE_KEYS.weatherCache, JSON.stringify(cache));
-    } catch { /* silenzioso: la cache è opzionale */ }
+    } catch { /* silenzioso */ }
   }
 
   function loadWeatherFromCache() {
@@ -1033,7 +1093,6 @@
       const cache = JSON.parse(raw);
       if (!cache || !cache.timestamp || !cache.weatherData) return false;
       if (cache.version !== 1) return false;
-      // Valida: max 3 ore
       if (Date.now() - cache.timestamp > 3 * 60 * 60 * 1000) return false;
       APP.weatherData   = cache.weatherData;
       APP.marineData    = cache.marineData  || null;
@@ -1065,7 +1124,6 @@
       if (!raw) return false;
       const pos = JSON.parse(raw);
       if (!pos || !pos.lat || !pos.lon || !pos.timestamp) return false;
-      // Valida: max 2 ore
       if (Date.now() - pos.timestamp > 2 * 60 * 60 * 1000) return false;
       APP.userPos = { lat: pos.lat, lon: pos.lon, accuracy: null, altitude: pos.altitude ?? null };
       return true;
@@ -1091,32 +1149,14 @@
     });
   }
 
-  // ── Marker posizione utente: pin stile Google Maps (punto blu con alone) ──
   function createUserMarkerIcon() {
     return L.divIcon({
       className: "",
       html: `
         <div style="position:relative;width:24px;height:24px">
-          <!-- Alone esterno pulsante -->
-          <div style="
-            position:absolute;inset:-8px;
-            border-radius:50%;
-            background:rgba(45,142,255,.18);
-            animation:userPulse 2s ease-in-out infinite;
-          "></div>
-          <!-- Cerchio bianco esterno -->
-          <div style="
-            position:absolute;inset:0;
-            border-radius:50%;
-            background:#fff;
-            box-shadow:0 2px 8px rgba(0,0,0,.38);
-          "></div>
-          <!-- Punto blu interno -->
-          <div style="
-            position:absolute;inset:4px;
-            border-radius:50%;
-            background:#2d8eff;
-          "></div>
+          <div style="position:absolute;inset:-8px;border-radius:50%;background:rgba(45,142,255,.18);animation:userPulse 2s ease-in-out infinite;"></div>
+          <div style="position:absolute;inset:0;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.38);"></div>
+          <div style="position:absolute;inset:4px;border-radius:50%;background:#2d8eff;"></div>
         </div>
       `,
       iconSize:    [24, 24],
@@ -1134,7 +1174,6 @@
     renderMarkers();
   }
 
-  // Marker posizione utente — punto blu stile Google Maps, z-index alto
   function updateUserMarker() {
     if (!APP.map || typeof L === "undefined") return;
     if (!APP.userPos) {
@@ -1142,27 +1181,16 @@
       return;
     }
     const { lat, lon } = APP.userPos;
-
-    // Testo altitudine solo se disponibile
     const altText = APP.userPos.altitude != null
       ? `<div style="font-size:12px;color:#8fc9f8;margin-top:2px">${Math.round(APP.userPos.altitude)} m s.l.m.</div>`
       : "";
-
     if (!APP.userMarker) {
-      APP.userMarker = L.marker([lat, lon], {
-        icon:        createUserMarkerIcon(),
-        zIndexOffset: 2000  // sempre sopra gli altri marker
-      }).addTo(APP.map);
-      APP.userMarker.bindPopup(
-        `<div style="font-size:13px;font-weight:700">La tua posizione</div>${altText}`
-      );
+      APP.userMarker = L.marker([lat, lon], { icon: createUserMarkerIcon(), zIndexOffset: 2000 }).addTo(APP.map);
+      APP.userMarker.bindPopup(`<div style="font-size:13px;font-weight:700">La tua posizione</div>${altText}`);
     } else {
       APP.userMarker.setLatLng([lat, lon]);
       APP.userMarker.setIcon(createUserMarkerIcon());
-      // Aggiorna popup altitudine live
-      APP.userMarker.setPopupContent(
-        `<div style="font-size:13px;font-weight:700">La tua posizione</div>${altText}`
-      );
+      APP.userMarker.setPopupContent(`<div style="font-size:13px;font-weight:700">La tua posizione</div>${altText}`);
     }
   }
 
@@ -1218,7 +1246,6 @@
     document.querySelectorAll(".page").forEach(p => p.classList.toggle("active", p.id === `page-${pageName}`));
     document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.page === pageName));
 
-    // Fade in sulla pagina attiva
     if (activePage) {
       activePage.style.opacity = "0";
       requestAnimationFrame(() => {
@@ -1227,7 +1254,6 @@
       });
     }
 
-    // Mostra/nascondi search box solo su Home
     const searchWrapper = $("searchBoxWrapper");
     if (searchWrapper) {
       searchWrapper.style.display = pageName === "home" ? "" : "none";
@@ -1296,7 +1322,7 @@
 
         APP.liveGpsData = { lat, lon, speedMs, heading, altitude, timestamp: Date.now() };
         APP.userPos     = { lat, lon, accuracy: pos.coords.accuracy, altitude };
-        saveLastPosition(APP.userPos); // aggiorna cache posizione live
+        saveLastPosition(APP.userPos);
 
         APP.gpsPath.push([lat, lon]);
         if (APP.gpsLine) APP.gpsLine.setLatLngs(APP.gpsPath);
@@ -1321,9 +1347,7 @@
         APP._nearbyCache = getClosestSpots(3);
 
         if (!APP._lastUiUpdate || Date.now() - APP._lastUiUpdate > 15000) {
-          if (window.UI?.renderGpsBox) {
-            window.UI.renderGpsBox(APP, APP.liveGpsData);
-          }
+          if (window.UI?.renderGpsBox) window.UI.renderGpsBox(APP, APP.liveGpsData);
           APP._lastUiUpdate = Date.now();
         }
 
@@ -1368,7 +1392,7 @@
   }
 
   // ─── COSA FACCIO ORA ──────────────────────────────────────────────────────
-  // Mappa tempo (minuti) → distanza massima km
+
   const COSA_ORA_DIST = { 30: 5, 60: 15, 90: 30, 120: 50 };
 
   function runCosaOra() {
@@ -1377,22 +1401,23 @@
     const maxKm     = COSA_ORA_DIST[minutes] || 5;
     const hint      = $("cosaOraGpsHint");
 
-    // Mostra hint solo se GPS ha fallito dopo il tentativo automatico
     if (!APP.userPos) {
       if (hint) hint.classList.add("visible");
     } else {
       if (hint) hint.classList.remove("visible");
     }
 
-    // Filtra per distanza se posizione disponibile, altrimenti usa tutti
     let pool = getAllSpotsWithMeta();
+
+    // Escludi visitati
+    const notVisited = pool.filter(s => !APP.visited.includes(s.id));
+    if (notVisited.length > 0) pool = notVisited;
+
     if (APP.userPos) {
       const filtered = pool.filter(s => s.distance != null && s.distance <= maxKm);
       if (filtered.length > 0) pool = filtered;
-      // Se nessuno spot nel raggio, allarga silenziosamente (non blocca)
     }
 
-    // Usa ranking esistente
     const ranked = pool
       .map(s => ({ ...s, goNowScore: rankSpotForGoNow(s) }))
       .sort((a, b) => b.goNowScore - a.goNowScore);
@@ -1430,7 +1455,6 @@
     $("plannerOpenBtn")?.addEventListener("click",     () => switchPage("home"));
     $("clearPlannerBtn")?.addEventListener("click",    clearPlannerAll);
 
-    // Dropdown "Cosa faccio ora" — apri/chiudi
     const trigger = $("cosaOraTrigger");
     const menu    = $("cosaOraMenu");
     if (trigger && menu) {
@@ -1458,7 +1482,6 @@
       });
     }
 
-    // GPS silenzioso in background al click su cosaOraBtn se non disponibile
     $("cosaOraBtn")?.addEventListener("click", () => {
       if (!APP.userPos && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -1493,12 +1516,11 @@
   // SEZIONE 19 — INIT
   // ═══════════════════════════════════════════════════════════════════════════
 
-  // Light update loop: 5 secondi per sun phase reattiva, render leggero
   function startLightUpdateLoop() {
     if (APP._lightUpdateTimer) clearInterval(APP._lightUpdateTimer);
     APP._lightUpdateTimer = setInterval(() => {
       smartRender("light");
-    }, 15000); // 15 secondi
+    }, 15000);
   }
 
   function initApp() {
@@ -1506,12 +1528,10 @@
     bindEvents();
     initMap();
 
-    // Inietta CSS fade pagine
     const fadeStyle = document.createElement("style");
     fadeStyle.textContent = ".page { transition: opacity 150ms ease; }";
     document.head.appendChild(fadeStyle);
 
-    // Back button Android → home se in pagina interna, esce se già in home
     history.pushState(null, "", location.href);
     window.addEventListener("popstate", () => {
       if (APP.activePage !== "home") {
@@ -1520,26 +1540,21 @@
       }
     });
 
-    // 1) Carica cache meteo e posizione PRIMA del render → nessun loading visibile
     loadWeatherFromCache();
     loadLastPosition();
 
-    // 2) Primo render con i dati già disponibili (cache o vuoti)
     if (APP.userPos) updateUserMarker();
     smartRender("full");
 
-    // 3) Carica meteo reale in background dopo il render: non blocca UI
     setTimeout(() => loadWeather(), 0);
 
     startLightUpdateLoop();
-    startWeatherRefreshLoop(); // auto-refresh ogni 5 minuti
-    if (APP.sunTimes) startSunsetCountdown(); // avvia countdown se cache disponibile
+    startWeatherRefreshLoop();
+    if (APP.sunTimes) startSunsetCountdown();
 
-    // Stato iniziale search box (home attivo di default)
     const searchWrapper = $("searchBoxWrapper");
     if (searchWrapper) searchWrapper.style.display = "";
 
-    // GPS fresco in background — sovrascrive cache se disponibile
     if (!APP.userPos) {
       navigator.geolocation?.getCurrentPosition(
         pos => {
@@ -1549,7 +1564,7 @@
             accuracy: pos.coords.accuracy,
             altitude: typeof pos.coords.altitude === "number" ? pos.coords.altitude : null
           };
-          saveLastPosition(APP.userPos); // aggiorna cache posizione
+          saveLastPosition(APP.userPos);
           updateUserMarker();
           smartRender("light");
         },
@@ -1583,6 +1598,8 @@
     getSunPhaseInfo,
 
     isFavorite, toggleFavorite, setPlannerSlot, clearPlannerSlot, clearPlannerAll,
+
+    isVisited, toggleVisited, markVisited,
 
     exportUserData, downloadUserData, importUserData, importUserDataFromFile,
 

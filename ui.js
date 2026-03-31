@@ -7,6 +7,7 @@
   function esc(v) { return window.APP_UTILS.escapeHtml(v); }
   function isFavorite(id) { return window.APP_UTILS.isFavorite(id); }
   function favIcon(id) { return isFavorite(id) ? "❤️" : "🤍"; }
+  function isVisited(id) { return window.APP_UTILS.isVisited(id); }
 
   // ─── LABEL HELPER ─────────────────────────────────────────────────────────
 
@@ -79,7 +80,6 @@
   // QUICK GRID
   // ═══════════════════════════════════════════════════════════════════════════
 
-  // -- SMART SIGNALS - segnali contestuali per ogni spot
   function buildSmartSignals(spot, app) {
     if (!spot) return "";
     const signals = [];
@@ -94,52 +94,60 @@
     const act  = (Array.isArray(spot.activity) ? spot.activity[0] : spot.activity) || null;
     const diff = spot.difficulty || null;
 
-    // 1. Spot-specifici PRIMA - cambiano per ogni spot
-    if (tipo)                                  signals.push("\u2728 " + tipo);
-    else if (mood)                             signals.push("\uD83C\uDFAF " + mood);
+    if (tipo)                                  signals.push("✨ " + tipo);
+    else if (mood)                             signals.push("🎯 " + mood);
     else if (best) {
       const bm = {
-        alba:     "\uD83C\uDF04 ideale all'alba",
-        tramonto: "\uD83C\uDF05 ideale al tramonto",
-        giorno:   "\u2600\uFE0F ottimo di giorno",
-        mattina:  "\uD83C\uDF04 meglio la mattina",
-        sera:     "\uD83C\uDF06 bello la sera"
+        alba:     "🌄 ideale all'alba",
+        tramonto: "🌅 ideale al tramonto",
+        giorno:   "☀️ ottimo di giorno",
+        mattina:  "🌄 meglio la mattina",
+        sera:     "🌆 bello la sera"
       };
       if (bm[best]) signals.push(bm[best]);
     }
 
     if (diff && diff !== "medio" && signals.length < 4) {
-      if (diff === "facile")               signals.push("\uD83D\uDFE2 accesso facile");
-      else if (diff === "impegnativo")     signals.push("\uD83D\uDD34 impegnativo");
+      if (diff === "facile")           signals.push("🟢 accesso facile");
+      else if (diff === "impegnativo") signals.push("🔴 impegnativo");
     }
 
     if (act && signals.length < 4) {
       const am = {
-        water:    "\uD83C\uDF0A spot acqua",
-        trekking: "\uD83E\uDD7E trekking",
-        relax:    "\uD83D\uDE0C relax",
-        mtb:      "\uD83D\uDEB5 MTB"
+        water:    "🌊 spot acqua",
+        trekking: "🥾 trekking",
+        relax:    "😌 relax",
+        mtb:      "🚵 MTB"
       };
       if (am[act]) signals.push(am[act]);
     }
 
-    if (wow >= 10 && signals.length < 4)     signals.push("\uD83D\uDD25 wow massimo");
-    else if (wow >= 9 && signals.length < 4) signals.push("\uD83D\uDD25 spot forte");
+    if (wow >= 10 && signals.length < 4)     signals.push("🔥 wow massimo");
+    else if (wow >= 9 && signals.length < 4) signals.push("🔥 spot forte");
 
-    // 2. Tramonto countdown - solo se urgente
     if (sunset instanceof Date && signals.length < 4) {
       const diffMin = Math.floor((sunset - now) / 60000);
-      if (diffMin > 0 && diffMin <= 90)      signals.push("\uD83C\uDF05 tramonto tra " + diffMin + " min");
+      if (diffMin > 0 && diffMin <= 90) signals.push("🌅 tramonto tra " + diffMin + " min");
     }
 
-    // 3. Meteo - solo 1 segnale se rimane spazio
     if (w && signals.length < 4) {
-      if (w.cloud <= 30 && w.rain < 20)      signals.push("\uD83C\uDF24\uFE0F cielo pulito");
-      else if (w.wind >= 30)                 signals.push("\uD83D\uDCA8 vento forte");
-      else if (w.rain >= 50)                 signals.push("\uD83C\uDF27\uFE0F pioggia probabile");
+      if (w.cloud <= 30 && w.rain < 20)  signals.push("🌤️ cielo pulito");
+      else if (w.wind >= 30)             signals.push("💨 vento forte");
+      else if (w.rain >= 50)             signals.push("🌧️ pioggia probabile");
     }
 
-    return signals.slice(0, 4).join(" \u00B7 ");
+    return signals.slice(0, 4).join(" · ");
+  }
+
+  // ── Bottone "segna come visitato" per le quick card ───────────────────────
+  function visitedBtn(spotId) {
+    const visited = isVisited(spotId);
+    return `<button
+      class="visited-btn${visited ? " visited" : ""}"
+      data-visited-id="${esc(spotId)}"
+      type="button"
+      title="${visited ? "Rimuovi da visitati" : "Segna come visitato"}"
+    >${visited ? "✓" : "✓"}</button>`;
   }
 
   function buildTravelQuickCards(app) {
@@ -158,7 +166,7 @@
       <div class="go-now-main glass best tap" data-quick-id="${bestNow ? esc(bestNow.id) : ""}">
         <div class="go-now-main-header">
           <div class="quick-label go-now-fire">🔥 Perfetto adesso</div>
-          ${bestNow?.experience?.wow ? `<div class="mini-chip gold">Wow ${esc(String(bestNow.experience.wow))}/10</div>` : ""}
+          ${bestNow ? visitedBtn(bestNow.id) : ""}
         </div>
         <div class="go-now-title">${bestNow ? esc(bestNow.name) : "Lettura in corso…"}</div>
         ${mainSignals ? `<div class="quick-explain smart-signals">${esc(mainSignals)}</div>` : ""}
@@ -166,6 +174,7 @@
         <div class="sunset-chip-row">
           ${bestNow && getDistanceLabel(bestNow) ? `<div class="mini-chip blue">📍 ${esc(getDistanceLabel(bestNow))}</div>` : ""}
           <div class="mini-chip ${chipClassFromFit(bestNow?.weatherFit)}">${bestNow?.weatherFit?.label || "meteo in lettura"}</div>
+          ${bestNow?.experience?.wow ? `<div class="mini-chip gold">Wow ${esc(String(bestNow.experience.wow))}/10</div>` : ""}
         </div>
       </div>
     `;
@@ -175,7 +184,10 @@
       <div class="go-now-alts">
         ${alt1 ? `
           <div class="go-now-alt glass tap" data-quick-id="${esc(alt1.id)}">
-            <div class="quick-label go-now-alt-label">👌 Ottima alternativa</div>
+            <div class="go-now-alt-header">
+              <div class="quick-label go-now-alt-label">👌 Ottima alternativa</div>
+              ${visitedBtn(alt1.id)}
+            </div>
             <div class="go-now-alt-name">${esc(alt1.name)}</div>
             ${alt1Signals ? `<div class="go-now-alt-explain smart-signals">${esc(alt1Signals)}</div>` : ""}
             <div class="quick-desc go-now-alt-desc">${esc(getBestPracticalLine(alt1))}</div>
@@ -188,7 +200,10 @@
         ` : ""}
         ${alt2 ? `
           <div class="go-now-alt glass tap" data-quick-id="${esc(alt2.id)}">
-            <div class="quick-label go-now-alt-label">👍 Piano B</div>
+            <div class="go-now-alt-header">
+              <div class="quick-label go-now-alt-label">👍 Piano B</div>
+              ${visitedBtn(alt2.id)}
+            </div>
             <div class="go-now-alt-name">${esc(alt2.name)}</div>
             ${alt2Signals ? `<div class="go-now-alt-explain smart-signals">${esc(alt2Signals)}</div>` : ""}
             <div class="quick-desc go-now-alt-desc">${esc(getBestPracticalLine(alt2))}</div>
@@ -274,12 +289,26 @@
     const box = $("quickGrid");
     if (!box) return;
     box.innerHTML = app.mode === "sail" ? buildSailQuickCards(app) : buildTravelQuickCards(app);
+
+    // Click sulle card → apri dettaglio spot
     box.querySelectorAll("[data-quick-id]").forEach(card => {
-      card.addEventListener("click", () => {
+      card.addEventListener("click", e => {
+        // Non propagare se click sul bottone visitato
+        if (e.target.closest("[data-visited-id]")) return;
         const id = card.dataset.quickId;
         if (!id) return;
         const spot = APP_SPOTS.spots.find(s => s.id === id);
         if (spot) { window.APP_UTILS.showSpotDetail(spot); window.APP_UTILS.switchPage("detail"); }
+      });
+    });
+
+    // Click sul bottone ✓ visitato
+    box.querySelectorAll("[data-visited-id]").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        const id = btn.dataset.visitedId;
+        window.APP_UTILS.markVisited(id);
+        // Dopo markVisited il smartRender aggiorna automaticamente le card
       });
     });
   }
@@ -861,7 +890,7 @@
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // NEARBY PANEL — versione premium
+  // NEARBY PANEL
   // ═══════════════════════════════════════════════════════════════════════════
 
   function renderNearbyPanel(app) {
@@ -870,7 +899,6 @@
       panel = document.createElement("div");
       panel.id        = "nearbyPanel";
       panel.className = "panel glass";
-      // Inserisce dopo quickGrid, prima del meteo
       const anchor = $("quickGrid");
       if (anchor) anchor.insertAdjacentElement("afterend", panel);
       else {
@@ -879,7 +907,6 @@
       }
     }
 
-    // GPS non disponibile
     if (!app.userPos || !Number.isFinite(app.userPos.lat) || !Number.isFinite(app.userPos.lon)) {
       panel.innerHTML = `
         <div class="panel-head">
@@ -964,7 +991,6 @@
       ` : ""}
     `;
 
-    // Click spot
     panel.querySelectorAll("[data-nearby-id]").forEach(card => {
       card.addEventListener("click", () => {
         const spot = APP_SPOTS.spots.find(s => s.id === card.dataset.nearbyId);
@@ -972,13 +998,11 @@
       });
     });
 
-    // Espandi a 10
     $("nearbyExpandBtn")?.addEventListener("click", () => {
       const list = $("nearbyList");
       if (!list) return;
       list.insertAdjacentHTML("beforeend", rest.map(buildRow).join(""));
       $("nearbyExpandBtn").style.display = "none";
-      // Bind click sui nuovi card
       list.querySelectorAll("[data-nearby-id]").forEach(card => {
         if (card._bound) return;
         card._bound = true;
