@@ -474,11 +474,11 @@
   function getBestSunsetSpot() {
     const names = APP_SPOTS.topSunsetNames;
     if (names?.length) {
-      const found = names.map(n => getBaseSpots().find(s => s.name === n)).filter(Boolean);
+      const found = names.map(n => getBaseSpots().find(s => s.name === n)).filter(Boolean).filter(s => !isVisited(s.id));
       if (found.length) return found[0];
     }
     return getBaseSpots()
-      .filter(s => isEveningLike(s.light))
+      .filter(s => isEveningLike(s.light) && !isVisited(s.id))
       .sort((a, b) => (b.experience?.wow || 0) - (a.experience?.wow || 0))[0] || null;
   }
 
