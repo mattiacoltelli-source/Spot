@@ -1024,15 +1024,18 @@
         } : null;
       }
 
-      // Hourly
+      // Hourly — parte dall'ora successiva a quella corrente
       if (meteo.hourly) {
         const times = meteo.hourly.time || [];
-        APP.hourlyData = times.slice(0, 12).map((t, i) => ({
+        const now = new Date();
+        const startIdx = times.findIndex(t => new Date(t) > now);
+        const from = startIdx >= 0 ? startIdx : 0;
+        APP.hourlyData = times.slice(from, from + 12).map((t, i) => ({
           date:  new Date(t),
-          temp:  meteo.hourly.temperature_2m?.[i] ?? 0,
-          wind:  meteo.hourly.windspeed_10m?.[i]  ?? 0,
-          rain:  meteo.hourly.precipitation_probability?.[i] ?? 0,
-          cloud: meteo.hourly.cloudcover?.[i] ?? 0
+          temp:  meteo.hourly.temperature_2m?.[from + i] ?? 0,
+          wind:  meteo.hourly.windspeed_10m?.[from + i]  ?? 0,
+          rain:  meteo.hourly.precipitation_probability?.[from + i] ?? 0,
+          cloud: meteo.hourly.cloudcover?.[from + i] ?? 0
         }));
       }
 
