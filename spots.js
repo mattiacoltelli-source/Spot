@@ -27,6 +27,19 @@ window.APP_SPOTS = {
   ],
 
   // ── Top list ──────────────────────────────────────────────────────────────────
+  // FIX 11: ID usati per lookup robusto — i nomi sono mantenuti per retrocompatibilità
+  topWowIds: [
+    "core-0",
+    "core-1",
+    "core-2",
+    "core-3",
+    "core-4",
+    "core-5",
+    "core-6",
+    "core-7",
+    "core-8",
+    "core-11"
+  ],
   topWowNames: [
     "Ponta de São Lourenço",
     "Pico do Arieiro",
@@ -40,6 +53,17 @@ window.APP_SPOTS = {
     "Eira do Serrado"
   ],
 
+  topSunsetIds: [
+    "core-9",
+    "core-14",
+    "core-7",
+    "secondary-0",
+    "secondary-17",
+    "secondary-18",
+    "secondary-23",
+    "secondary-22",
+    "core-6"
+  ],
   topSunsetNames: [
     "Ponta do Pargo Lighthouse",
     "Câmara de Lobos",

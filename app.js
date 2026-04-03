@@ -22,6 +22,25 @@
     visited:      APP_SPOTS.storageKeys?.visited   || "travel_sail_visited_v1"
   };
 
+  // FIX 3: migrazione visited — se spots.js definisce una nuova chiave visited
+  // ma i dati esistono ancora sulla vecchia chiave, li migriamo automaticamente
+  (function migrateVisited() {
+    const newKey = APP_SPOTS.storageKeys?.visited;
+    const oldKey = "travel_sail_visited_v1";
+    if (newKey && newKey !== oldKey) {
+      try {
+        const alreadyMigrated = localStorage.getItem(newKey);
+        if (!alreadyMigrated) {
+          const legacy = localStorage.getItem(oldKey);
+          if (legacy) {
+            localStorage.setItem(newKey, legacy);
+            localStorage.removeItem(oldKey);
+          }
+        }
+      } catch { /* silenzioso */ }
+    }
+  })();
+
   const DEFAULT_PLANNER = { alba: null, main: null, tramonto: null };
 
   // ─── APP STATE ────────────────────────────────────────────────────────────
@@ -460,7 +479,7 @@
 
   function getMapFilteredSpots() {
     let items = getAllSpotsWithMeta();
-    if (APP.mapQuickFilter === "wow")       items = items.filter(s => (APP_SPOTS.topWowNames || []).includes(s.name));
+    if (APP.mapQuickFilter === "wow")       items = items.filter(s => (APP_SPOTS.topWowIds || APP_SPOTS.topWowNames || []).some(v => v === s.id || v === s.name)); // FIX 11: supporta ID e nomi
     if (APP.mapQuickFilter === "sunset")    items = items.filter(s => isEveningLike(s.light));
     if (APP.mapQuickFilter === "alba")      items = items.filter(s => isMorningLike(s.light));
     if (APP.mapQuickFilter === "giorno")    items = items.filter(s => !isEveningLike(s.light) && !isMorningLike(s.light));
@@ -478,9 +497,16 @@
   }
 
   function getBestSunsetSpot() {
-    const names = APP_SPOTS.topSunsetNames;
-    if (names?.length) {
-      const found = names.map(n => getBaseSpots().find(s => s.name === n)).filter(Boolean).filter(s => !isVisited(s.id));
+    // FIX 11: supporta sia topSunsetIds (ID) che topSunsetNames (nomi) per retrocompatibilità
+    const ids   = APP_SPOTS.topSunsetIds   || [];
+    const names = APP_SPOTS.topSunsetNames || [];
+    if (ids.length || names.length) {
+      const found = getBaseSpots()
+        .filter(s => ids.includes(s.id) || names.includes(s.name))
+        .filter(s => !isVisited(s.id));
+      // Mantieni l'ordine della lista originale
+      const order = ids.length ? ids : names;
+      found.sort((a, b) => order.indexOf(ids.length ? a.id : a.name) - order.indexOf(ids.length ? b.id : b.name));
       if (found.length) return found[0];
     }
     return getBaseSpots()
@@ -1145,7 +1171,7 @@
 
   function markerColor(spot) {
     if (APP.mode === "sail" && window.SAIL) return window.SAIL.getMarkerColor(spot, APP);
-    if ((APP_SPOTS.topWowNames || []).includes(spot.name)) return "#f5c451";
+    if ((APP_SPOTS.topWowIds || APP_SPOTS.topWowNames || []).some(v => v === spot.id || v === spot.name)) return "#f5c451"; // FIX 11
     if (isEveningLike(spot.light)) return "#ff9fbc";
     return "#59b6ff";
   }

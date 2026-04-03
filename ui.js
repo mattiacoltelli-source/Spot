@@ -1029,20 +1029,32 @@
       });
     });
 
-    $("nearbyExpandBtn")?.addEventListener("click", () => {
-      const list = $("nearbyList");
-      if (!list) return;
-      list.insertAdjacentHTML("beforeend", rest.map(buildRow).join(""));
-      $("nearbyExpandBtn").style.display = "none";
-      list.querySelectorAll("[data-nearby-id]").forEach(card => {
-        if (card._bound) return;
-        card._bound = true;
-        card.addEventListener("click", () => {
-          const spot = APP_SPOTS.spots.find(s => s.id === card.dataset.nearbyId);
-          if (spot) { window.APP_UTILS.showSpotDetail(spot); window.APP_UTILS.switchPage("detail"); }
+    // FIX 6: l'expand non usa più una closure locale fragile.
+    // Salviamo gli ID degli spot "rest" come data-attribute sul bottone,
+    // così sopravvivono a qualsiasi re-render del panel.
+    const expandBtn = $("nearbyExpandBtn");
+    if (expandBtn) {
+      expandBtn.dataset.restIds = JSON.stringify(rest.map(s => s.id));
+      expandBtn.addEventListener("click", () => {
+        const list = $("nearbyList");
+        if (!list) return;
+        // Recupera gli spot dagli ID salvati — funziona anche dopo un re-render
+        const savedIds  = JSON.parse(expandBtn.dataset.restIds || "[]");
+        const allMeta2  = window.APP_UTILS.getAllSpotsWithMeta();
+        const metaById2 = new Map(allMeta2.map(s => [s.id, s]));
+        const restSpots = savedIds.map(id => metaById2.get(id)).filter(Boolean);
+        list.insertAdjacentHTML("beforeend", restSpots.map(buildRow).join(""));
+        expandBtn.style.display = "none";
+        // Attacca listener solo ai nuovi card appena inseriti
+        list.querySelectorAll("[data-nearby-id]:not([data-bound])").forEach(card => {
+          card.dataset.bound = "1";
+          card.addEventListener("click", () => {
+            const spot = APP_SPOTS.spots.find(s => s.id === card.dataset.nearbyId);
+            if (spot) { window.APP_UTILS.showSpotDetail(spot); window.APP_UTILS.switchPage("detail"); }
+          });
         });
       });
-    });
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
