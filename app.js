@@ -82,7 +82,13 @@
   }
 
   function saveJson(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      // QuotaExceededError su iOS Safari o storage pieno
+      console.warn("saveJson: impossibile salvare", key, e);
+      toast("Spazio di archiviazione pieno. Alcuni dati potrebbero non essere stati salvati.");
+    }
   }
 
   function escapeHtml(str) {
@@ -1404,12 +1410,40 @@
     const maxKm     = COSA_ORA_DIST[minutes] || 5;
     const hint      = $("cosaOraGpsHint");
 
-    if (!APP.userPos) {
+    // FIX 1: se non abbiamo posizione, la chiediamo ORA e poi eseguiamo
+    // La logica GPS era prima in un secondo listener separato (bug: doppio binding)
+    if (!APP.userPos && navigator.geolocation) {
       if (hint) hint.classList.add("visible");
-    } else {
-      if (hint) hint.classList.remove("visible");
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          APP.userPos = {
+            lat:      pos.coords.latitude,
+            lon:      pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+            altitude: typeof pos.coords.altitude === "number" ? pos.coords.altitude : null
+          };
+          saveLastPosition(APP.userPos);
+          updateUserMarker();
+          APP._nearbyCache = null;
+          if (hint) hint.classList.remove("visible");
+          smartRender("light");
+          _eseguiCosaOra(minutes, maxKm);
+        },
+        () => {
+          // FIX 5: errore GPS non più silenzioso
+          if (hint) hint.classList.add("visible");
+          _eseguiCosaOra(minutes, maxKm); // esegui comunque senza filtro distanza
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+      return; // aspetta il risultato GPS prima di procedere
     }
 
+    if (hint) hint.classList.remove("visible");
+    _eseguiCosaOra(minutes, maxKm);
+  }
+
+  function _eseguiCosaOra(minutes, maxKm) {
     let pool = getAllSpotsWithMeta();
 
     // Escludi visitati
@@ -1485,26 +1519,7 @@
       });
     }
 
-    $("cosaOraBtn")?.addEventListener("click", () => {
-      if (!APP.userPos && navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          pos => {
-            APP.userPos = {
-              lat:      pos.coords.latitude,
-              lon:      pos.coords.longitude,
-              accuracy: pos.coords.accuracy,
-              altitude: typeof pos.coords.altitude === "number" ? pos.coords.altitude : null
-            };
-            saveLastPosition(APP.userPos);
-            updateUserMarker();
-            APP._nearbyCache = null;
-            smartRender("light");
-          },
-          () => {},
-          { enableHighAccuracy: true, timeout: 5000 }
-        );
-      }
-    }, true);
+    // FIX 1: logica GPS spostata dentro runCosaOra — rimosso listener duplicato con capture:true
 
     $("gpsStartBtn")?.addEventListener("click", startGPSRoute);
     $("gpsStopBtn")?.addEventListener("click",  stopGPSRoute);
@@ -1521,8 +1536,25 @@
 
   function startLightUpdateLoop() {
     if (APP._lightUpdateTimer) clearInterval(APP._lightUpdateTimer);
+
+    // FIX 7: non aggiornare se la pagina è in background (risparmio batteria su mobile)
+    // Aggiorniamo solo il countdown tramonto con textContent diretto se siamo in home,
+    // il render completo scatta solo se qualcosa è effettivamente cambiato
+    let _lastHour = -1;
+
     APP._lightUpdateTimer = setInterval(() => {
-      smartRender("light");
+      if (document.hidden) return; // tab/app in background: salta
+
+      const currentHour = new Date().getHours();
+      // Render leggero solo se l'ora è cambiata (periodo luce potenzialmente diverso)
+      // oppure ogni 60 secondi comunque per aggiornare il countdown tramonto
+      if (currentHour !== _lastHour) {
+        _lastHour = currentHour;
+        smartRender("light");
+      } else {
+        // Aggiorna solo il countdown senza ri-renderizzare tutto il DOM
+        if (window.UI?.renderSunPhase) window.UI.renderSunPhase(APP);
+      }
     }, 15000);
   }
 
@@ -1571,7 +1603,15 @@
           updateUserMarker();
           smartRender("light");
         },
-        () => {},
+        err => {
+          // FIX 5: errore GPS non più silenzioso — informa l'utente
+          const msgs = {
+            1: "Posizione non disponibile: permesso GPS negato.",
+            2: "Posizione non disponibile: GPS non raggiungibile.",
+            3: "Posizione non disponibile: timeout GPS."
+          };
+          toast(msgs[err?.code] || "Posizione non disponibile.");
+        },
         { enableHighAccuracy: true, timeout: 8000 }
       );
     }
