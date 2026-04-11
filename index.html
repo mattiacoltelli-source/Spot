@@ -1,255 +1,1 @@
-<!doctype html>
-<html lang="it">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
-  <title>Travel & Sail Planner</title>
-
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0b0f14">
-  <link rel="apple-touch-icon" href="icon-192.png">
-
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <link rel="stylesheet" href="styles.css">
-  <script src="spots.js"></script>
-</head>
-<body>
-  <div class="app-bg"></div>
-
-  <div class="splash" id="splash">
-    <div class="splash-card">
-      <div class="splash-emoji">🗺️</div>
-      <div class="splash-title">Travel &amp; Sail Planner</div>
-      <div class="splash-sub">Guida smart per spot, giornate e attività outdoor.</div>
-      <div class="splash-bar"><div></div></div>
-    </div>
-  </div>
-
-  <div class="wrap">
-    <section class="hero">
-      <div class="hero-top">
-        <div class="eyebrow">
-          <span class="eyebrow-dot"></span>
-          <span id="eyebrowRegion">Zona attiva</span>
-        </div>
-
-        <label class="mode-switch" for="sailModeToggle">
-          <input type="checkbox" id="sailModeToggle">
-          <span class="mode-switch-track">
-            <span class="mode-switch-thumb"></span>
-          </span>
-          <span class="mode-switch-label">
-            <strong id="modeLabelMain">Travel Mode</strong>
-            <small id="modeLabelSub">Sail mode OFF</small>
-          </span>
-        </label>
-      </div>
-
-      <h1 id="heroTitle">Scopri meglio il posto.<br>Vai negli spot giusti.</h1>
-
-      <p id="heroDescription">
-        Guida travel e outdoor con mappa, spot wow, tramonti, vai ora intelligente, planner giornata e preferiti personali.
-      </p>
-
-      <div class="hero-actions">
-
-        <div class="panel glass side-actions">
-
-          <!-- Blocco "Cosa faccio ora" -->
-          <div class="cosa-ora-block">
-            <div class="cosa-ora-row">
-              <button class="btn btn-primary tap btn-large cosa-ora-main" id="cosaOraBtn" type="button">⚡ Cosa faccio ora</button>
-              <div class="cosa-ora-dropdown-wrap" id="cosaOraDropdownWrap">
-                <button class="cosa-ora-trigger tap" id="cosaOraTrigger" type="button">
-                  <span id="cosaOraSelected">30 min</span>
-                  <span class="cosa-ora-arrow">▾</span>
-                </button>
-                <div class="cosa-ora-menu glass" id="cosaOraMenu">
-                  <button class="cosa-ora-option active" data-min="30" type="button">30 min</button>
-                  <button class="cosa-ora-option" data-min="60" type="button">1h</button>
-                  <button class="cosa-ora-option" data-min="90" type="button">1h 30</button>
-                  <button class="cosa-ora-option" data-min="120" type="button">2h</button>
-                </div>
-              </div>
-            </div>
-            <div class="cosa-ora-gps-hint" id="cosaOraGpsHint">📍 Posizione non disponibile — risultati generali</div>
-          </div>
-
-          <button class="btn btn-gold tap" id="autofillPlannerBtn" type="button">📅 Pianifica giornata</button>
-        </div>
-
-        <div class="search-box glass home-only" id="searchBoxWrapper">
-          <input id="searchInput" type="text"
-            placeholder="Cerca spot, zona, attività… (es: tramonto facile)">
-          <div class="search-row">
-            <button class="btn btn-secondary tap btn-compact" id="searchBtn" type="button">Cerca</button>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <section id="page-home" class="page active">
-      <div class="stack">
-
-        <!-- 1. Vai ora + alternative -->
-        <div class="quick-grid" id="quickGrid"></div>
-
-        <!-- 2. Vicino a te (generato da ui.js in #nearbyPanel) -->
-
-        <!-- 3. Tramonto premium (generato da ui.js dentro quickGrid, già incluso) -->
-
-        <!-- 4. Meteo -->
-        <div class="panel glass">
-          <div class="panel-head">
-            <h2 id="conditionsTitle">Meteo e mood del giorno</h2>
-            <span class="tiny muted" id="conditionsSub">Travel</span>
-          </div>
-          <div class="stats-grid" id="statsGrid"></div>
-          <div id="weatherAlert" class="alert ok" style="margin-top:10px">Caricamento meteo...</div>
-        </div>
-
-        <div class="panel glass">
-          <div class="panel-head">
-            <h2 id="forecastTitle">Previsione oraria · prossime 12 ore</h2>
-            <span class="tiny muted" id="forecastSub">Lettura rapida</span>
-          </div>
-          <div class="hourly-summary">
-            <div>
-              <div class="hourly-summary-main" id="hourlySummaryMain">Sto leggendo la finestra migliore della giornata.</div>
-              <div class="hourly-summary-sub" id="hourlySummarySub">Fra poco trovi una lettura rapida delle prossime ore.</div>
-            </div>
-          </div>
-          <div class="hourly-strip" id="hourlyStrip"></div>
-        </div>
-
-        <!-- Sail only -->
-        <div class="panel glass sail-only" id="sailHomePanel">
-          <div class="panel-head">
-            <h2>Modalità rotta live</h2>
-            <span class="tiny muted">Solo Sail Mode</span>
-          </div>
-          <div class="planner-actions">
-            <button class="btn btn-primary tap" id="gpsStartBtn" type="button">Avvia rotta</button>
-            <button class="btn btn-secondary tap" id="gpsStopBtn" type="button">Ferma</button>
-            <button class="btn btn-danger tap" id="gpsResetBtn" type="button">Reset rotta</button>
-          </div>
-          <div class="stats-grid" style="margin-top:10px">
-            <div class="stat"><div class="k">Velocità</div><div class="v" id="gpsSpeed">—</div></div>
-            <div class="stat"><div class="k">Direzione</div><div class="v" id="gpsHeading">—</div></div>
-            <div class="stat"><div class="k">Distanza</div><div class="v" id="gpsDistance">—</div></div>
-            <div class="stat"><div class="k">Punti traccia</div><div class="v" id="gpsPoints">—</div></div>
-          </div>
-        </div>
-
-        <!-- 5. Planner -->
-        <div class="panel glass" id="plannerPanel">
-          <h2>Planner giornata</h2>
-          <div class="planner-box" id="plannerBox"></div>
-          <div class="planner-actions">
-            <button class="btn btn-secondary tap" id="plannerOpenBtn" type="button">Apri planner</button>
-            <button class="btn btn-danger tap" id="clearPlannerBtn" type="button">Svuota planner</button>
-          </div>
-        </div>
-
-        <!-- 6. Dati personali (generato da ui.js in #dataPanel) -->
-
-      </div>
-    </section>
-
-    <section id="page-top" class="page">
-      <div class="stack">
-        <div class="featured-panel glass">
-          <div class="featured-head">
-            <div class="featured-sub" id="topBox1Sub">I più forti del posto</div>
-            <h2 class="featured-title" id="topBox1Title">Top wow</h2>
-          </div>
-          <div id="topWowList" class="featured-scroll"></div>
-        </div>
-
-        <div class="featured-panel glass">
-          <div class="featured-head">
-            <div class="featured-sub" id="topBox2Sub">Luce serale</div>
-            <h2 class="featured-title" id="topBox2Title">Top tramonti</h2>
-          </div>
-          <div id="topSunsetList" class="featured-scroll"></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="page-map" class="page">
-      <div class="stack">
-        <div class="panel glass">
-          <h2>Filtri rapidi mappa</h2>
-          <div class="toolbar" id="mapQuickFilters"></div>
-        </div>
-
-        <div class="map-panel glass">
-          <div id="map"></div>
-          <div class="legend" id="mapLegend"></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="page-spots" class="page">
-      <div class="stack">
-        <div class="panel glass subtoolbar">
-          <h2>Filtri spot</h2>
-
-          <div id="travelFilters">
-            <div class="toolbar" id="levelChips"></div>
-            <div class="toolbar" id="lightChips"></div>
-            <div class="toolbar" id="zoneChips"></div>
-            <div class="toolbar" id="activityChips"></div>
-            <div class="toolbar" id="favoriteChips"></div>
-            <div class="toolbar" id="distanceChips"></div>
-          </div>
-
-          <div id="sailFilters" class="sail-only">
-            <div class="toolbar" id="sailChips"></div>
-          </div>
-        </div>
-
-        <div class="panel glass">
-          <h2>Spot della zona</h2>
-          <div id="resultNote" class="detail-empty" style="margin-bottom:10px">Tutti gli spot</div>
-          <div class="spot-list" id="spotList"></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="page-detail" class="page">
-      <div class="stack">
-        <div class="panel glass">
-          <h2>Dettaglio spot</h2>
-          <div id="spotDetail" class="detail-empty">
-            Tocca uno spot nella lista, nella Home, nella Top page o sulla mappa per vedere il dettaglio.
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <div class="footer-note">
-      Questa app è una guida personale intelligente. Verifica sempre meteo reale, strade, sentieri, mare, regolamenti e condizioni locali.
-    </div>
-  </div>
-
-  <nav class="bottom-nav" id="bottomNav">
-    <div class="bottom-nav-inner">
-      <button class="nav-btn active" data-page="home" type="button"><strong>Home</strong></button>
-      <button class="nav-btn" data-page="top" type="button"><strong>Top</strong></button>
-      <button class="nav-btn" data-page="map" type="button"><strong>Mappa</strong></button>
-      <button class="nav-btn" data-page="spots" type="button"><strong>Spot</strong></button>
-      <button class="nav-btn" data-page="detail" type="button"><strong>Dettaglio</strong></button>
-    </div>
-  </nav>
-
-  <div class="toast-wrap" id="toastWrap"></div>
-
-  <script src="sail.js"></script>
-  <script src="ui.js"></script>
-  <script src="app.js"></script>
-</body>
-</html>
+<!doctype html><html lang="it"><head>  <meta charset="utf-8">  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">  <title>Travel & Sail Planner</title>  <link rel="manifest" href="manifest.json">  <meta name="theme-color" content="#0b0f14">  <link rel="apple-touch-icon" href="icon-192.png">  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>  <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>  <link rel="stylesheet" href="styles.css">  <script src="spots.js"></script></head><body>  <div class="app-bg"></div>  <div class="splash" id="splash">    <div class="splash-card">      <div class="splash-emoji">🗺️</div>      <div class="splash-title">Travel &amp; Sail Planner</div>      <div class="splash-sub">Guida smart per spot, giornate e attività outdoor.</div>      <div class="splash-bar"><div></div></div>    </div>  </div>  <div class="wrap">    <section class="hero">      <div class="hero-top">        <div class="eyebrow">          <span class="eyebrow-dot"></span>          <span id="eyebrowRegion">Zona attiva</span>        </div>        <label class="mode-switch" for="sailModeToggle">          <input type="checkbox" id="sailModeToggle">          <span class="mode-switch-track">            <span class="mode-switch-thumb"></span>          </span>          <span class="mode-switch-label">            <strong id="modeLabelMain">Travel Mode</strong>            <small id="modeLabelSub">Sail mode OFF</small>          </span>        </label>      </div>      <h1 id="heroTitle">Scopri meglio il posto.<br>Vai negli spot giusti.</h1>      <p id="heroDescription">        Guida travel e outdoor con mappa, spot wow, tramonti, vai ora intelligente, planner giornata e preferiti personali.      </p>      <div class="hero-actions">        <div class="panel glass side-actions">          <!-- Blocco "Cosa faccio ora" -->          <div class="cosa-ora-block">            <div class="cosa-ora-row">              <button class="btn btn-primary tap btn-large cosa-ora-main" id="cosaOraBtn" type="button">⚡ Cosa faccio ora</button>              <div class="cosa-ora-dropdown-wrap" id="cosaOraDropdownWrap">                <button class="cosa-ora-trigger tap" id="cosaOraTrigger" type="button">                  <span id="cosaOraSelected">30 min</span>                  <span class="cosa-ora-arrow">▾</span>                </button>                <div class="cosa-ora-menu glass" id="cosaOraMenu">                  <button class="cosa-ora-option active" data-min="30" type="button">30 min</button>                  <button class="cosa-ora-option" data-min="60" type="button">1h</button>                  <button class="cosa-ora-option" data-min="90" type="button">1h 30</button>                  <button class="cosa-ora-option" data-min="120" type="button">2h</button>                </div>              </div>            </div>            <div class="cosa-ora-gps-hint" id="cosaOraGpsHint">📍 Posizione non disponibile — risultati generali</div>          </div>          <button class="btn btn-gold tap" id="autofillPlannerBtn" type="button">📅 Pianifica giornata</button>        </div>        <div class="search-box glass home-only" id="searchBoxWrapper">          <input id="searchInput" type="text"            placeholder="Cerca spot, zona, attività… (es: tramonto facile)">          <div class="search-row">            <button class="btn btn-secondary tap btn-compact" id="searchBtn" type="button">Cerca</button>          </div>        </div>      </div>    </section>    <section id="page-home" class="page active">      <div class="stack">        <!-- 1. Vai ora + alternative -->        <div class="quick-grid" id="quickGrid"></div>        <!-- 2. Vicino a te (generato da ui.js in #nearbyPanel) -->        <!-- 3. Tramonto premium (generato da ui.js dentro quickGrid, già incluso) -->        <!-- 4. Meteo -->        <div class="panel glass">          <div class="panel-head">            <h2 id="conditionsTitle">Meteo e mood del giorno</h2>            <span class="tiny muted" id="conditionsSub">Travel</span>          </div>          <div class="stats-grid" id="statsGrid"></div>          <div id="weatherAlert" class="alert ok" style="margin-top:10px">Caricamento meteo...</div>        </div>        <div class="panel glass">          <div class="panel-head">            <h2 id="forecastTitle">Previsione oraria · prossime 12 ore</h2>            <span class="tiny muted" id="forecastSub">Lettura rapida</span>          </div>          <div class="hourly-summary">            <div>              <div class="hourly-summary-main" id="hourlySummaryMain">Sto leggendo la finestra migliore della giornata.</div>              <div class="hourly-summary-sub" id="hourlySummarySub">Fra poco trovi una lettura rapida delle prossime ore.</div>            </div>          </div>          <div class="hourly-strip" id="hourlyStrip"></div>        </div>        <!-- Sail only -->        <div class="panel glass sail-only" id="sailHomePanel">          <div class="panel-head">            <h2>Modalità rotta live</h2>            <span class="tiny muted">Solo Sail Mode</span>          </div>          <div class="planner-actions">            <button class="btn btn-primary tap" id="gpsStartBtn" type="button">Avvia rotta</button>            <button class="btn btn-secondary tap" id="gpsStopBtn" type="button">Ferma</button>            <button class="btn btn-danger tap" id="gpsResetBtn" type="button">Reset rotta</button>          </div>          <div class="stats-grid" style="margin-top:10px">            <div class="stat"><div class="k">Velocità</div><div class="v" id="gpsSpeed">—</div></div>            <div class="stat"><div class="k">Direzione</div><div class="v" id="gpsHeading">—</div></div>            <div class="stat"><div class="k">Distanza</div><div class="v" id="gpsDistance">—</div></div>            <div class="stat"><div class="k">Punti traccia</div><div class="v" id="gpsPoints">—</div></div>          </div>        </div>        <!-- 5. Planner -->        <div class="panel glass" id="plannerPanel">          <h2>Planner giornata</h2>          <div class="planner-box" id="plannerBox"></div>          <div class="planner-actions">            <button class="btn btn-secondary tap" id="plannerOpenBtn" type="button">Apri planner</button>            <button class="btn btn-danger tap" id="clearPlannerBtn" type="button">Svuota planner</button>          </div>        </div>        <!-- 6. Dati personali (generato da ui.js in #dataPanel) -->      </div>    </section>    <section id="page-top" class="page">      <div class="stack">        <div class="featured-panel glass">          <div class="featured-head">            <div class="featured-sub" id="topBox1Sub">I più forti del posto</div>            <h2 class="featured-title" id="topBox1Title">Top wow</h2>          </div>          <div id="topWowList" class="featured-scroll"></div>        </div>        <div class="featured-panel glass">          <div class="featured-head">            <div class="featured-sub" id="topBox2Sub">Luce serale</div>            <h2 class="featured-title" id="topBox2Title">Top tramonti</h2>          </div>          <div id="topSunsetList" class="featured-scroll"></div>        </div>      </div>    </section>    <section id="page-map" class="page">      <div class="stack">        <div class="panel glass">          <h2>Filtri rapidi mappa</h2>          <div class="toolbar" id="mapQuickFilters"></div>        </div>        <div class="map-panel glass">          <div id="map"></div>          <div class="legend" id="mapLegend"></div>        </div>      </div>    </section>    <section id="page-spots" class="page">      <div class="stack">        <div class="panel glass subtoolbar">          <h2>Filtri spot</h2>          <div id="travelFilters">            <div class="toolbar" id="levelChips"></div>            <div class="toolbar" id="lightChips"></div>            <div class="toolbar" id="zoneChips"></div>            <div class="toolbar" id="activityChips"></div>            <div class="toolbar" id="favoriteChips"></div>            <div class="toolbar" id="distanceChips"></div>          </div>          <div id="sailFilters" class="sail-only">            <div class="toolbar" id="sailChips"></div>          </div>        </div>        <div class="panel glass">          <h2>Spot della zona</h2>          <div id="resultNote" class="detail-empty" style="margin-bottom:10px">Tutti gli spot</div>          <div class="spot-list" id="spotList"></div>        </div>      </div>    </section>    <section id="page-detail" class="page">      <div class="stack">        <div class="panel glass">          <h2>Dettaglio spot</h2>          <div id="spotDetail" class="detail-empty">            Tocca uno spot nella lista, nella Home, nella Top page o sulla mappa per vedere il dettaglio.          </div>        </div>      </div>    </section>    <div class="footer-note">      Questa app è una guida personale intelligente. Verifica sempre meteo reale, strade, sentieri, mare, regolamenti e condizioni locali.    </div>  </div>  <nav class="bottom-nav" id="bottomNav">    <div class="bottom-nav-inner">      <button class="nav-btn active" data-page="home" type="button"><strong>Home</strong></button>      <button class="nav-btn" data-page="top" type="button"><strong>Top</strong></button>      <button class="nav-btn" data-page="map" type="button"><strong>Mappa</strong></button>      <button class="nav-btn" data-page="spots" type="button"><strong>Spot</strong></button>      <button class="nav-btn" data-page="detail" type="button"><strong>Dettaglio</strong></button>    </div>  </nav>  <div class="toast-wrap" id="toastWrap"></div>  <script src="sail.js"></script>  <script src="ui.js"></script>  <script src="app.js"></script>  <!-- vConsole: hidden debug panel con trigger segreto 7 click -->  <script>    (function () {      // --- Configurazione ---      const CLICK_TARGET = 7;       // numero di click per attivare      const CLICK_TIMEOUT = 500;    // ms massimi tra un click e l'altro      // --- Init vConsole nascosta ---      const vc = new VConsole();      vc.hideSwitch();      let clickCount = 0;      let lastClickTime = 0;      let isVisible = false;      document.addEventListener('click', function () {        const now = Date.now();        if (now - lastClickTime > CLICK_TIMEOUT) {          clickCount = 0; // reset se troppo tempo        }        clickCount++;        lastClickTime = now;        if (clickCount >= CLICK_TARGET) {          clickCount = 0;          isVisible = !isVisible;          if (isVisible) {            vc.showSwitch();            console.log('[vConsole] Attivata 🔓');          } else {            vc.hideSwitch();            console.log('[vConsole] Nascosta 🔒');          }        }      });    })();  </script></body></html>
