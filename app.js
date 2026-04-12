@@ -1488,6 +1488,31 @@
     const best = ranked[0] || null;
     if (!best) { toast("Nessuno spot disponibile"); return; }
 
+    // ── DEBUG: stato interno visibile nella mini console ──────────────────
+    try {
+      const w = APP.weatherData;
+      const gps = APP.userPos
+        ? `📍 GPS OK · lat ${APP.userPos.lat.toFixed(4)} lon ${APP.userPos.lon.toFixed(4)}`
+        : "📍 GPS non disponibile — nessun filtro distanza";
+      const meteo = w
+        ? `🌤️ Meteo · ☁️ ${w.cloud}%  🌧️ ${w.rain}%  💨 ${w.wind}km/h  🌡️ ${w.temp}°C`
+        : "🌤️ Meteo non disponibile";
+      const dist = best.distance != null ? ` · ${best.distance.toFixed(1)}km` : "";
+      const fitLabel = best.weatherFit?.label || "—";
+      const top3 = ranked.slice(0, 3).map((s, i) =>
+        `  ${i + 1}. ${s.name} · score ${s.goNowScore}`
+      ).join("\n");
+
+      console.log("── ⚡ COSA FACCIO ORA ──────────────────");
+      console.log(gps);
+      console.log(meteo);
+      console.log(`⏱️ Finestra: ${minutes} min · pool: ${pool.length} spot`);
+      console.log(`🎯 Scelto: ${best.name}${dist} · score ${best.goNowScore} · meteo: ${fitLabel}`);
+      console.log(`🏆 Top 3:\n${top3}`);
+      console.log("────────────────────────────────────────");
+    } catch (e) { /* debug non blocca mai l'app */ }
+    // ── FINE DEBUG ────────────────────────────────────────────────────────
+
     showSpotDetail(best);
     switchPage("detail");
     const label = minutes < 60 ? `${minutes} min` : minutes === 60 ? "1h" : minutes === 90 ? "1h 30" : "2h";
