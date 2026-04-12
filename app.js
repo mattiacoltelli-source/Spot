@@ -708,6 +708,30 @@
       alt2 = remaining.find(s => s.id !== alt1?.id) || remaining[1] || null;
     }
 
+    // ── DEBUG: card home PERFETTO / ALTERNATIVA / PIANO B ─────────────────
+    try {
+      const levelBoost = { core: 18, secondary: 10, extra: 4 };
+      function bd(s) {
+        if (!s) return "—";
+        return `meteo:${(s.weatherFit?.score||0)*10} ora:${scoreTimeLight(s)} dist:${scoreDistance(s)} lv:${levelBoost[s.level]||0} wow:${scoreWow(s)} diff:${scoreDifficulty(s)} att:${scoreActivityPeriod(s)} ctx:${scoreWeatherContext(s)}`;
+      }
+      console.log("── 🏠 CARD HOME ────────────────────────");
+      if (best) {
+        console.log(`🔥 PERFETTO: ${best.name} · score ${best.goNowScore}`);
+        console.log(`   ${bd(best)}`);
+      }
+      if (alt1) {
+        console.log(`👌 ALTERNATIVA: ${alt1.name} · score ${alt1.goNowScore}`);
+        console.log(`   ${bd(alt1)}`);
+      }
+      if (alt2) {
+        console.log(`👍 PIANO B: ${alt2.name} · score ${alt2.goNowScore}`);
+        console.log(`   ${bd(alt2)}`);
+      }
+      console.log("────────────────────────────────────────");
+    } catch (e) { /* debug non blocca mai l'app */ }
+    // ── FINE DEBUG ────────────────────────────────────────────────────────
+
     return { best, alternatives: [alt1, alt2].filter(Boolean) };
   }
 
