@@ -1491,24 +1491,41 @@
     // ── DEBUG: stato interno visibile nella mini console ──────────────────
     try {
       const w = APP.weatherData;
+      const levelBoost = { core: 18, secondary: 10, extra: 4 };
+
       const gps = APP.userPos
         ? `📍 GPS OK · lat ${APP.userPos.lat.toFixed(4)} lon ${APP.userPos.lon.toFixed(4)}`
         : "📍 GPS non disponibile — nessun filtro distanza";
       const meteo = w
         ? `🌤️ Meteo · ☁️ ${w.cloud}%  🌧️ ${w.rain}%  💨 ${w.wind}km/h  🌡️ ${w.temp}°C`
         : "🌤️ Meteo non disponibile";
-      const dist = best.distance != null ? ` · ${best.distance.toFixed(1)}km` : "";
-      const fitLabel = best.weatherFit?.label || "—";
-      const top3 = ranked.slice(0, 3).map((s, i) =>
-        `  ${i + 1}. ${s.name} · score ${s.goNowScore}`
-      ).join("\n");
+
+      function breakdown(s) {
+        const wScore   = (s.weatherFit?.score || 0) * 10;
+        const tl       = scoreTimeLight(s);
+        const dist     = scoreDistance(s);
+        const lv       = levelBoost[s.level] || 0;
+        const wow      = scoreWow(s);
+        const diff     = scoreDifficulty(s);
+        const act      = scoreActivityPeriod(s);
+        const wCtx     = scoreWeatherContext(s);
+        return `meteo:${wScore} ora:${tl} dist:${dist} lv:${lv} wow:${wow} diff:${diff} att:${act} ctx:${wCtx}`;
+      }
+
+      const distLabel = best.distance != null ? ` · ${best.distance.toFixed(1)}km` : "";
+      const fitLabel  = best.weatherFit?.label || "—";
 
       console.log("── ⚡ COSA FACCIO ORA ──────────────────");
       console.log(gps);
       console.log(meteo);
       console.log(`⏱️ Finestra: ${minutes} min · pool: ${pool.length} spot`);
-      console.log(`🎯 Scelto: ${best.name}${dist} · score ${best.goNowScore} · meteo: ${fitLabel}`);
-      console.log(`🏆 Top 3:\n${top3}`);
+      console.log(`🎯 Scelto: ${best.name}${distLabel} · score ${best.goNowScore} · ${fitLabel}`);
+      console.log(`   ${breakdown(best)}`);
+      console.log("🏆 Top 3:");
+      ranked.slice(0, 3).forEach((s, i) => {
+        console.log(`  ${i + 1}. ${s.name} · ${s.goNowScore}`);
+        console.log(`     ${breakdown(s)}`);
+      });
       console.log("────────────────────────────────────────");
     } catch (e) { /* debug non blocca mai l'app */ }
     // ── FINE DEBUG ────────────────────────────────────────────────────────
