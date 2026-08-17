@@ -1,32 +1,7 @@
 (function () {
   "use strict";
 
-  // ─── SAIL MODULE ──────────────────────────────────────────────────────────
-  //
-  // Modulo opzionale. Se nessuno spot ha sail.enabled = true,
-  // il travel mode funziona normalmente senza attivare nulla.
-  //
-  // Struttura sail nello spot:
-  //   sail: {
-  //     enabled: true,
-  //     windMinKnots: 8,       // vento minimo utile
-  //     windMaxKnots: 22,      // vento massimo sicuro
-  //     windIdealFrom: ["NW", "N", "NE"],
-  //     waveMaxMeters: 1.5,
-  //     sailSpot: true,        // spot per navigare (vs ormeggio/relax)
-  //     nightShelter: false,   // riparo sicuro per la notte
-  //     beautifulWater: false,
-  //     topWater: false,
-  //     topSunset: false,
-  //     beautyScore: 4,        // 1-5 — valore estetico / serata
-  //     sunsetScore: 4,        // 1-5 — qualità tramonto
-  //     sailNotes: "...",
-  //     beautyNotes: "..."
-  //   }
-
   const SAIL = {};
-
-  // ─── UTILITIES ────────────────────────────────────────────────────────────
 
   function hasSailData(spot) {
     return !!(spot && spot.sail && spot.sail.enabled);
@@ -47,12 +22,8 @@
     return map[String(dir).toUpperCase()] ?? null;
   }
 
-  // Ritorna un punteggio 0-3 per la direzione del vento:
-  //   3 = entro 35° da un'ideale   → direzione ottimale
-  //   1 = entro 70° da un'ideale   → accettabile
-  //   0 = fuori da tutto            → non ideale
   function directionScore(currentDeg, list = []) {
-    if (!list.length || currentDeg == null || !isFinite(currentDeg)) return 1; // neutro se sconosciuto
+    if (!list.length || currentDeg == null || !isFinite(currentDeg)) return 1;
     let best = Infinity;
     for (const dir of list) {
       const deg = compassToDeg(dir);
@@ -63,72 +34,48 @@
     return 0;
   }
 
-  // ─── SCORE SPOT ───────────────────────────────────────────────────────────
-  //
-  // Punteggio composito 0-10.
-  //
-  // Fattori e pesi massimi:
-  //   Vento (range)     → 0-4  (perfetto / accettabile / marginale / fuori)
-  //   Direzione vento   → 0-3  (ottimale / accettabile / non ideale)
-  //   Onde              → 0-2  (ok / margine / fuori)
-  //   sailSpot bonus    → 0-1
-  //
-  // Totale massimo: 10
-
   function scoreSpot(spot, app) {
     if (!hasSailData(spot) || !app.weatherData) return null;
 
     const sail = spot.sail;
 
-    // Dati meteo — con fallback sicuro
     const windKmh    = safeNum(app.weatherData.wind);
     const windKnots  = windKmh * 0.539957;
     const windDirDeg = safeNum(app.weatherData.windDir);
     const waveHeight = safeNum(app.marineData?.waveHeight);
 
-    // Limiti configurati nello spot
     const wMin  = safeNum(sail.windMinKnots, 0);
     const wMax  = safeNum(sail.windMaxKnots, 999);
     const wMax2 = safeNum(sail.waveMaxMeters, 999);
 
     let score = 0;
 
-    // ── Vento (0-4) ──────────────────────────────────────────────────────
     if (windKnots >= wMin && windKnots <= wMax) {
-      // Finestra perfetta: bonus extra se si è nel cuore del range
       const center    = (wMin + wMax) / 2;
       const halfWidth = (wMax - wMin) / 2 || 1;
       const proximity = 1 - Math.min(Math.abs(windKnots - center) / halfWidth, 1);
-      score += 3 + proximity; // 3.0 – 4.0
+      score += 3 + proximity;
     } else if (windKnots >= wMin - 3 && windKnots < wMin) {
-      score += 1.5; // sottovento marginale
+      score += 1.5;
     } else if (windKnots > wMax && windKnots <= wMax + 5) {
-      score += 1;   // leggermente sopra il limite
+      score += 1;
     } else if (windKnots > wMax + 5) {
-      score -= 1;   // vento eccessivo: penalità
+      score -= 1;
     }
-    // vento < wMin - 3: niente punti (troppo poco per navigare)
 
-    // ── Direzione vento (0-3) ────────────────────────────────────────────
     score += directionScore(windDirDeg, sail.windIdealFrom || []);
 
-    // ── Onde (0-2) ───────────────────────────────────────────────────────
     if (waveHeight <= wMax2) {
-      // Bonus scalare: onde basse → valore pieno
       const waveFraction = wMax2 > 0 ? waveHeight / wMax2 : 0;
-      score += 2 * (1 - waveFraction * 0.5); // 1.0 – 2.0
+      score += 2 * (1 - waveFraction * 0.5);
     } else if (waveHeight <= wMax2 + 0.3) {
-      score += 0.5; // margine minimo
+      score += 0.5;
     }
-    // onde troppo alte: nessun punto
 
-    // ── Bonus sailSpot (0-1) ─────────────────────────────────────────────
     if (sail.sailSpot) score += 1;
 
     return Math.max(0, Number(score.toFixed(1)));
   }
-
-  // ─── LABEL / CLASS ────────────────────────────────────────────────────────
 
   function labelFromScore(score) {
     if (score == null) return "n/d";
@@ -144,8 +91,6 @@
     if (score >= 5)    return "gold";
     return "pink";
   }
-
-  // ─── META SPOT ────────────────────────────────────────────────────────────
 
   function getSpotSailMeta(spot, app) {
     if (!hasSailData(spot)) {
@@ -180,8 +125,6 @@
     };
   }
 
-  // ─── FILTRO SAIL MODE ─────────────────────────────────────────────────────
-
   function filterSpotForSailMode(spot, app) {
     const meta = getSpotSailMeta(spot, app);
     if (!meta.enabled) return false;
@@ -195,8 +138,6 @@
     }
   }
 
-  // ─── BEST SPOT SELECTORS ──────────────────────────────────────────────────
-
   function getBestSailSpot(app) {
     const items = (window.APP_SPOTS?.spots || [])
       .filter(hasSailData)
@@ -205,21 +146,13 @@
     return items[0] || null;
   }
 
-  // Seleziona il miglior spot per la serata / tramonto in sail mode.
-  // Bilancia tre fattori:
-  //   sunsetScore × 2   → qualità intrinseca per il tramonto
-  //   beautyScore       → valore estetico generale
-  //   score live × 0.4  → compatibilità attuale (peso ridotto: siamo in sosta, non navigando)
-  // Penalizza gli spot con score live molto basso (< 2) per evitare di suggerire
-  // posti in condizioni proibitive anche per stare ormeggiati.
-
   function getBestSailSunsetSpot(app) {
     const items = (window.APP_SPOTS?.spots || [])
       .filter(hasSailData)
       .map(spot => {
         const meta       = getSpotSailMeta(spot, app);
         const liveScore  = meta.score || 0;
-        const livePenalty = liveScore < 2 ? -3 : 0; // penalizza condizioni proibitive
+        const livePenalty = liveScore < 2 ? -3 : 0;
         const sunsetRank =
           safeNum(spot.sail?.sunsetScore) * 2 +
           safeNum(spot.sail?.beautyScore) +
@@ -231,8 +164,6 @@
     return items[0] || null;
   }
 
-  // ─── MARKER COLOR ─────────────────────────────────────────────────────────
-
   function getMarkerColor(spot, app) {
     const meta = getSpotSailMeta(spot, app);
     if (!meta.enabled)                                            return "#3c4a5d";
@@ -241,8 +172,6 @@
     if ((meta.score || 0) < 5)                                    return "#ff6b6b";
     return "#4da3ff";
   }
-
-  // ─── EXPORT ───────────────────────────────────────────────────────────────
 
   SAIL.hasSailData           = hasSailData;
   SAIL.getSpotSailMeta       = getSpotSailMeta;

@@ -22,8 +22,6 @@
     visited:      APP_SPOTS.storageKeys?.visited   || "travel_sail_visited_v1"
   };
 
-  // FIX 3: migrazione visited — se spots.js definisce una nuova chiave visited
-  // ma i dati esistono ancora sulla vecchia chiave, li migriamo automaticamente
   (function migrateVisited() {
     const newKey = APP_SPOTS.storageKeys?.visited;
     const oldKey = "travel_sail_visited_v1";
@@ -42,8 +40,6 @@
   })();
 
   const DEFAULT_PLANNER = { alba: null, main: null, tramonto: null };
-
-  // ─── APP STATE ────────────────────────────────────────────────────────────
 
   const APP = {
     mode:              loadJson(STORAGE_KEYS.mode, "travel"),
@@ -84,12 +80,7 @@
 
   window.APP = APP;
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 1 — UTILITIES DI BASE
-  // ═══════════════════════════════════════════════════════════════════════════
-
   function $(id) { return document.getElementById(id); }
-
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
 
   function loadJson(key, fallback) {
@@ -104,7 +95,6 @@
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch (e) {
-      // QuotaExceededError su iOS Safari o storage pieno
       console.warn("saveJson: impossibile salvare", key, e);
       toast("Spazio di archiviazione pieno. Alcuni dati potrebbero non essere stati salvati.");
     }
@@ -237,7 +227,6 @@
     return null;
   }
 
-  // Unico punto di ingresso render — evita chiamate duplicate
   function smartRender(type = "light") {
     if (window.UI?.smartRender) {
       window.UI.smartRender(APP, type);
@@ -246,58 +235,29 @@
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 2 — SMART SEARCH
-  // ═══════════════════════════════════════════════════════════════════════════
-
   const SEARCH_INTENT_MAP = {
     "epico":       { minWow: 9 },
     "wow":         { minWow: 9 },
     "forte":       { minWow: 8 },
     "top":         { level: "core" },
     "mega":        { minWow: 9 },
-    "mistico":     { tagMatch: "mistico" },
-    "avventura":   { tagMatch: "avventura" },
-    "iconico":     { tagMatch: "iconico" },
     "panorama":    { anyOf: [{ activity: "view" }, { tagMatch: "panorama" }] },
-    "trekking":    { activity: "trekking" },
-    "mtb":         { activity: "mtb" },
-    "bike":        { activity: "mtb" },
-    "bici":        { activity: "mtb" },
+    "spiaggia":    { activity: "spiaggia" },
+    "borgo":       { activity: "borgo" },
+    "storico":     { activity: "storico" },
+    "natura":      { activity: "natura" },
     "view":        { activity: "view" },
-    "viewpoint":   { activity: "view" },
     "belvedere":   { activity: "view" },
-    "relax":       { activity: "relax" },
-    "acqua":       { anyOf: [{ activity: "water" }, { tagMatch: "acqua" }, { tagMatch: "lago" }] },
-    "kayak":       { anyOf: [{ activity: "water" }, { tagMatch: "kayak" }] },
-    "sup":         { anyOf: [{ activity: "water" }, { tagMatch: "sup" }] },
-    "surf":        { anyOf: [{ activity: "water" }, { tagMatch: "surf" }] },
-    "nuoto":       { anyOf: [{ activity: "water" }, { tagMatch: "bagno" }] },
-    "sport acqua": { activity: "water" },
     "tramonto":    { light: "tramonto" },
     "alba":        { light: "alba" },
     "giorno":      { light: "giorno" },
-    "mattina":     { light: "alba" },
-    "sera":        { light: "tramonto" },
-    "golden":      { light: "tramonto" },
     "facile":      { difficulty: "facile" },
-    "easy":        { difficulty: "facile" },
-    "semplice":    { difficulty: "facile" },
     "medio":       { difficulty: "medio" },
     "difficile":   { difficulty: "impegnativo" },
     "impegnativo": { difficulty: "impegnativo" },
-    "serio":       { difficulty: "impegnativo" },
-    "tecnico":     { difficulty: "impegnativo" },
-    "lago":        { anyOf: [{ zone: "lago" }, { tagMatch: "lago" }] },
-    "montagna":    { zone: "montagna" },
-    "nord":        { zone: "nord" },
-    "est":         { zone: "est" },
-    "ovest":       { zone: "ovest" },
-    "sud":         { zone: "sud" },
     "vicino":      { nearMe: true },
     "vicini":      { nearMe: true },
-    "lontano":     { farMe: true },
-    "calma":       { anyOf: [{ activity: "water" }, { tagMatch: "calma" }] }
+    "lontano":     { farMe: true }
   };
 
   function evaluateConstraint(spot, c) {
@@ -358,10 +318,6 @@
     return false;
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 3 — WEATHER SUITABILITY
-  // ═══════════════════════════════════════════════════════════════════════════
-
   function getWeatherWindowFit(spot) {
     const h     = getCurrentHour();
     const light = normalizeLight((Array.isArray(spot.light) ? spot.light[0] : spot.light) || "");
@@ -390,38 +346,30 @@
     const hay    = buildHaystack(spot);
 
     if (w.rain >= 55) {
-      if (act === "relax") score += 3;
-      if (["foresta", "bosco", "verde", "grotta"].some(t => hay.includes(t))) score += 4;
-      if (act === "view" && (zone === "montagna" || zone === "ovest")) score -= 3;
+      if (act === "natura") score += 2;
+      if (["grotta", "natura"].some(t => hay.includes(t))) score += 3;
+      if (act === "view" ) score -= 2;
       if (light === "tramonto" || light === "alba") score -= 2;
     } else if (w.rain >= 30) {
-      if (act === "trekking") score -= 2;
-      if (act === "relax")    score += 1;
+      if (act === "spiaggia") score -= 2;
     }
     if (w.wind >= 38) {
-      if (zone === "montagna") score -= 5;
+      if (act === "spiaggia") score -= 5;
       if (diff === "impegnativo") score -= 3;
       if (act === "view")  score -= 2;
-      if (act === "relax") score += 1;
-      if (act === "water") score -= 5;
     } else if (w.wind >= 28) {
-      if (zone === "montagna") score -= 3;
-      if (act === "trekking" && diff === "impegnativo") score -= 2;
-      if (act === "water") score -= 3;
+      if (act === "spiaggia") score -= 3;
     } else if (w.wind <= 15) {
-      if (act === "view")  score += 1;
-      if (act === "water") score += 3;
+      if (act === "spiaggia") score += 3;
+      if (act === "view")     score += 1;
     } else if (w.wind <= 18) {
-      if (act === "view")  score += 1;
-      if (act === "water") score += 1;
+      if (act === "spiaggia") score += 1;
     }
     if (w.cloud >= 75) {
-      if (["foresta", "verde", "bosco"].some(t => hay.includes(t)) || act === "trekking") score += 2;
       if (light === "tramonto" || light === "alba") score -= 2;
     } else if (w.cloud <= 35 && w.rain < 25) {
       if (light === "alba" || light === "tramonto") score += 3;
-      if (act === "view")      score += 2;
-      if (zone === "montagna") score += 1;
+      if (act === "spiaggia" || act === "view") score += 2;
     }
     score += getWeatherWindowFit(spot);
     if ((spot.experience?.wow || 0) >= 10) score += 1;
@@ -437,10 +385,6 @@
     spot._weatherStamp = APP._weatherStamp;
     return result;
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 4 — SPOT META / FILTERING
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function getAllSpotsWithMeta() {
     return getBaseSpots().map(spot => {
@@ -479,7 +423,7 @@
 
   function getMapFilteredSpots() {
     let items = getAllSpotsWithMeta();
-    if (APP.mapQuickFilter === "wow")       items = items.filter(s => (APP_SPOTS.topWowIds || APP_SPOTS.topWowNames || []).some(v => v === s.id || v === s.name)); // FIX 11: supporta ID e nomi
+    if (APP.mapQuickFilter === "wow")       items = items.filter(s => (APP_SPOTS.topWowIds || APP_SPOTS.topWowNames || []).some(v => v === s.id || v === s.name));
     if (APP.mapQuickFilter === "sunset")    items = items.filter(s => isEveningLike(s.light));
     if (APP.mapQuickFilter === "alba")      items = items.filter(s => isMorningLike(s.light));
     if (APP.mapQuickFilter === "giorno")    items = items.filter(s => !isEveningLike(s.light) && !isMorningLike(s.light));
@@ -497,14 +441,12 @@
   }
 
   function getBestSunsetSpot() {
-    // FIX 11: supporta sia topSunsetIds (ID) che topSunsetNames (nomi) per retrocompatibilità
     const ids   = APP_SPOTS.topSunsetIds   || [];
     const names = APP_SPOTS.topSunsetNames || [];
     if (ids.length || names.length) {
       const found = getBaseSpots()
         .filter(s => ids.includes(s.id) || names.includes(s.name))
         .filter(s => !isVisited(s.id));
-      // Mantieni l'ordine della lista originale
       const order = ids.length ? ids : names;
       found.sort((a, b) => order.indexOf(ids.length ? a.id : a.name) - order.indexOf(ids.length ? b.id : b.name));
       if (found.length) return found[0];
@@ -555,7 +497,6 @@
         <div class="spot-meta">
           <span class="tag blue">${displayDistance(s.distance)}</span>
           ${s.weatherFit ? `<span class="tag ${s.weatherFit.cls}">${escapeHtml(s.weatherFit.label)}</span>` : ""}
-          ${s.altitude != null ? `<span class="tag">${s.altitude} m</span>` : ""}
         </div>
         <div class="spot-desc">${escapeHtml(s.tip || s.desc || "")}</div>
       </div>
@@ -567,10 +508,6 @@
       });
     });
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 5 — GO NOW ENGINE v2
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function scoreDistance(spot) {
     const d = spot.distance;
@@ -589,17 +526,11 @@
     if (light === "alba") {
       if (h < 5) return 10; if (h < 9) return 26; if (h < 11) return 8; return -10;
     }
-    if (lightRaw === "mattina") {
-      if (h < 8) return 8; if (h < 12) return 20; if (h < 14) return 8; return -5;
-    }
     if (light === "giorno") {
       if (h < 8) return 2; if (h < 16) return 20; if (h < 18) return 8; return -4;
     }
     if (light === "tramonto") {
       if (h < 13) return -5; if (h < 16) return 10; if (h < 20) return 26; return 8;
-    }
-    if (lightRaw === "sera") {
-      if (h < 16) return -3; if (h < 21) return 20; return 8;
     }
     return 0;
   }
@@ -627,13 +558,9 @@
     const act    = normalizeText((Array.isArray(spot.activity) ? spot.activity[0] : spot.activity) || "");
     if (act === "view"     && period === "tramonto") return 8;
     if (act === "view"     && period === "alba")     return 6;
-    if (act === "trekking" && period === "giorno")   return 5;
-    if (act === "trekking" && period === "alba")     return 4;
-    if (act === "relax"    && period === "tramonto") return 5;
-    if (act === "relax"    && period === "giorno")   return 2;
-    if (act === "water"    && period === "giorno")   return 5;
-    if (act === "mtb"      && period === "giorno")   return 5;
-    if (act === "mtb"      && period === "alba")     return 3;
+    if (act === "spiaggia" && period === "giorno")   return 6;
+    if (act === "borgo"    && period === "tramonto") return 5;
+    if (act === "natura"   && period === "giorno")   return 4;
     return 0;
   }
 
@@ -642,28 +569,20 @@
     if (!w) return 0;
     let bonus = 0;
     const act   = normalizeText((Array.isArray(spot.activity) ? spot.activity[0] : spot.activity) || "");
-    const zone  = normalizeText(spot.zone || "");
     const light = normalizeLight((Array.isArray(spot.light) ? spot.light[0] : spot.light) || "");
-    const hay   = buildHaystack(spot);
     if (w.rain >= 50) {
-      if (["foresta", "bosco", "verde", "grotta"].some(t => hay.includes(t))) bonus += 10;
-      if (act === "relax") bonus += 5;
+      if (act === "natura") bonus += 6;
       if (light === "tramonto" || light === "alba") bonus -= 6;
       if (act === "view") bonus -= 4;
     }
     if (w.wind >= 35) {
-      if (zone === "montagna") bonus -= 10;
-      if (normalizeText(spot.difficulty || "") === "impegnativo") bonus -= 5;
+      if (act === "spiaggia") bonus -= 8;
     }
-    if (w.wind <= 12 && act === "water") bonus += 8;
-    if (w.wind >= 28 && act === "water") bonus -= 12;
+    if (w.wind <= 12 && act === "spiaggia") bonus += 8;
+    if (w.wind >= 28 && act === "spiaggia") bonus -= 12;
     if (w.cloud <= 30 && w.rain < 20) {
       if (light === "tramonto" || light === "alba") bonus += 8;
       if (act === "view") bonus += 5;
-    }
-    if (w.cloud >= 85) {
-      if (light === "tramonto" || light === "alba") bonus -= 4;
-      if (act === "view") bonus -= 3;
     }
     return bonus;
   }
@@ -681,10 +600,7 @@
       return { best: window.SAIL.getBestSailSpot(APP) || null, alternatives: [] };
     }
     let pool = getAllSpotsWithMeta();
-
-    // ── Escludi spot già visitati ──────────────────────────────────────────
     const notVisited = pool.filter(s => !APP.visited.includes(s.id));
-    // Se tutti visitati, ignora il filtro e usa tutto il pool
     if (notVisited.length > 0) pool = notVisited;
 
     if (APP.level !== "all") pool = pool.filter(s => s.level === APP.level);
@@ -693,11 +609,9 @@
     const best = pool[0] || null;
     const bestLight = best ? normalizeLight((Array.isArray(best.light) ? best.light[0] : best.light) || "") : null;
 
-    // Alt1: miglior spot dopo il best (qualsiasi categoria)
     const remaining = pool.filter(s => !best || s.id !== best.id);
     const alt1 = remaining[0] || null;
 
-    // Alt2: preferisci light diversa per diversificare, fallback al 3° in classifica
     let alt2 = null;
     if (bestLight) {
       alt2 = remaining.find(s =>
@@ -708,36 +622,8 @@
       alt2 = remaining.find(s => s.id !== alt1?.id) || remaining[1] || null;
     }
 
-    // ── DEBUG: card home PERFETTO / ALTERNATIVA / PIANO B ─────────────────
-    try {
-      const levelBoost = { core: 18, secondary: 10, extra: 4 };
-      function bd(s) {
-        if (!s) return "—";
-        return `meteo:${(s.weatherFit?.score||0)*10} ora:${scoreTimeLight(s)} dist:${scoreDistance(s)} lv:${levelBoost[s.level]||0} wow:${scoreWow(s)} diff:${scoreDifficulty(s)} att:${scoreActivityPeriod(s)} ctx:${scoreWeatherContext(s)}`;
-      }
-      console.log("── 🏠 CARD HOME ────────────────────────");
-      if (best) {
-        console.log(`🔥 PERFETTO: ${best.name} · score ${best.goNowScore}`);
-        console.log(`   ${bd(best)}`);
-      }
-      if (alt1) {
-        console.log(`👌 ALTERNATIVA: ${alt1.name} · score ${alt1.goNowScore}`);
-        console.log(`   ${bd(alt1)}`);
-      }
-      if (alt2) {
-        console.log(`👍 PIANO B: ${alt2.name} · score ${alt2.goNowScore}`);
-        console.log(`   ${bd(alt2)}`);
-      }
-      console.log("────────────────────────────────────────");
-    } catch (e) { /* debug non blocca mai l'app */ }
-    // ── FINE DEBUG ────────────────────────────────────────────────────────
-
     return { best, alternatives: [alt1, alt2].filter(Boolean) };
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 6 — EXPLAIN ENGINE
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function explainGoNow(spot) {
     if (!spot) return "";
@@ -746,74 +632,47 @@
     const w       = APP.weatherData;
     const light   = normalizeLight((Array.isArray(spot.light)   ? spot.light[0]   : spot.light)   || "");
     const act     = normalizeText((Array.isArray(spot.activity) ? spot.activity[0] : spot.activity) || "");
-    const diff    = normalizeText(spot.difficulty || "");
     const h       = getCurrentHour();
     const wow     = spot.experience?.wow || 0;
 
     const fitCls = spot.weatherFit?.cls;
     if (fitCls === "green")      reasons.push("condizioni eccellenti in questo momento");
     else if (fitCls === "gold")  reasons.push("momento favorevole");
-    else if (fitCls === "pink") {
-      reasons.push(act === "relax" ? "regge bene anche con meteo incerto" : "nonostante le condizioni, vale comunque la pena");
-    }
 
     const tl = scoreTimeLight(spot);
     if (tl >= 20) {
       if (light === "tramonto" && period === "tramonto")  reasons.push("fascia di luce ideale per il tramonto");
       else if (light === "alba" && period === "alba")     reasons.push("luce perfetta per partire adesso");
-      else if (light === "giorno" && period === "giorno") reasons.push("orario giusto per questo spot");
       else reasons.push("finestra oraria ottimale");
     } else if (tl >= 8) {
       reasons.push("buon momento per andarci");
-    } else if (tl < 0) {
-      reasons.push("non è l'orario ideale, ma lo spot rimane valido");
     }
 
     if (w && reasons.length < 3) {
-      if (w.cloud <= 25 && w.rain < 15 && (light === "tramonto" || light === "alba"))
-        reasons.push("cielo pulito: tramonto potenzialmente molto forte");
-      else if (w.wind <= 12 && act === "water") reasons.push("acqua calma — condizioni perfette");
-      else if (w.wind <= 18 && act === "view")  reasons.push("vento tranquillo, ideale per stare fermi a guardare");
-      else if (w.rain >= 50 && act === "relax") reasons.push("ideale anche con la pioggia");
-      else if (w.cloud <= 30 && w.rain < 20 && act === "trekking") reasons.push("buona visibilità per il percorso");
+      if (w.wind <= 12 && act === "spiaggia") reasons.push("mare calmo — condizioni perfette");
+      else if (w.cloud <= 25 && w.rain < 15 && (light === "tramonto" || light === "alba"))
+        reasons.push("cielo pulito: luce potenzialmente molto forte");
     }
 
     if (reasons.length < 3) {
       const d = spot.distance;
       if (d != null) {
-        if (d <= 3)       reasons.push("praticamente sotto casa");
-        else if (d <= 8)  reasons.push("vicinissimo — facile da raggiungere");
-        else if (d <= 20) reasons.push("a portata di mano");
-        else if (d <= 50) reasons.push("raggiungibile senza troppi sbatti");
-        else if (d <= 120) reasons.push("vale il viaggio");
-        else reasons.push("spot forte anche se lontano");
-      } else {
-        if (spot.level === "core")           reasons.push("spot di prima fascia");
-        else if (spot.level === "secondary") reasons.push("ottima alternativa intelligente");
-      }
+        if (d <= 3)       reasons.push("praticamente a un passo");
+        else if (d <= 15) reasons.push("vicinissimo");
+        else if (d <= 50) reasons.push("raggiungibile senza troppa navigazione");
+        else reasons.push("vale la rotta più lunga");
+      } else if (spot.level === "core") reasons.push("spot di prima fascia");
     }
 
     if (reasons.length < 3) {
-      if (wow >= 10)                          reasons.push("wow factor massimo: 10/10");
-      else if (wow >= 9)                      reasons.push("resa altissima");
-      else if (diff === "facile" && wow >= 7) reasons.push("grande resa con poco sforzo");
-      else if (act === "trekking") reasons.push("buona scelta come esperienza centrale");
-      else if (act === "view")     reasons.push("alta resa visiva");
-      else if (act === "relax")    reasons.push("ottima chiusura di giornata");
-      else if (act === "water")    reasons.push("esperienza acqua consigliata");
-      else if (act === "mtb")      reasons.push("ottimo modulo bike");
-    }
-
-    if (reasons.length < 2 && h >= 17) {
-      reasons.push(diff === "facile" ? "accessibile anche partendo tardi" : "ancora gestibile per questa sera");
+      if (wow >= 10)      reasons.push("wow factor massimo: 10/10");
+      else if (wow >= 9)  reasons.push("resa altissima");
+      else if (act === "spiaggia") reasons.push("acqua e colori da non perdere");
+      else if (act === "borgo")    reasons.push("atmosfera molto bella");
     }
 
     return reasons.slice(0, 3).join(" · ");
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 7 — PLANNER BUILDER
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function sortBestPool(pool) {
     return pool.sort((a, b) => {
@@ -839,12 +698,10 @@
 
   function buildDayPlanner() {
     const hour  = getCurrentHour();
-    const albaC = bestSpotForSlot({ light: "alba",    activity: ["view", "trekking", "relax"] })
-               || bestSpotForSlot({ light: "mattina", activity: ["view", "trekking", "relax"] });
-    const mainC = bestSpotForSlot({ light: "giorno",  activity: ["trekking", "view", "relax", "mtb", "water"], exclude: [albaC?.id] })
-               || bestSpotForSlot({ activity: ["trekking", "view", "relax", "mtb", "water"], exclude: [albaC?.id] });
-    const sunC  = bestSpotForSlot({ light: "tramonto", activity: ["view", "relax"], exclude: [albaC?.id, mainC?.id] })
-               || bestSpotForSlot({ light: "sera",     activity: ["view", "relax"], exclude: [albaC?.id, mainC?.id] });
+    const albaC = bestSpotForSlot({ light: "alba",    activity: ["view", "spiaggia"] });
+    const mainC = bestSpotForSlot({ light: "giorno",  activity: ["spiaggia", "view", "natura"], exclude: [albaC?.id] })
+               || bestSpotForSlot({ activity: ["spiaggia", "view", "natura"], exclude: [albaC?.id] });
+    const sunC  = bestSpotForSlot({ light: "tramonto", activity: ["view", "borgo"], exclude: [albaC?.id, mainC?.id] });
     APP.planner = hour >= 17
       ? { alba: null, main: mainC?.id || null, tramonto: sunC?.id || mainC?.id || null }
       : hour >= 10
@@ -854,10 +711,6 @@
     renderPlannerBox();
     toast("Giornata pianificata");
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 8 — FAVORITES & PLANNER CRUD
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function isFavorite(id) { return APP.favorites.includes(id); }
 
@@ -890,10 +743,6 @@
     toast("Planner svuotato");
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 8b — VISITED CRUD
-  // ═══════════════════════════════════════════════════════════════════════════
-
   function isVisited(id) { return APP.visited.includes(id); }
 
   function toggleVisited(id) {
@@ -911,10 +760,6 @@
     }
     smartRender("light");
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 9 — EXPORT / IMPORT DATI
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function exportUserData() {
     return { version: 2, exportedAt: new Date().toISOString(), region: APP_SPOTS.region || "unknown", favorites: [...APP.favorites], planner: clone(APP.planner) };
@@ -961,10 +806,6 @@
     reader.onerror = () => toast("Errore nella lettura del file");
     reader.readAsText(file);
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 10 — SUN PHASE
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function getSunPhaseInfo() {
     if (!APP.sunTimes?.sunset) {
@@ -1017,10 +858,6 @@
     return { clockText, phaseText, mainText, subText, timeText };
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 11 — METEO
-  // ═══════════════════════════════════════════════════════════════════════════
-
   function startSunsetCountdown() {
     if (APP.sunsetTimer) clearInterval(APP.sunsetTimer);
     APP.sunsetTimer = setInterval(() => {
@@ -1059,7 +896,7 @@
           ? "Nuvoloso ma stabile"
           : "Condizioni miste",
         advice: c.windspeed_10m >= 35
-          ? "vento forte, evita quote alte"
+          ? "vento forte, valuta ancoraggi riparati"
           : c.precipitation_probability >= 60
           ? "porta impermeabile"
           : c.cloudcover <= 25
@@ -1069,7 +906,6 @@
 
       APP._weatherStamp = Date.now();
 
-      // Marine
       if (marineRes?.ok) {
         const marine = await marineRes.json();
         const mc = marine.current;
@@ -1080,7 +916,6 @@
         } : null;
       }
 
-      // Hourly — parte dall'ora successiva a quella corrente
       if (meteo.hourly) {
         const times = meteo.hourly.time || [];
         const now = new Date();
@@ -1095,7 +930,6 @@
         }));
       }
 
-      // Sun times via sunrise-sunset.org
       try {
         const sunRes = await fetch(`https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&formatted=0`);
         if (sunRes.ok) {
@@ -1118,15 +952,12 @@
     startSunsetCountdown();
   }
 
-  // Auto-refresh meteo ogni 5 minuti senza ricaricare l'app
   function startWeatherRefreshLoop() {
     if (APP._weatherRefreshTimer) clearInterval(APP._weatherRefreshTimer);
     APP._weatherRefreshTimer = setInterval(() => {
       loadWeather();
     }, 5 * 60 * 1000);
   }
-
-  // ── CACHE METEO ────────────────────────────────────────────────────────────
 
   function saveWeatherCache() {
     try {
@@ -1164,8 +995,6 @@
     } catch { return false; }
   }
 
-  // ── CACHE POSIZIONE ────────────────────────────────────────────────────────
-
   function saveLastPosition(pos) {
     try {
       localStorage.setItem(STORAGE_KEYS.lastPosition, JSON.stringify({
@@ -1189,13 +1018,9 @@
     } catch { return false; }
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 12 — MAPPA
-  // ═══════════════════════════════════════════════════════════════════════════
-
   function markerColor(spot) {
     if (APP.mode === "sail" && window.SAIL) return window.SAIL.getMarkerColor(spot, APP);
-    if ((APP_SPOTS.topWowIds || APP_SPOTS.topWowNames || []).some(v => v === spot.id || v === spot.name)) return "#f5c451"; // FIX 11
+    if ((APP_SPOTS.topWowIds || APP_SPOTS.topWowNames || []).some(v => v === spot.id || v === spot.name)) return "#f5c451";
     if (isEveningLike(spot.light)) return "#ff9fbc";
     return "#59b6ff";
   }
@@ -1227,7 +1052,7 @@
   function initMap() {
     const mapEl = $("map");
     if (!mapEl || typeof L === "undefined") return;
-    APP.map = L.map("map", { zoomControl: true, touchZoom: true, dragging: true, tap: false, tapTolerance: 15 }).setView(APP_SPOTS.center || [45.885, 10.842], APP_SPOTS.zoom || 11);
+    APP.map = L.map("map", { zoomControl: true, touchZoom: true, dragging: true, tap: false, tapTolerance: 15 }).setView(APP_SPOTS.center || [38.9, 20.3], APP_SPOTS.zoom || 8);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap" }).addTo(APP.map);
     APP.gpsLine = L.polyline([], { color: "#7dc4ff", weight: 4, opacity: 0.9 }).addTo(APP.map);
     renderMarkers();
@@ -1279,10 +1104,6 @@
     updateUserMarker();
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 13 — SPOT DETAIL / NAVIGAZIONE
-  // ═══════════════════════════════════════════════════════════════════════════
-
   function showSpotDetail(spot) {
     APP.currentSpot = spot;
     if (window.UI?.renderSpotDetail) window.UI.renderSpotDetail(APP, spot);
@@ -1293,7 +1114,7 @@
     if (!spot || !APP.map) return;
     switchPage("map");
     setTimeout(() => {
-      APP.map.setView([spot.lat, spot.lon], 13, { animate: true });
+      APP.map.setView([spot.lat, spot.lon], 11, { animate: true });
       APP.markerBySpotId.get(id)?.openPopup();
     }, 180);
     showSpotDetail(spot);
@@ -1324,10 +1145,6 @@
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 14 — MODE (TRAVEL / SAIL)
-  // ═══════════════════════════════════════════════════════════════════════════
-
   function updateModeUI() {
     const toggle = $("sailModeToggle"), main = $("modeLabelMain"), sub = $("modeLabelSub"), hero = $("heroDescription");
     const isSail = APP.mode === "sail";
@@ -1335,8 +1152,8 @@
     if (main)   main.textContent = isSail ? "Sail Mode"   : "Travel Mode";
     if (sub)    sub.textContent  = isSail ? "Sail mode ON" : "Sail mode OFF";
     if (hero)   hero.textContent = isSail
-      ? "Modalità vela attiva: vento, onde, rotta live e spot compatibili quando presenti nei dati."
-      : "Guida travel e outdoor con mappa, spot wow, tramonti, vai ora intelligente, planner giornata e preferiti personali.";
+      ? "Modalità vela attiva: filtra gli spot compatibili con vento e onde attuali."
+      : "Spiagge, borghi e punti di interesse lungo la rotta: cerca, scopri, pianifica ogni tappa.";
     document.body.classList.toggle("mode-sail", isSail);
   }
 
@@ -1347,10 +1164,6 @@
     smartRender("full");
     toast(APP.mode === "sail" ? "Sail mode attivata" : "Travel mode attiva");
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 15 — SEARCH (input)
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function searchSpot() {
     const input = $("searchInput");
@@ -1363,10 +1176,6 @@
     if (found) { showSpotDetail(found); switchPage("detail"); toast("Spot trovato"); }
     else       { switchPage("spots"); toast("Nessuno spot trovato per quella ricerca"); }
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 16 — GPS
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function startGPSRoute() {
     if (!navigator.geolocation || !APP.map) { toast("GPS non disponibile"); return; }
@@ -1432,10 +1241,6 @@
     if (window.UI?.renderGpsBox)  window.UI.renderGpsBox(APP, null);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 17 — RENDER HELPERS
-  // ═══════════════════════════════════════════════════════════════════════════
-
   function renderPlannerBox() { if (window.UI?.renderPlannerBox) window.UI.renderPlannerBox(APP); }
 
   function renderAll() { smartRender("full"); renderMarkers(); renderNearbyPage(); }
@@ -1450,8 +1255,6 @@
     toast("Ti ho scelto lo spot migliore di adesso");
   }
 
-  // ─── COSA FACCIO ORA ──────────────────────────────────────────────────────
-
   const COSA_ORA_DIST = { 30: 5, 60: 15, 90: 30, 120: 50 };
 
   function runCosaOra() {
@@ -1460,8 +1263,6 @@
     const maxKm     = COSA_ORA_DIST[minutes] || 5;
     const hint      = $("cosaOraGpsHint");
 
-    // FIX 1: se non abbiamo posizione, la chiediamo ORA e poi eseguiamo
-    // La logica GPS era prima in un secondo listener separato (bug: doppio binding)
     if (!APP.userPos && navigator.geolocation) {
       if (hint) hint.classList.add("visible");
       navigator.geolocation.getCurrentPosition(
@@ -1480,13 +1281,12 @@
           _eseguiCosaOra(minutes, maxKm);
         },
         () => {
-          // FIX 5: errore GPS non più silenzioso
           if (hint) hint.classList.add("visible");
-          _eseguiCosaOra(minutes, maxKm); // esegui comunque senza filtro distanza
+          _eseguiCosaOra(minutes, maxKm);
         },
         { enableHighAccuracy: true, timeout: 5000 }
       );
-      return; // aspetta il risultato GPS prima di procedere
+      return;
     }
 
     if (hint) hint.classList.remove("visible");
@@ -1495,8 +1295,6 @@
 
   function _eseguiCosaOra(minutes, maxKm) {
     let pool = getAllSpotsWithMeta();
-
-    // Escludi visitati
     const notVisited = pool.filter(s => !APP.visited.includes(s.id));
     if (notVisited.length > 0) pool = notVisited;
 
@@ -1512,57 +1310,11 @@
     const best = ranked[0] || null;
     if (!best) { toast("Nessuno spot disponibile"); return; }
 
-    // ── DEBUG: stato interno visibile nella mini console ──────────────────
-    try {
-      const w = APP.weatherData;
-      const levelBoost = { core: 18, secondary: 10, extra: 4 };
-
-      const gps = APP.userPos
-        ? `📍 GPS OK · lat ${APP.userPos.lat.toFixed(4)} lon ${APP.userPos.lon.toFixed(4)}`
-        : "📍 GPS non disponibile — nessun filtro distanza";
-      const meteo = w
-        ? `🌤️ Meteo · ☁️ ${w.cloud}%  🌧️ ${w.rain}%  💨 ${w.wind}km/h  🌡️ ${w.temp}°C`
-        : "🌤️ Meteo non disponibile";
-
-      function breakdown(s) {
-        const wScore   = (s.weatherFit?.score || 0) * 10;
-        const tl       = scoreTimeLight(s);
-        const dist     = scoreDistance(s);
-        const lv       = levelBoost[s.level] || 0;
-        const wow      = scoreWow(s);
-        const diff     = scoreDifficulty(s);
-        const act      = scoreActivityPeriod(s);
-        const wCtx     = scoreWeatherContext(s);
-        return `meteo:${wScore} ora:${tl} dist:${dist} lv:${lv} wow:${wow} diff:${diff} att:${act} ctx:${wCtx}`;
-      }
-
-      const distLabel = best.distance != null ? ` · ${best.distance.toFixed(1)}km` : "";
-      const fitLabel  = best.weatherFit?.label || "—";
-
-      console.log("── ⚡ COSA FACCIO ORA ──────────────────");
-      console.log(gps);
-      console.log(meteo);
-      console.log(`⏱️ Finestra: ${minutes} min · pool: ${pool.length} spot`);
-      console.log(`🎯 Scelto: ${best.name}${distLabel} · score ${best.goNowScore} · ${fitLabel}`);
-      console.log(`   ${breakdown(best)}`);
-      console.log("🏆 Top 3:");
-      ranked.slice(0, 3).forEach((s, i) => {
-        console.log(`  ${i + 1}. ${s.name} · ${s.goNowScore}`);
-        console.log(`     ${breakdown(s)}`);
-      });
-      console.log("────────────────────────────────────────");
-    } catch (e) { /* debug non blocca mai l'app */ }
-    // ── FINE DEBUG ────────────────────────────────────────────────────────
-
     showSpotDetail(best);
     switchPage("detail");
     const label = minutes < 60 ? `${minutes} min` : minutes === 60 ? "1h" : minutes === 90 ? "1h 30" : "2h";
     toast(`Spot perfetto per ${label} — eccolo`);
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 18 — EVENTS
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function bindEvents() {
     $("sailModeToggle")?.addEventListener("change", e => toggleMode(e.target.checked ? "sail" : "travel"));
@@ -1611,8 +1363,6 @@
       });
     }
 
-    // FIX 1: logica GPS spostata dentro runCosaOra — rimosso listener duplicato con capture:true
-
     $("gpsStartBtn")?.addEventListener("click", startGPSRoute);
     $("gpsStopBtn")?.addEventListener("click",  stopGPSRoute);
     $("gpsResetBtn")?.addEventListener("click", resetGPSRoute);
@@ -1622,29 +1372,18 @@
     });
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 19 — INIT
-  // ═══════════════════════════════════════════════════════════════════════════
-
   function startLightUpdateLoop() {
     if (APP._lightUpdateTimer) clearInterval(APP._lightUpdateTimer);
-
-    // FIX 7: non aggiornare se la pagina è in background (risparmio batteria su mobile)
-    // Aggiorniamo solo il countdown tramonto con textContent diretto se siamo in home,
-    // il render completo scatta solo se qualcosa è effettivamente cambiato
     let _lastHour = -1;
 
     APP._lightUpdateTimer = setInterval(() => {
-      if (document.hidden) return; // tab/app in background: salta
+      if (document.hidden) return;
 
       const currentHour = new Date().getHours();
-      // Render leggero solo se l'ora è cambiata (periodo luce potenzialmente diverso)
-      // oppure ogni 60 secondi comunque per aggiornare il countdown tramonto
       if (currentHour !== _lastHour) {
         _lastHour = currentHour;
         smartRender("light");
       } else {
-        // Aggiorna solo il countdown senza ri-renderizzare tutto il DOM
         if (window.UI?.renderSunPhase) window.UI.renderSunPhase(APP);
       }
     }, 15000);
@@ -1696,7 +1435,6 @@
           smartRender("light");
         },
         err => {
-          // FIX 5: errore GPS non più silenzioso — informa l'utente
           const msgs = {
             1: "Posizione non disponibile: permesso GPS negato.",
             2: "Posizione non disponibile: GPS non raggiungibile.",
@@ -1712,10 +1450,6 @@
       setTimeout(() => $("splash")?.classList.add("hide"), 850);
     });
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEZIONE 20 — PUBLIC API  (window.APP_UTILS)
-  // ═══════════════════════════════════════════════════════════════════════════
 
   window.APP_UTILS = {
     $, escapeHtml, normalizeText, formatTime, formatCountdown,

@@ -9,8 +9,6 @@
   function favIcon(id) { return isFavorite(id) ? "❤️" : "🤍"; }
   function isVisited(id) { return window.APP_UTILS.isVisited(id); }
 
-  // ─── LABEL HELPER ─────────────────────────────────────────────────────────
-
   function pretty(value) {
     if (!value) return "—";
     const zones = APP_SPOTS.zones || [];
@@ -21,11 +19,10 @@
     if (actEntry) return actEntry.label;
     const map = {
       core: "Top", secondary: "Belli", extra: "Extra",
-      alba: "Alba", giorno: "Giorno", tramonto: "Tramonto", mattina: "Mattina", sera: "Sera",
+      alba: "Alba", giorno: "Giorno", tramonto: "Tramonto",
       facile: "Facile", medio: "Medio", impegnativo: "Impegnativo",
-      epico: "Epico", iconico: "Iconico", mistico: "Mistico",
-      avventura: "Avventura", "relax wow": "Relax wow",
-      "grande panorama": "Grande panorama", "panorama pulito": "Panorama pulito"
+      epico: "Epico", iconico: "Iconico", elegante: "Elegante", magico: "Magico",
+      romantico: "Romantico", rilassato: "Rilassato", vivace: "Vivace", tranquillo: "Tranquillo"
     };
     return map[value] || value;
   }
@@ -48,13 +45,6 @@
     return window.APP_UTILS.displayDistance(spot.distance);
   }
 
-  function getSpotMicroSummary(spot) {
-    if (!spot) return "—";
-    if (spot.tip) return spot.tip;
-    if (spot.experience?.tipo && spot.experience?.tempo) return `${spot.experience.tipo} · ${spot.experience.tempo}`;
-    return spot.desc || "Spot disponibile.";
-  }
-
   function getBestPracticalLine(spot) {
     if (!spot) return "Sto leggendo lo spot migliore del momento.";
     const parts = [];
@@ -65,20 +55,6 @@
     if (!parts.length && spot.tip)            parts.push(spot.tip);
     return parts.slice(0, 2).join(" · ") || "Spot consigliato adesso.";
   }
-
-  function getClosestPracticalLine(spot) {
-    if (!spot) return "Attiva il GPS per leggere lo spot più vicino.";
-    const parts = [];
-    if (spot.zone)              parts.push(pretty(spot.zone));
-    if (spot.activity)          parts.push(pretty(spot.activity));
-    if (spot.experience?.tempo) parts.push(spot.experience.tempo);
-    if (parts.length) return parts.join(" · ");
-    return spot.tip || spot.desc || "Spot vicino disponibile.";
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // QUICK GRID
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function buildSmartSignals(spot, app) {
     if (!spot) return "";
@@ -100,24 +76,23 @@
       const bm = {
         alba:     "🌄 ideale all'alba",
         tramonto: "🌅 ideale al tramonto",
-        giorno:   "☀️ ottimo di giorno",
-        mattina:  "🌄 meglio la mattina",
-        sera:     "🌆 bello la sera"
+        giorno:   "☀️ ottimo di giorno"
       };
       if (bm[best]) signals.push(bm[best]);
     }
 
     if (diff && diff !== "medio" && signals.length < 4) {
-      if (diff === "facile")           signals.push("🟢 accesso facile");
-      else if (diff === "impegnativo") signals.push("🔴 impegnativo");
+      if (diff === "facile")           signals.push("🟢 facile da raggiungere");
+      else if (diff === "impegnativo") signals.push("🔴 ancoraggio esposto");
     }
 
     if (act && signals.length < 4) {
       const am = {
-        water:    "🌊 spot acqua",
-        trekking: "🥾 trekking",
-        relax:    "😌 relax",
-        mtb:      "🚵 MTB"
+        spiaggia: "🏖️ spiaggia",
+        borgo:    "🏘️ borgo",
+        storico:  "🏛️ storico",
+        natura:   "🌿 natura",
+        view:     "🔭 vista"
       };
       if (am[act]) signals.push(am[act]);
     }
@@ -139,7 +114,6 @@
     return signals.slice(0, 4).join(" · ");
   }
 
-  // ── Bottone "segna come visitato" per le quick card ───────────────────────
   function visitedBtn(spotId) {
     const visited = isVisited(spotId);
     return `<button
@@ -161,7 +135,6 @@
     const alt1Signals = alt1    ? buildSmartSignals(alt1, app)    : "";
     const alt2Signals = alt2    ? buildSmartSignals(alt2, app)    : "";
 
-    // ── Card principale "Vai ora" ──────────────────────────────────────────
     const mainCard = `
       <div class="go-now-main glass best tap" data-quick-id="${bestNow ? esc(bestNow.id) : ""}">
         <div class="go-now-main-header">
@@ -179,7 +152,6 @@
       </div>
     `;
 
-    // ── Due card alternative ───────────────────────────────────────────────
     const altCards = (alt1 || alt2) ? `
       <div class="go-now-alts">
         ${alt1 ? `
@@ -217,7 +189,6 @@
       </div>
     ` : "";
 
-    // ── Card tramonto ──────────────────────────────────────────────────────
     const sunsetCard = `
       <div class="quick-card glass sunset-card tap" data-quick-id="${bestSunset ? esc(bestSunset.id) : ""}">
         <div class="sunset-card-header">
@@ -293,10 +264,8 @@
     if (!box) return;
     box.innerHTML = app.mode === "sail" ? buildSailQuickCards(app) : buildTravelQuickCards(app);
 
-    // Click sulle card → apri dettaglio spot
     box.querySelectorAll("[data-quick-id]").forEach(card => {
       card.addEventListener("click", e => {
-        // Non propagare se click sul bottone visitato
         if (e.target.closest("[data-visited-id]")) return;
         const id = card.dataset.quickId;
         if (!id) return;
@@ -305,7 +274,6 @@
       });
     });
 
-    // Click sul bottone ✓ visitato
     box.querySelectorAll("[data-visited-id]").forEach(btn => {
       btn.addEventListener("click", e => {
         e.stopPropagation();
@@ -313,7 +281,6 @@
         const alreadyVisited = window.APP_UTILS.isVisited(id);
 
         if (!alreadyVisited) {
-          // Mostra spunta verde per 900ms poi aggiorna
           btn.classList.add("visited");
           btn.textContent = "✓";
           btn.style.pointerEvents = "none";
@@ -321,16 +288,11 @@
             window.APP_UTILS.toggleVisited(id);
           }, 900);
         } else {
-          // Rimozione immediata
           window.APP_UTILS.toggleVisited(id);
         }
       });
     });
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // STATS GRID
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function renderStatsGrid(app) {
     const box = $("statsGrid");
@@ -352,22 +314,14 @@
         <div class="stat"><div class="k">Onde</div><div class="v">${app.marineData ? Number(app.marineData.waveHeight || 0).toFixed(1) + " m" : "—"}</div></div>
       `;
     } else {
-      const altCard = (app.userPos && typeof app.userPos.altitude === "number")
-        ? `<div class="stat"><div class="k">Altitudine</div><div class="v">${Math.round(app.userPos.altitude)} m</div></div>`
-        : "";
       box.innerHTML = `
         <div class="stat"><div class="k">Temperatura</div><div class="v">${Math.round(app.weatherData.temp)}°</div></div>
         <div class="stat"><div class="k">Vento</div><div class="v">${Math.round(app.weatherData.wind)} km/h</div></div>
         <div class="stat"><div class="k">Nuvole</div><div class="v">${Math.round(app.weatherData.cloud)}%</div></div>
         <div class="stat"><div class="k">Pioggia</div><div class="v">${Math.round(app.weatherData.rain)}%</div></div>
-        ${altCard}
       `;
     }
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SUN PHASE
-  // ═══════════════════════════════════════════════════════════════════════════
 
   UI.renderSunPhase = function () {
     const data = window.APP_UTILS.getSunPhaseInfo();
@@ -398,10 +352,6 @@
     const m        = totalMin % 60;
     el.textContent = h > 0 ? `${h}h ${m}m` : `${m}m`;
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // HOURLY STRIP
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function hourlyMood(item) {
     let score = 0;
@@ -459,10 +409,6 @@
     }).join("");
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // FILTER BARS
-  // ═══════════════════════════════════════════════════════════════════════════
-
   function getAvailableZones() {
     const zones    = APP_SPOTS.zones || [];
     const spotZones = new Set((APP_SPOTS.spots || []).map(s => s.zone).filter(Boolean));
@@ -508,7 +454,6 @@
         <button class="chip ${app.level === "all"       ? "active" : ""}" data-level="all"       type="button">Tutti</button>
         <button class="chip ${app.level === "core"      ? "active" : ""}" data-level="core"      type="button">Top</button>
         <button class="chip ${app.level === "secondary" ? "active" : ""}" data-level="secondary" type="button">Belli</button>
-        <button class="chip ${app.level === "extra"     ? "active" : ""}" data-level="extra"     type="button">Extra</button>
       `;
       levelChips.querySelectorAll("[data-level]").forEach(btn => {
         btn.addEventListener("click", () => { app.level = btn.dataset.level; UI.smartRender(app, "light"); });
@@ -530,7 +475,7 @@
     if (zoneChips) {
       const zones = getAvailableZones();
       zoneChips.innerHTML =
-        `<button class="chip ${app.zone === "all" ? "active" : ""}" data-zone="all" type="button">Tutte le zone</button>` +
+        `<button class="chip ${app.zone === "all" ? "active" : ""}" data-zone="all" type="button">Tutte le tappe</button>` +
         zones.map(z => `<button class="chip ${app.zone === z.id ? "active" : ""}" data-zone="${esc(z.id)}" type="button">${esc(z.label)}</button>`).join("");
       zoneChips.querySelectorAll("[data-zone]").forEach(btn => {
         btn.addEventListener("click", () => { app.zone = btn.dataset.zone; UI.smartRender(app, "light"); });
@@ -577,9 +522,7 @@
       sailChips.innerHTML = `
         <button class="chip ${app.sailFilter === "all"       ? "active" : ""}" data-sailfilter="all"       type="button">Tutti</button>
         <button class="chip ${app.sailFilter === "compat"    ? "active" : ""}" data-sailfilter="compat"    type="button">Compatibili oggi</button>
-        <button class="chip ${app.sailFilter === "sail"      ? "active" : ""}" data-sailfilter="sail"      type="button">Vela</button>
         <button class="chip ${app.sailFilter === "night"     ? "active" : ""}" data-sailfilter="night"     type="button">Riparo notte</button>
-        <button class="chip ${app.sailFilter === "beautiful" ? "active" : ""}" data-sailfilter="beautiful" type="button">Spot belli</button>
       `;
       sailChips.querySelectorAll("[data-sailfilter]").forEach(btn => {
         btn.addEventListener("click", () => { app.sailFilter = btn.dataset.sailfilter; UI.smartRender(app, "light"); });
@@ -587,31 +530,16 @@
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // MAP LEGEND
-  // ═══════════════════════════════════════════════════════════════════════════
-
   function renderLegend(app) {
     const box = $("mapLegend");
     if (!box) return;
-    box.innerHTML = app.mode === "sail"
-      ? `
-        <div class="legend-item"><span class="legend-dot legend-blue"></span> Spot vela</div>
-        <div class="legend-item"><span class="legend-dot legend-gold"></span> Spot belli / top acqua</div>
-        <div class="legend-item"><span class="legend-dot legend-pink"></span> Spot serali</div>
-        <div class="legend-item"><span class="legend-dot" style="background:#36c275"></span> Riparo notte</div>
-      `
-      : `
-        <div class="legend-item"><span class="legend-dot legend-gold"></span> Wow</div>
-        <div class="legend-item"><span class="legend-dot legend-pink"></span> Tramonto / Sera</div>
-        <div class="legend-item"><span class="legend-dot legend-blue"></span> Alba / Altri spot</div>
-        <div class="legend-item"><span class="legend-dot" style="background:#2d8eff;border:2px solid white"></span> La tua posizione</div>
-      `;
+    box.innerHTML = `
+      <div class="legend-item"><span class="legend-dot legend-gold"></span> Wow</div>
+      <div class="legend-item"><span class="legend-dot legend-pink"></span> Tramonto / Sera</div>
+      <div class="legend-item"><span class="legend-dot legend-blue"></span> Altri spot</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#2d8eff;border:2px solid white"></span> La tua posizione</div>
+    `;
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // TOP LIST
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function renderTopLists(app) {
     const wowBox    = $("topWowList");
@@ -619,17 +547,17 @@
     if (!wowBox || !sunsetBox) return;
 
     let wowSpots = [];
-    if (APP_SPOTS.topWowNames?.length) {
-      wowSpots = APP_SPOTS.topWowNames.map(name => APP_SPOTS.spots.find(s => s.name === name)).filter(Boolean);
+    if (APP_SPOTS.topWowIds?.length) {
+      wowSpots = APP_SPOTS.topWowIds.map(id => APP_SPOTS.spots.find(s => s.id === id)).filter(Boolean);
     } else {
-      wowSpots = [...APP_SPOTS.spots].filter(s => s.experience?.wow).sort((a, b) => (b.experience?.wow || 0) - (a.experience?.wow || 0)).slice(0, 10);
+      wowSpots = [...APP_SPOTS.spots].sort((a, b) => (b.experience?.wow || 0) - (a.experience?.wow || 0)).slice(0, 10);
     }
 
     let sunsetSpots = [];
-    if (APP_SPOTS.topSunsetNames?.length) {
-      sunsetSpots = APP_SPOTS.topSunsetNames.map(name => APP_SPOTS.spots.find(s => s.name === name)).filter(Boolean);
+    if (APP_SPOTS.topSunsetIds?.length) {
+      sunsetSpots = APP_SPOTS.topSunsetIds.map(id => APP_SPOTS.spots.find(s => s.id === id)).filter(Boolean);
     } else {
-      sunsetSpots = [...APP_SPOTS.spots].filter(s => { const l = (s.light || "").toLowerCase(); return l === "tramonto" || l === "sera"; })
+      sunsetSpots = [...APP_SPOTS.spots].filter(s => { const l = (s.light || "").toLowerCase(); return l === "tramonto"; })
         .sort((a, b) => (b.experience?.wow || 0) - (a.experience?.wow || 0)).slice(0, 10);
     }
 
@@ -669,10 +597,6 @@
     });
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SPOT LIST
-  // ═══════════════════════════════════════════════════════════════════════════
-
   function renderSpotList(app) {
     const box  = $("spotList");
     const note = $("resultNote");
@@ -693,7 +617,6 @@
 
     box.innerHTML = items.map(s => {
       const fit    = s.weatherFit;
-      const sail   = s.sailMeta;
       const isCore = s.level === "core";
       const tags   = (s.tags || []).slice(0, 3);
       return `
@@ -710,7 +633,6 @@
             ${fit    ? `<span class="tag ${chipClassFromFit(fit)}">${esc(fit.label)}</span>` : ""}
             ${s.experience?.wow ? `<span class="tag gold">Wow ${esc(String(s.experience.wow))}/10</span>` : ""}
             ${s.difficulty ? `<span class="tag">${esc(pretty(s.difficulty))}</span>` : ""}
-            ${app.mode === "sail" && sail?.enabled ? `<span class="tag blue">Vela ${esc(sail.label)}</span>` : ""}
             ${tags.map(t => `<span class="tag spot-tag">${esc(t)}</span>`).join("")}
           </div>
           <div class="spot-desc">${esc(s.tip || s.desc || "")}</div>
@@ -732,10 +654,6 @@
       btn.addEventListener("click", e => { e.stopPropagation(); window.APP_UTILS.toggleFavorite(btn.dataset.favId); });
     });
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SPOT DETAIL
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function renderExperienceSection(spot) {
     const exp = spot.experience;
@@ -768,9 +686,8 @@
       <div class="detail-section"><h3>Accesso</h3>
         <div class="detail-grid">
           ${acc.difficolta ? `<div class="detail-box"><div class="k">Difficoltà</div><div class="v">${esc(pretty(acc.difficolta))}</div></div>` : ""}
-          ${acc.parcheggio ? `<div class="detail-box"><div class="k">Parcheggio</div><div class="v">${esc(acc.parcheggio)}</div></div>` : ""}
+          ${acc.parcheggio ? `<div class="detail-box"><div class="k">Ormeggio</div><div class="v">${esc(acc.parcheggio)}</div></div>` : ""}
           ${acc.walk       ? `<div class="detail-box"><div class="k">A piedi</div><div class="v">${esc(acc.walk)}</div></div>` : ""}
-          ${acc.strada     ? `<div class="detail-box"><div class="k">Strada</div><div class="v">${esc(acc.strada)}</div></div>` : ""}
         </div>
       </div>
     `;
@@ -779,7 +696,7 @@
   function renderCrowdSection(spot) {
     if (!spot.crowd) return "";
     return `
-      <div class="detail-section"><h3>Folla</h3>
+      <div class="detail-section"><h3>Affollamento</h3>
         ${spot.crowd.best  ? `<p>Meglio: ${esc(spot.crowd.best)}</p>`  : ""}
         ${spot.crowd.worst ? `<p>Peggio: ${esc(spot.crowd.worst)}</p>` : ""}
       </div>
@@ -812,7 +729,6 @@
 
     const fit  = spot.weatherFit || null;
     const dist = spot.distance   != null ? spot.distance : null;
-    const sail = spot.sailMeta   || null;
 
     box.innerHTML = `
       ${spot.image ? `
@@ -830,14 +746,12 @@
       `}
 
       <div class="detail-grid">
-        <div class="detail-box"><div class="k">Zona</div><div class="v">${esc(pretty(spot.zone))}</div></div>
+        <div class="detail-box"><div class="k">Tappa</div><div class="v">${esc(pretty(spot.zone))}</div></div>
         <div class="detail-box"><div class="k">Luce</div><div class="v">${esc(pretty(spot.light))}</div></div>
         <div class="detail-box"><div class="k">Livello</div><div class="v">${esc(pretty(spot.level))}</div></div>
         <div class="detail-box"><div class="k">Difficoltà</div><div class="v">${esc(pretty(spot.difficulty || "—"))}</div></div>
         ${fit  ? `<div class="detail-box"><div class="k">Meteo adesso</div><div class="v">${esc(fit.label)}</div></div>` : ""}
         ${dist != null ? `<div class="detail-box"><div class="k">Distanza</div><div class="v">${esc(window.APP_UTILS.displayDistance(dist))}</div></div>` : ""}
-        ${app.mode === "sail" && sail?.enabled ? `<div class="detail-box"><div class="k">Vela</div><div class="v">${esc(sail.label)}</div></div>` : ""}
-        ${spot.altitude != null ? `<div class="detail-box"><div class="k">Altitudine</div><div class="v">${Math.round(spot.altitude)} m</div></div>` : ""}
       </div>
 
       ${spot.desc ? `<div class="detail-section"><p style="margin:0;font-size:15px;line-height:1.55;color:#deebf6">${esc(spot.desc)}</p></div>` : ""}
@@ -848,13 +762,11 @@
       ${renderAccessSection(spot)}
       ${renderCrowdSection(spot)}
       ${renderArrayAsList("Quando evitare", spot.whenToAvoid)}
-      ${renderArrayAsList("Smart tips", spot.smartTips)}
+      ${renderArrayAsList("Consigli pratici", spot.smartTips)}
       ${renderSpotTags(spot)}
 
       ${spot.longDescription ? `<div class="detail-section"><h3>Dettaglio extra</h3><p>${esc(spot.longDescription)}</p></div>` : ""}
       ${spot.photoTips       ? `<div class="detail-section"><h3>Consiglio foto</h3><p>${esc(spot.photoTips)}</p></div>` : ""}
-      ${spot.weatherNote     ? `<div class="detail-section"><h3>Nota meteo</h3><p>${esc(spot.weatherNote)}</p></div>` : ""}
-      ${app.mode === "sail" && sail?.enabled ? `<div class="detail-section"><h3>Sezione vela</h3><p>${esc(sail.detailText || "Spot compatibile con modalità vela.")}</p></div>` : ""}
 
       <div class="detail-section"><h3>Azioni</h3>
         <button class="detail-visited-btn${isVisited(spot.id) ? " visited" : ""}" id="detailVisitedBtn" type="button">
@@ -885,17 +797,13 @@
     });
   };
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // PLANNER BOX
-  // ═══════════════════════════════════════════════════════════════════════════
-
   UI.renderPlannerBox = function (app) {
     const box = $("plannerBox");
     if (!box) return;
     const slots = [
-      { key: "alba",     title: "Alba / mattina",                                               hint: "Tappa iniziale della giornata." },
-      { key: "main",     title: app.mode === "sail" ? "Spot principale" : "Attività centrale",  hint: "Cuore della giornata." },
-      { key: "tramonto", title: "Tramonto / chiusura",                                          hint: "Finale forte o rilassato." }
+      { key: "alba",     title: "Alba / mattina",      hint: "Tappa iniziale della giornata." },
+      { key: "main",     title: "Tappa centrale",       hint: "Cuore della giornata." },
+      { key: "tramonto", title: "Tramonto / chiusura",  hint: "Finale forte o rilassato." }
     ];
     box.innerHTML = slots.map(slot => {
       const spot = slot.key in app.planner && app.planner[slot.key]
@@ -919,10 +827,6 @@
       btn.addEventListener("click", () => window.APP_UTILS.clearPlannerSlot(btn.dataset.clearSlot));
     });
   };
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // NEARBY PANEL
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function renderNearbyPanel(app) {
     let panel = $("nearbyPanel");
@@ -965,22 +869,10 @@
     const allMeta  = window.APP_UTILS.getAllSpotsWithMeta();
     const metaById = new Map(allMeta.map(s => [s.id, s]));
 
-    function estimateDriveTime(spot) {
-      if (spot.distance == null) return null;
-      const avgSpeed = { montagna: 25, nord: 30, est: 35, ovest: 35, sud: 40 };
-      const speed    = avgSpeed[spot.zone] || 38;
-      const min      = Math.round((spot.distance / speed) * 60);
-      if (min < 60) return `~${min} min`;
-      const h = Math.floor(min / 60);
-      const m = min % 60;
-      return m > 0 ? `~${h}h ${m}m` : `~${h}h`;
-    }
-
     function buildRow(spot) {
       const meta      = metaById.get(spot.id) || spot;
       const fit       = meta.weatherFit || null;
       const distLbl   = window.APP_UTILS.displayDistance(spot.distance);
-      const driveLbl  = estimateDriveTime(spot);
       const zoneLbl   = spot.zone     ? pretty(spot.zone)     : null;
       const actLbl    = spot.activity ? pretty(spot.activity) : null;
       const shortDesc = spot.tip || spot.desc || null;
@@ -993,8 +885,6 @@
           ${(zoneLbl || actLbl) ? `<div class="nearby-card-sub">${[zoneLbl, actLbl].filter(Boolean).map(esc).join(" · ")}</div>` : ""}
           <div class="nearby-card-badges">
             <div class="mini-chip blue">📍 ${esc(distLbl)}</div>
-            ${driveLbl ? `<div class="mini-chip">🚗 ${esc(driveLbl)}</div>` : ""}
-            ${spot.altitude != null ? `<div class="mini-chip">${Math.round(spot.altitude)} m</div>` : ""}
           </div>
           ${shortDesc ? `<div class="nearby-card-desc">${esc(shortDesc)}</div>` : ""}
         </div>
@@ -1029,23 +919,18 @@
       });
     });
 
-    // FIX 6: l'expand non usa più una closure locale fragile.
-    // Salviamo gli ID degli spot "rest" come data-attribute sul bottone,
-    // così sopravvivono a qualsiasi re-render del panel.
     const expandBtn = $("nearbyExpandBtn");
     if (expandBtn) {
       expandBtn.dataset.restIds = JSON.stringify(rest.map(s => s.id));
       expandBtn.addEventListener("click", () => {
         const list = $("nearbyList");
         if (!list) return;
-        // Recupera gli spot dagli ID salvati — funziona anche dopo un re-render
         const savedIds  = JSON.parse(expandBtn.dataset.restIds || "[]");
         const allMeta2  = window.APP_UTILS.getAllSpotsWithMeta();
         const metaById2 = new Map(allMeta2.map(s => [s.id, s]));
         const restSpots = savedIds.map(id => metaById2.get(id)).filter(Boolean);
         list.insertAdjacentHTML("beforeend", restSpots.map(buildRow).join(""));
         expandBtn.style.display = "none";
-        // Attacca listener solo ai nuovi card appena inseriti
         list.querySelectorAll("[data-nearby-id]:not([data-bound])").forEach(card => {
           card.dataset.bound = "1";
           card.addEventListener("click", () => {
@@ -1056,10 +941,6 @@
       });
     }
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // EXPORT / IMPORT UI
-  // ═══════════════════════════════════════════════════════════════════════════
 
   function renderDataPanel() {
     const target = $("plannerBox")?.closest(".panel.glass");
@@ -1089,10 +970,6 @@
       if (file) { window.APP_UTILS.importUserDataFromFile(file); e.target.value = ""; }
     });
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // GPS BOX
-  // ═══════════════════════════════════════════════════════════════════════════
 
   UI.renderGpsBox = function (app, liveData) {
     const gpsSpeed    = $("gpsSpeed");
@@ -1127,10 +1004,6 @@
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // TOAST
-  // ═══════════════════════════════════════════════════════════════════════════
-
   UI.toast = function (message) {
     const wrap = $("toastWrap");
     if (!wrap) return;
@@ -1144,10 +1017,6 @@
     }, 2200);
   };
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // RENDER ALL / LIGHT / SMART
-  // ═══════════════════════════════════════════════════════════════════════════
-
   let lastFullRender = 0;
 
   UI.renderAll = function (app) {
@@ -1158,13 +1027,13 @@
       lastFullRender = now;
       const counts = getSpotCounts();
 
-      $("eyebrowRegion") && ($("eyebrowRegion").textContent = `${APP_SPOTS.region || "Area"} · ${counts.main} spot principali${counts.extra ? ` + ${counts.extra} extra` : ""}`);
-      $("conditionsTitle") && ($("conditionsTitle").textContent = app.mode === "sail" ? "Condizioni vela" : "Meteo e mood del giorno");
-      $("conditionsSub")   && ($("conditionsSub").textContent   = app.mode === "sail" ? "Sail" : "Travel");
-      $("forecastTitle")   && ($("forecastTitle").textContent   = app.mode === "sail" ? "Previsione oraria vela · prossime 12 ore" : "Previsione oraria · prossime 12 ore");
-      $("forecastSub")     && ($("forecastSub").textContent     = app.mode === "sail" ? "Vento · direzione · onde" : "Lettura rapida");
-      $("topBox1Sub")   && ($("topBox1Sub").textContent   = app.mode === "sail" ? "Spot belli / forti" : "I più forti del posto");
-      $("topBox1Title") && ($("topBox1Title").textContent = app.mode === "sail" ? "Top spot belli" : "Top wow");
+      $("eyebrowRegion") && ($("eyebrowRegion").textContent = `${APP_SPOTS.region || "Area"} · ${counts.main} spot`);
+      $("conditionsTitle") && ($("conditionsTitle").textContent = "Meteo e mare del giorno");
+      $("conditionsSub")   && ($("conditionsSub").textContent   = "Rotta");
+      $("forecastTitle")   && ($("forecastTitle").textContent   = "Previsione oraria · prossime 12 ore");
+      $("forecastSub")     && ($("forecastSub").textContent     = "Lettura rapida");
+      $("topBox1Sub")   && ($("topBox1Sub").textContent   = "I più belli della rotta");
+      $("topBox1Title") && ($("topBox1Title").textContent = "Top wow");
       $("topBox2Sub")   && ($("topBox2Sub").textContent   = "Luce serale");
       $("topBox2Title") && ($("topBox2Title").textContent = "Top tramonti");
 
@@ -1185,18 +1054,13 @@
         if (!app.weatherData) {
           $("weatherAlert").className   = "alert warn";
           $("weatherAlert").textContent = "Meteo non disponibile.";
-        } else if (app.mode === "sail") {
-          $("weatherAlert").className   = "alert ok";
-          $("weatherAlert").textContent = app.marineData
-            ? `Vento ${Math.round(app.weatherData.wind)} km/h · onde ${Number(app.marineData.waveHeight || 0).toFixed(1)} m`
-            : "Lettura vela aggiornata.";
         } else {
           $("weatherAlert").className   = "alert ok";
           $("weatherAlert").textContent = `${app.weatherData.headline} — ${app.weatherData.advice}`;
         }
       }
 
-      if (app.mode === "travel") UI.renderSunPhase(app);
+      UI.renderSunPhase(app);
     }
 
     renderQuickGrid(app);
