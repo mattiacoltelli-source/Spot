@@ -29,7 +29,7 @@ window.APP_SPOTS = {
   ],
 
   topWowIds: [
-    "lef-0", "kef-0", "pax-1", "cor-1", "zan-0", "lef-1", "kef-2", "pax-2", "cor-0", "ith-0"
+    "lef-0", "kef-0", "pax-3", "cor-1", "zan-0", "lef-1", "kef-2", "pax-2", "cor-0", "ith-0"
   ],
   topWowNames: [
     "Porto Katsiki", "Myrtos Beach", "Voutoumi Beach", "Paleokastritsa", "Navagio (Shipwreck Beach)",
