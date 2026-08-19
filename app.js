@@ -39,7 +39,17 @@
     }
   })();
 
-  const DEFAULT_PLANNER = { alba: null, main: null, tramonto: null };
+  const PLANNER_SLOTS   = ["alba", "tappa2", "tappa3", "tappa4", "tramonto"];
+  const DEFAULT_PLANNER = { alba: null, tappa2: null, tappa3: null, tappa4: null, tramonto: null };
+
+  function loadPlanner() {
+    const loaded = loadJson(STORAGE_KEYS.planner, DEFAULT_PLANNER);
+    const planner = clone(DEFAULT_PLANNER);
+    for (const slot of PLANNER_SLOTS) {
+      if (loaded && typeof loaded[slot] === "string") planner[slot] = loaded[slot];
+    }
+    return planner;
+  }
 
   const APP = {
     mode:              loadJson(STORAGE_KEYS.mode, "travel"),
@@ -61,7 +71,7 @@
     sunsetTimer:       null,
     favorites:         loadJson(STORAGE_KEYS.favorites, []),
     visited:           loadJson(STORAGE_KEYS.visited, []),
-    planner:           loadJson(STORAGE_KEYS.planner, DEFAULT_PLANNER),
+    planner:           loadPlanner(),
     activePage:        "home",
     map:               null,
     markers:           [],
@@ -696,20 +706,54 @@
     return sortBestPool(pool)[0] || null;
   }
 
+  function nearestSpotTo(coords, pool) {
+    return pool.slice().sort((a, b) => {
+      const dA = distKm(coords[0], coords[1], ...getCoords(a));
+      const dB = distKm(coords[0], coords[1], ...getCoords(b));
+      return dA - dB;
+    })[0] || null;
+  }
+
+  function midStopPool(excludeIds) {
+    let pool = getAllSpotsWithMeta()
+      .filter(s => !excludeIds.includes(s.id))
+      .filter(s => ["spiaggia", "view", "natura", "borgo"].some(a => matchValue(s.activity, a)));
+    if (APP.zone  !== "all") pool = pool.filter(s => s.zone  === APP.zone);
+    if (APP.level !== "all") pool = pool.filter(s => s.level === APP.level);
+    return sortBestPool(pool);
+  }
+
   function buildDayPlanner() {
-    const hour  = getCurrentHour();
-    const albaC = bestSpotForSlot({ light: "alba",    activity: ["view", "spiaggia"] });
-    const mainC = bestSpotForSlot({ light: "giorno",  activity: ["spiaggia", "view", "natura"], exclude: [albaC?.id] })
-               || bestSpotForSlot({ activity: ["spiaggia", "view", "natura"], exclude: [albaC?.id] });
-    const sunC  = bestSpotForSlot({ light: "tramonto", activity: ["view", "borgo"], exclude: [albaC?.id, mainC?.id] });
-    APP.planner = hour >= 17
-      ? { alba: null, main: mainC?.id || null, tramonto: sunC?.id || mainC?.id || null }
-      : hour >= 10
-      ? { alba: null, main: mainC?.id || null, tramonto: sunC?.id || null }
-      : { alba: albaC?.id || null, main: mainC?.id || null, tramonto: sunC?.id || null };
+    const hour   = getCurrentHour();
+    const albaC  = hour >= 10 ? null : bestSpotForSlot({ light: "alba", activity: ["view", "spiaggia"] });
+    const usedIds = [albaC?.id].filter(Boolean);
+
+    const sunC = bestSpotForSlot({ light: "tramonto", activity: ["view", "borgo"], exclude: usedIds });
+    if (sunC) usedIds.push(sunC.id);
+
+    const mids = [];
+    let fromCoords = albaC ? getCoords(albaC) : (sunC ? getCoords(sunC) : null);
+    for (let i = 0; i < 3; i++) {
+      const pool = midStopPool(usedIds);
+      if (!pool.length) break;
+      const topCandidates = pool.slice(0, 8);
+      const pick = fromCoords ? nearestSpotTo(fromCoords, topCandidates) : topCandidates[0];
+      if (!pick) break;
+      mids.push(pick);
+      usedIds.push(pick.id);
+      fromCoords = getCoords(pick);
+    }
+
+    APP.planner = {
+      alba:     albaC?.id || null,
+      tappa2:   mids[0]?.id || null,
+      tappa3:   mids[1]?.id || null,
+      tappa4:   mids[2]?.id || null,
+      tramonto: sunC?.id || null
+    };
     saveJson(STORAGE_KEYS.planner, APP.planner);
     renderPlannerBox();
-    toast("Giornata pianificata");
+    toast("Itinerario pianificato");
   }
 
   function isFavorite(id) { return APP.favorites.includes(id); }
@@ -1408,7 +1452,7 @@
   window.APP_UTILS = {
     $, escapeHtml, normalizeText, formatTime, formatCountdown,
     currentPeriod, displayDistance, getSpotImage, isMorningLike, isEveningLike,
-    getCoords, matchValue, distanceFilterKm,
+    getCoords, matchValue, distanceFilterKm, distKm,
 
     smartSearchMatch, buildHaystack, evaluateConstraint,
 
