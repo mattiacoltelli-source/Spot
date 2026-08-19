@@ -75,6 +75,22 @@ window.APP_SPOTS = {
         "La Vecchia Fortezza offre la vista migliore su tutta la città.",
         "Cerca il Kanoni per il tramonto se hai ancora tempo la sera."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 25,
+        windIdealFrom: ["N", "NE", "E"],
+        waveMaxMeters: 1.5,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: false,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 6,
+        sunsetScore: 4,
+        sailNotes: "Ormeggio riparato a Mandraki o Gouvia, gestibile con quasi ogni condizione: ottima base di partenza o arrivo.",
+        beautyNotes: "Non una baia da bagno, ma le fortezze e la Spianata regalano un'atmosfera unica al tramonto."
+      },
       image: "https://picsum.photos/seed/Corfu-Old-Town/900/600"
     },
 
@@ -105,6 +121,22 @@ window.APP_SPOTS = {
         "Le grotte marine nei dintorni si esplorano bene in gommone.",
         "Il monastero chiude nel primo pomeriggio, controllare orari."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 5,
+        windMaxKnots: 15,
+        windIdealFrom: ["E", "NE", "SE"],
+        waveMaxMeters: 0.6,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: true,
+        topWater: true,
+        topSunset: true,
+        beautyScore: 9,
+        sunsetScore: 9,
+        sailNotes: "Baie esposte a ovest: ideali con vento leggero da terra (E/NE), da evitare con maestrale teso o mare formato.",
+        beautyNotes: "Acqua turchese tra le più belle di Corfù, con il monastero che si accende di luce calda al tramonto."
+      },
       image: "https://picsum.photos/seed/Paleokastritsa/900/600"
     },
 
@@ -165,6 +197,22 @@ window.APP_SPOTS = {
         "Le rovine del castello si visitano in 20-30 minuti.",
         "Buon ancoraggio di appoggio con più taverne sul lungomare."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 20,
+        windIdealFrom: ["S", "SW"],
+        waveMaxMeters: 0.8,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: false,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 5,
+        sunsetScore: 3,
+        sailNotes: "Piccolo porto di pescatori riparato dai venti da sud; con tramontana tesa da nord il porto può risentirne.",
+        beautyNotes: "Atmosfera autentica più che acqua da cartolina: il castello si illumina bene al tramonto."
+      },
       image: "https://picsum.photos/seed/Kassiopi/900/600"
     },
 
@@ -197,6 +245,22 @@ window.APP_SPOTS = {
         "Le taverne sul porto sono affidabili per un primo assaggio di cucina greca.",
         "Prenota l'ormeggio in anticipo se possibile in alta stagione."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 25,
+        windIdealFrom: ["N", "NE"],
+        waveMaxMeters: 1.2,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: true,
+        topWater: false,
+        topSunset: true,
+        beautyScore: 8,
+        sunsetScore: 8,
+        sailNotes: "Canale strettissimo tra Paxos e gli isolotti: uno degli ormeggi più protetti della rotta, gestibile con quasi ogni vento.",
+        beautyNotes: "Facciate color pastello che si accendono di luce calda al tramonto sul porto veneziano."
+      },
       image: "https://picsum.photos/seed/Gaios-Paxos/900/600"
     },
 
@@ -227,6 +291,22 @@ window.APP_SPOTS = {
         "Buona base di partenza per Antipaxos, molto vicina.",
         "Nuoto piacevole già a poca distanza dalla barca."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 5,
+        windMaxKnots: 18,
+        windIdealFrom: ["S", "SE", "SW"],
+        waveMaxMeters: 0.8,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: true,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 7,
+        sunsetScore: 4,
+        sailNotes: "Baia quasi circolare molto riparata, ma vento forte da nord può portare mare formato all'ingresso.",
+        beautyNotes: "Fondali chiari che regalano un colore quasi tropicale con sole alto."
+      },
       image: "https://picsum.photos/seed/Lakka-Paxos/900/600"
     },
 
@@ -257,6 +337,22 @@ window.APP_SPOTS = {
         "Abbinala a Voutoumi, sono a pochi minuti di gommone/barca l'una dall'altra.",
         "In alta stagione arrivano molti gozzi turistici da Corfù: meglio molto presto o tardo pomeriggio."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 12,
+        windIdealFrom: ["E", "NE"],
+        waveMaxMeters: 0.4,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: true,
+        topWater: true,
+        topSunset: false,
+        beautyScore: 10,
+        sunsetScore: 2,
+        sailNotes: "Ancoraggio scoperto: va bene solo con vento leggero da est/nord-est e mare piatto. Con libeccio diventa scomodo o pericoloso.",
+        beautyNotes: "Uno dei tratti d'acqua più belli di tutta la rotta, colori quasi caraibici a mezzogiorno."
+      },
       image: "https://picsum.photos/seed/Vrika-Antipaxos/900/600"
     },
 
@@ -287,6 +383,22 @@ window.APP_SPOTS = {
         "Il sentiero verso il faro a sud regala una vista dall'alto molto bella.",
         "Non è un ancoraggio per la notte: pianifica di spostarti prima di sera."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 14,
+        windIdealFrom: ["N", "NE", "E"],
+        waveMaxMeters: 0.5,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: true,
+        topWater: true,
+        topSunset: false,
+        beautyScore: 10,
+        sunsetScore: 2,
+        sailNotes: "Leggermente più riparata di Vrika ma comunque esposta: da evitare con vento forte da sud.",
+        beautyNotes: "La spiaggia più iconica di Antipaxos, colori che cambiano continuamente con la luce del giorno."
+      },
       image: "https://picsum.photos/seed/Voutoumi-Antipaxos/900/600"
     },
 
@@ -319,6 +431,22 @@ window.APP_SPOTS = {
         "La spiaggia di Valtos è più tranquilla del centro.",
         "Buone taverne di pesce sul lungomare del centro."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 18,
+        windIdealFrom: ["N", "NE"],
+        waveMaxMeters: 0.9,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: true,
+        topWater: false,
+        topSunset: true,
+        beautyScore: 7,
+        sunsetScore: 8,
+        sailNotes: "Ancoraggio in baia oppure porticciolo piccolo e trafficato in alta stagione: valuta Valtos come alternativa più tranquilla.",
+        beautyNotes: "Il castello veneziano e le case colorate si accendono splendidamente con la luce calda della sera."
+      },
       image: "https://picsum.photos/seed/Parga-Valtos/900/600"
     },
 
@@ -351,6 +479,22 @@ window.APP_SPOTS = {
         "Ancoraggio non sempre comodo: controlla condizioni del giorno.",
         "Vicinissima a Egremni, si possono vedere entrambe nella stessa giornata."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 10,
+        windIdealFrom: ["E", "NE"],
+        waveMaxMeters: 0.3,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: true,
+        topWater: true,
+        topSunset: true,
+        beautyScore: 10,
+        sunsetScore: 10,
+        sailNotes: "Ancoraggio molto esposto a ovest: da vivere con mare calmo, meglio ammirarla passando lungo costa se il mare è mosso.",
+        beautyNotes: "Le falesie bianche si accendono con la luce del tramonto: uno degli scorci più fotografati della Grecia."
+      },
       image: "https://picsum.photos/seed/Porto-Katsiki/900/600"
     },
 
@@ -381,6 +525,22 @@ window.APP_SPOTS = {
         "Meno affollata perché più difficile da raggiungere da terra.",
         "Il tratto di costa tra le due spiagge è già bellissimo da percorrere in barca."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 10,
+        windIdealFrom: ["E", "NE"],
+        waveMaxMeters: 0.3,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: true,
+        topWater: true,
+        topSunset: false,
+        beautyScore: 9,
+        sunsetScore: 3,
+        sailNotes: "Come Porto Katsiki, ancoraggio esposto a ovest: da godere con mare calmo, ideale passaggio costiero con vento leggero da terra.",
+        beautyNotes: "Chilometri di sabbia bianca ai piedi di pareti altissime, colori migliori con sole a picco."
+      },
       image: "https://picsum.photos/seed/Egremni-Lefkada/900/600"
     },
 
@@ -411,6 +571,22 @@ window.APP_SPOTS = {
         "Buon punto per il bagno con meno gente intorno.",
         "Riparo migliore in caso di vento leggero da ovest rispetto alle spiagge vicine."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 5,
+        windMaxKnots: 20,
+        windIdealFrom: ["W", "SW", "NW"],
+        waveMaxMeters: 0.9,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: true,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 8,
+        sunsetScore: 4,
+        sailNotes: "Baia semicircolare più riparata delle vicine spiagge da falesia: gestibile anche con vento moderato da ovest.",
+        beautyNotes: "Acqua turchese e più tranquillità rispetto a Porto Katsiki ed Egremni."
+      },
       image: "https://picsum.photos/seed/Agiofili-Lefkada/900/600"
     },
 
@@ -441,6 +617,22 @@ window.APP_SPOTS = {
         "Il ponte mobile regola il passaggio delle barche: informati sugli orari.",
         "Ottimo mix di comodità e atmosfera greca autentica."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 25,
+        windIdealFrom: ["E", "W"],
+        waveMaxMeters: 1.2,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: false,
+        topWater: false,
+        topSunset: true,
+        beautyScore: 5,
+        sunsetScore: 7,
+        sailNotes: "Canale riparato tra l'isola e la terraferma: ormeggio comodo con quasi ogni vento, ponte mobile da controllare per gli orari.",
+        beautyNotes: "Le case basse colorate si accendono bene con la luce calda serale sul canale."
+      },
       image: "https://picsum.photos/seed/Lefkada-Town/900/600"
     },
 
@@ -471,6 +663,22 @@ window.APP_SPOTS = {
         "Diverse baie tra cui scegliere in base al vento del giorno.",
         "Buone taverne locali con pesce fresco, meno turistiche di Lefkada Town."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 22,
+        windIdealFrom: ["N", "NE", "E", "SE"],
+        waveMaxMeters: 1.0,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: true,
+        topWater: false,
+        topSunset: true,
+        beautyScore: 7,
+        sunsetScore: 7,
+        sailNotes: "Isola con più baie protette tra cui scegliere in base al vento del giorno: una delle notti più tranquille della rotta.",
+        beautyNotes: "Vista dal borgo sulle baie sottostanti, molto suggestiva al tramonto sul canale di Lefkada."
+      },
       image: "https://picsum.photos/seed/Meganisi-Spartochori/900/600"
     },
 
@@ -503,6 +711,22 @@ window.APP_SPOTS = {
         "L'ancoraggio non è sempre comodo: valuta le condizioni prima.",
         "Abbinala ad Assos se navighi lungo questo tratto di costa."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 10,
+        windIdealFrom: ["E", "NE"],
+        waveMaxMeters: 0.3,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: true,
+        topWater: true,
+        topSunset: false,
+        beautyScore: 10,
+        sunsetScore: 3,
+        sailNotes: "Ancoraggio esposto a ovest: da ammirare con mare calmo, altrimenti meglio il solo passaggio costiero.",
+        beautyNotes: "Forse la spiaggia più fotografata della Grecia, colori migliori a mezzogiorno con sole alto."
+      },
       image: "https://picsum.photos/seed/Myrtos-Kefalonia/900/600"
     },
 
@@ -533,6 +757,22 @@ window.APP_SPOTS = {
         "Baia riparata, buona scelta per la notte anche con vento.",
         "La camminata alla fortezza vale la vista panoramica."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 22,
+        windIdealFrom: ["N", "NE", "E", "SE", "S"],
+        waveMaxMeters: 1.1,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: true,
+        topWater: false,
+        topSunset: true,
+        beautyScore: 8,
+        sunsetScore: 8,
+        sailNotes: "Baia molto riparata: una delle scelte più sicure per la notte anche con vento sostenuto.",
+        beautyNotes: "Il borgo si accende con luce calda serale, vista magnifica dalla fortezza sull'istmo."
+      },
       image: "https://picsum.photos/seed/Assos-Kefalonia/900/600"
     },
 
@@ -593,6 +833,22 @@ window.APP_SPOTS = {
         "Ottime taverne di pesce sul lungomare del porto.",
         "Da qui i traghetti collegano facilmente a Itaca se volete visitarla anche via terra."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 20,
+        windIdealFrom: ["N", "NE", "E"],
+        waveMaxMeters: 1.0,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: false,
+        topWater: false,
+        topSunset: true,
+        beautyScore: 7,
+        sunsetScore: 8,
+        sailNotes: "Porto molto ambito e ben protetto: arriva presto in alta stagione perché si riempie in fretta.",
+        beautyNotes: "Le facciate veneziane color pastello si accendono con la luce calda della sera."
+      },
       image: "https://picsum.photos/seed/Fiskardo-Kefalonia/900/600"
     },
 
@@ -623,6 +879,22 @@ window.APP_SPOTS = {
         "Itaca è l'isola di Ulisse: buona atmosfera per chi ama la mitologia.",
         "Le taverne sul porto sono eccellenti e meno turistiche di Fiskardo."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 22,
+        windIdealFrom: ["N", "NE", "E", "SE", "S", "SW"],
+        waveMaxMeters: 1.2,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: true,
+        topWater: true,
+        topSunset: false,
+        beautyScore: 9,
+        sunsetScore: 8,
+        sailNotes: "Baia stretta e profonda, tra gli ancoraggi più riparati e sicuri di tutta la rotta.",
+        beautyNotes: "Atmosfera magica la sera con le luci del porto e i mulini a vento sul crinale."
+      },
       image: "https://picsum.photos/seed/Kioni-Itaca/900/600"
     },
 
@@ -653,6 +925,22 @@ window.APP_SPOTS = {
         "Baia molto riparata, buona anche con brutto tempo.",
         "Meno fotogenica di Kioni ma più pratica come base."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 25,
+        windIdealFrom: ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
+        waveMaxMeters: 1.3,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: false,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 5,
+        sunsetScore: 3,
+        sailNotes: "Tra le baie più profonde e protette delle Ionie: buona anche con maltempo o vento sostenuto.",
+        beautyNotes: "Meno scenografica di Kioni, ma comoda e tranquilla, quasi un lago naturale."
+      },
       image: "https://picsum.photos/seed/Vathy-Itaca/900/600"
     },
 
@@ -685,6 +973,22 @@ window.APP_SPOTS = {
         "Aspettati molte imbarcazioni turistiche da terra a metà giornata.",
         "Le Grotte Blu poco distanti si possono abbinare nella stessa giornata."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 8,
+        windIdealFrom: ["E", "NE"],
+        waveMaxMeters: 0.3,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: true,
+        topWater: true,
+        topSunset: false,
+        beautyScore: 10,
+        sunsetScore: 2,
+        sailNotes: "Baia molto esposta: qualsiasi vento consistente rende l'ancoraggio sconsigliato. Solo con mare piatto.",
+        beautyNotes: "L'immagine simbolo della Grecia: relitto su sabbia bianca circondato da pareti a picco."
+      },
       image: "https://picsum.photos/seed/Navagio-Zante/900/600"
     },
 
@@ -747,6 +1051,22 @@ window.APP_SPOTS = {
         "Diversi isolotti tra cui scegliere per l'ancoraggio in base al vento.",
         "Taverne di pesce molto genuine, meno turistiche della media."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 22,
+        windIdealFrom: ["N", "NE", "E", "SE", "S"],
+        waveMaxMeters: 1.1,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: true,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 7,
+        sunsetScore: 6,
+        sailNotes: "Diversi isolotti offrono riparo da quasi ogni direzione: una delle notti più comode e amate dai velisti.",
+        beautyNotes: "Atmosfera rilassata, ancora più bella la sera con le taverne illuminate sul porticciolo."
+      },
       image: "https://picsum.photos/seed/Sivota-Epirus/900/600"
     },
 
@@ -777,6 +1097,22 @@ window.APP_SPOTS = {
         "Zona turistica sviluppata, aspettati più gente che nelle baie isolate.",
         "L'erosione cambia leggermente la forma delle rocce negli anni."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 12,
+        windIdealFrom: ["S", "SE"],
+        waveMaxMeters: 0.5,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: true,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 7,
+        sunsetScore: 3,
+        sailNotes: "Formazioni rocciose da vivere con mare calmo: con vento forte diventa difficile e poco sicuro nuotare nei canali.",
+        beautyNotes: "Colori dell'acqua migliori nelle ore centrali con sole alto."
+      },
       image: "https://picsum.photos/seed/Canal-dAmour-Sidari/900/600"
     },
 
@@ -837,6 +1173,22 @@ window.APP_SPOTS = {
         "Punto di partenza per escursioni verso le cascate di Dimosari nell'entroterra.",
         "Meganisi è a pochi minuti di navigazione da qui."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 25,
+        windIdealFrom: ["N", "NE", "E", "SE", "S"],
+        waveMaxMeters: 1.2,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: false,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 4,
+        sunsetScore: 4,
+        sailNotes: "Marina attrezzata e ben riparata: punto pratico per rifornimenti e servizi tecnici, gestibile con quasi ogni vento.",
+        beautyNotes: "Non un luogo scenografico, ma il canale verso Meganisi è piacevole al tramonto."
+      },
       image: "https://picsum.photos/seed/Nydri-Lefkada/900/600"
     },
 
@@ -867,6 +1219,22 @@ window.APP_SPOTS = {
         "Buona sosta pranzo prima che il vento si alzi.",
         "Diverse scuole di windsurf/kitesurf sulla spiaggia."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 15,
+        windMaxKnots: 28,
+        windIdealFrom: ["N", "NW"],
+        waveMaxMeters: 0.8,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: false,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 5,
+        sunsetScore: 2,
+        sailNotes: "Non un ancoraggio da relax: interessante soprattutto quando il termico pomeridiano si alza, spettacolo di vele colorate in baia.",
+        beautyNotes: "Non una baia da cartolina, ma il windsurf in azione nel primo pomeriggio è uno spettacolo a sé."
+      },
       image: "https://picsum.photos/seed/Vasiliki-Lefkada/900/600"
     },
 
@@ -897,6 +1265,22 @@ window.APP_SPOTS = {
         "I mulini a vento della penisola sono un bel giro a piedi o in bici.",
         "Buon punto per cambio equipaggio se qualcuno arriva/parte in aereo."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 25,
+        windIdealFrom: ["N", "NE", "E", "SE", "S"],
+        waveMaxMeters: 1.2,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: false,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 5,
+        sunsetScore: 5,
+        sailNotes: "Laguna riparata e marina attrezzata: ottima per rifornimenti importanti, gestibile con quasi ogni vento.",
+        beautyNotes: "I mulini a vento sulla penisola sono suggestivi al tramonto."
+      },
       image: "https://picsum.photos/seed/Argostoli-Kefalonia/900/600"
     },
 
@@ -927,6 +1311,22 @@ window.APP_SPOTS = {
         "Acqua bassa, ottima se a bordo ci sono bambini.",
         "Vicina a Lourdas se vuoi confrontare due spiagge diverse lo stesso giorno."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 16,
+        windIdealFrom: ["N", "NE", "E"],
+        waveMaxMeters: 0.7,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: true,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 6,
+        sunsetScore: 2,
+        sailNotes: "Ancoraggio semplice e poco impegnativo, buona pausa rilassata tra spiagge più esposte.",
+        beautyNotes: "Sabbia color rosso/arancio molto particolare, da vedere con sole diretto."
+      },
       image: "https://picsum.photos/seed/Xi-Beach-Kefalonia/900/600"
     },
 
@@ -957,6 +1357,22 @@ window.APP_SPOTS = {
         "Meno posti di ormeggio di Kioni: valuta l'orario di arrivo.",
         "Buone taverne di pesce sul molo, meno turistiche della media."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 20,
+        windIdealFrom: ["N", "NE", "E", "SE"],
+        waveMaxMeters: 1.0,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: false,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 6,
+        sunsetScore: 5,
+        sailNotes: "Porto piccolo ma riparato, buona alternativa a Kioni con meno posti disponibili: valuta l'orario di arrivo.",
+        beautyNotes: "Atmosfera genuina, luce calda serale sulle barche del molo."
+      },
       image: "https://picsum.photos/seed/Frikes-Itaca/900/600"
     },
 
@@ -987,6 +1403,22 @@ window.APP_SPOTS = {
         "Esperienza diversa dalle solite spiagge: vale la sosta per la curiosità.",
         "L'acqua è leggermente più calda vicino alle sorgenti."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 12,
+        windIdealFrom: ["S", "SE"],
+        waveMaxMeters: 0.5,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: true,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 6,
+        sunsetScore: 2,
+        sailNotes: "Piccola baia esposta: meglio con mare calmo, da vivere più come esperienza che come sosta lunga.",
+        beautyNotes: "Rocce bianche sbiancate dallo zolfo creano un paesaggio quasi lunare a contrasto con l'acqua turchese."
+      },
       image: "https://picsum.photos/seed/Xigia-Beach-Zante/900/600"
     },
 
@@ -1019,6 +1451,22 @@ window.APP_SPOTS = {
         "Sviluppata dal punto di vista turistico: più servizi a terra.",
         "Ancoraggio da valutare con attenzione se il vento soffia da ovest."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 12,
+        windIdealFrom: ["E", "NE"],
+        waveMaxMeters: 0.5,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: true,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 6,
+        sunsetScore: 7,
+        sailNotes: "Ancoraggio esposto a ovest: valuta bene le condizioni del giorno, specie con vento sostenuto da mare aperto.",
+        beautyNotes: "Tramonto diretto sull'acqua senza ostacoli, tra i più belli e aperti della costa ovest di Corfù."
+      },
       image: "https://picsum.photos/seed/Agios-Gordios-Corfu/900/600"
     },
 
@@ -1109,6 +1557,22 @@ window.APP_SPOTS = {
         "Le gite in barca sul fiume partono dal villaggio, se interessa.",
         "Spiaggia tranquilla rispetto ai centri più turistici della zona."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 18,
+        windIdealFrom: ["N", "NE", "E"],
+        waveMaxMeters: 0.7,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: false,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 5,
+        sunsetScore: 3,
+        sailNotes: "Ancoraggio semplice davanti alla spiaggia, comodo per una sosta tranquilla vicino alla foce del fiume.",
+        beautyNotes: "Il verde della vegetazione fluviale contrasta piacevolmente con il mare."
+      },
       image: "https://picsum.photos/seed/Acheron-River-Ammoudia/900/600"
     },
 
@@ -1139,6 +1603,22 @@ window.APP_SPOTS = {
         "Meno noto di Lefkada Town ma con più carattere.",
         "Buone taverne di pesce con vista mare."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 16,
+        windIdealFrom: ["E", "NE", "SE"],
+        waveMaxMeters: 0.7,
+        sailSpot: true,
+        nightShelter: true,
+        beautifulWater: false,
+        topWater: false,
+        topSunset: true,
+        beautyScore: 6,
+        sunsetScore: 6,
+        sailNotes: "Ancoraggio nella baia vicina, discretamente riparato per la costa ovest: valuta comunque il vento da ovest.",
+        beautyNotes: "Vicoli e case in legno colorate, atmosfera più bella la sera con le taverne aperte."
+      },
       image: "https://picsum.photos/seed/Agios-Nikitas-Lefkada/900/600"
     },
 
@@ -1169,6 +1649,22 @@ window.APP_SPOTS = {
         "Più semplice da vivere rispetto a Porto Katsiki, meno scale e meno affollamento estremo.",
         "Buon fondale per il bagno anche vicino a riva."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 12,
+        windIdealFrom: ["E", "NE"],
+        waveMaxMeters: 0.5,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: true,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 7,
+        sunsetScore: 4,
+        sailNotes: "Ancoraggio esposto a ovest come le altre spiagge di questa costa: meglio con vento leggero da terra.",
+        beautyNotes: "Sabbia fine e acqua che scurisce rapidamente di blu, molto piacevole per un bagno rilassato."
+      },
       image: "https://picsum.photos/seed/Kathisma-Beach-Lefkada/900/600"
     },
 
@@ -1229,6 +1725,22 @@ window.APP_SPOTS = {
         "Vicina ad Argostoli, comoda per unire rifornimenti e mare.",
         "Fondale che degrada gradualmente, comodo per tutti."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 18,
+        windIdealFrom: ["N", "NE", "E"],
+        waveMaxMeters: 0.8,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: false,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 5,
+        sunsetScore: 3,
+        sailNotes: "Sosta tranquilla e poco impegnativa, buona alternativa se Myrtos è troppo affollata.",
+        beautyNotes: "Montagne verdi alle spalle, atmosfera rilassata senza la folla delle spiagge più famose."
+      },
       image: "https://picsum.photos/seed/Lourdas-Beach-Kefalonia/900/600"
     },
 
@@ -1289,6 +1801,22 @@ window.APP_SPOTS = {
         "Meno estrema di Myrtos ma altrettanto fotogenica.",
         "Buon fondale per bagno anche con bambini a bordo."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 14,
+        windIdealFrom: ["W", "SW", "NW"],
+        waveMaxMeters: 0.6,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: true,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 8,
+        sunsetScore: 3,
+        sailNotes: "Baia scenografica ma esposta a vento da est: attenzione alle condizioni prima di ancorare.",
+        beautyNotes: "Ciottoli bianchi e acqua turchese intensa, contrasto notevole con le colline verdi alle spalle."
+      },
       image: "https://picsum.photos/seed/Antisamos-Beach/900/600"
     },
 
@@ -1379,6 +1907,22 @@ window.APP_SPOTS = {
         "Baia stretta: valuta bene lo spazio di manovra per l'ancoraggio.",
         "Acqua tra le più trasparenti della costa ovest di Zante."
       ],
+      sail: {
+        enabled: true,
+        windMinKnots: 0,
+        windMaxKnots: 10,
+        windIdealFrom: ["E", "NE"],
+        waveMaxMeters: 0.4,
+        sailSpot: true,
+        nightShelter: false,
+        beautifulWater: true,
+        topWater: false,
+        topSunset: false,
+        beautyScore: 7,
+        sunsetScore: 3,
+        sailNotes: "Baia stretta ed esposta a ovest: valuta bene lo spazio di manovra e le condizioni del giorno.",
+        beautyNotes: "Acqua tra le più trasparenti della costa ovest di Zante, meno affollata dei siti più famosi."
+      },
       image: "https://picsum.photos/seed/Porto-Limnionas-Zante/900/600"
     }
 
