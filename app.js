@@ -293,6 +293,10 @@
       if (!hayTags.some(t => t.includes(needle))) return false;
     }
     if ("nearMe" in c && APP.userPos && spot._distance != null && spot._distance > 30) return false;
+    // FIX: "farMe" era definito nell'intento "lontano" ma mai controllato qui,
+    // quindi la ricerca "lontano" non scartava nessuno spot. Simmetrico a
+    // nearMe: scarta gli spot entro la stessa soglia di 30 km.
+    if ("farMe" in c && APP.userPos && spot._distance != null && spot._distance <= 30) return false;
     return true;
   }
 
