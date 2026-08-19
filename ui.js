@@ -1039,7 +1039,7 @@
 
       document.querySelectorAll(".sail-only").forEach(el => { el.style.display = app.mode === "sail" ? "" : "none"; });
       if ($("travelFilters")) $("travelFilters").style.display = app.mode === "sail" ? "none" : "";
-      if ($("sailFilters"))   $("sailFilters").style.display   = app.mode === "sail" ? ""     : "";
+      if ($("sailFilters"))   $("sailFilters").style.display   = app.mode === "sail" ? ""     : "none";
 
       renderStatsGrid(app);
       renderHourly(app);
