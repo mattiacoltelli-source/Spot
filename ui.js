@@ -942,35 +942,6 @@
     }
   }
 
-  function renderDataPanel() {
-    const target = $("plannerBox")?.closest(".panel.glass");
-    if (!target || $("dataPanel")) return;
-    const panel     = document.createElement("div");
-    panel.id        = "dataPanel";
-    panel.className = "panel glass";
-    panel.innerHTML = `
-      <div class="panel-head">
-        <h2>Dati personali</h2>
-        <span class="tiny muted">Preferiti</span>
-      </div>
-      <div class="planner-actions" style="grid-template-columns:1fr 1fr;gap:10px;margin-top:0">
-        <button class="btn btn-secondary tap" id="exportDataBtn" type="button">⬇ Esporta dati</button>
-        <button class="btn btn-secondary tap" id="importDataBtn" type="button">⬆ Importa dati</button>
-      </div>
-      <input type="file" id="importDataInput" accept=".json" style="display:none">
-      <div id="dataHint" style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.5">
-        Esporta preferiti e planner come file JSON. Importa un backup precedente.
-      </div>
-    `;
-    target.insertAdjacentElement("afterend", panel);
-    $("exportDataBtn")?.addEventListener("click", () => window.APP_UTILS.downloadUserData());
-    $("importDataBtn")?.addEventListener("click", () => $("importDataInput")?.click());
-    $("importDataInput")?.addEventListener("change", e => {
-      const file = e.target.files?.[0];
-      if (file) { window.APP_UTILS.importUserDataFromFile(file); e.target.value = ""; }
-    });
-  }
-
   UI.renderGpsBox = function (app, liveData) {
     const gpsSpeed    = $("gpsSpeed");
     const gpsHeading  = $("gpsHeading");
@@ -1047,7 +1018,6 @@
       renderLegend(app);
       renderTopLists(app);
       UI.renderGpsBox(app, app.liveGpsData || null);
-      renderDataPanel();
       renderNearbyPanel(app);
 
       if ($("weatherAlert")) {
