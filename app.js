@@ -761,52 +761,6 @@
     smartRender("light");
   }
 
-  function exportUserData() {
-    return { version: 2, exportedAt: new Date().toISOString(), region: APP_SPOTS.region || "unknown", favorites: [...APP.favorites], planner: clone(APP.planner) };
-  }
-
-  function downloadUserData() {
-    const blob = new Blob([JSON.stringify(exportUserData(), null, 2)], { type: "application/json" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href     = url;
-    a.download = `travel-planner-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-    toast("Backup scaricato");
-  }
-
-  function importUserData(jsonString) {
-    let data;
-    try { data = JSON.parse(jsonString); } catch { return { ok: false, error: "JSON non valido" }; }
-    if (!data || typeof data !== "object") return { ok: false, error: "Struttura non riconosciuta" };
-    const validIds = new Set(getBaseSpots().map(s => s.id));
-    if (Array.isArray(data.favorites)) {
-      APP.favorites = data.favorites.filter(id => typeof id === "string" && validIds.has(id));
-      saveJson(STORAGE_KEYS.favorites, APP.favorites);
-    }
-    if (data.planner && typeof data.planner === "object") {
-      const np = clone(DEFAULT_PLANNER);
-      for (const slot of ["alba", "main", "tramonto"]) {
-        const val = data.planner[slot];
-        if (typeof val === "string" && validIds.has(val)) np[slot] = val;
-      }
-      APP.planner = np;
-      saveJson(STORAGE_KEYS.planner, APP.planner);
-    }
-    smartRender("full");
-    toast("Dati importati con successo");
-    return { ok: true };
-  }
-
-  function importUserDataFromFile(file) {
-    if (!file) return;
-    const reader  = new FileReader();
-    reader.onload = e => { const r = importUserData(e.target.result); if (!r.ok) toast(`Errore importazione: ${r.error}`); };
-    reader.onerror = () => toast("Errore nella lettura del file");
-    reader.readAsText(file);
-  }
-
   function getSunPhaseInfo() {
     if (!APP.sunTimes?.sunset) {
       return {
@@ -1469,8 +1423,6 @@
     isFavorite, toggleFavorite, setPlannerSlot, clearPlannerSlot, clearPlannerAll,
 
     isVisited, toggleVisited, markVisited,
-
-    exportUserData, downloadUserData, importUserData, importUserDataFromFile,
 
     showSpotDetail, switchPage, centerSpot, renderPlannerBox, renderAll,
     renderMarkers, updateUserMarker, toggleMode
