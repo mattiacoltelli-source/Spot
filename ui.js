@@ -810,7 +810,11 @@
         ? APP_SPOTS.spots.find(s => s.id === app.planner[slot.key])
         : null;
       if (!spot) {
-        return `<div class="planner-slot tap"><div class="planner-slot-head"><div class="planner-slot-title">${slot.title}</div></div><div class="planner-slot-sub">${slot.hint}</div></div>`;
+        const skippedForTime = slot.key === "alba" && new Date().getHours() >= 10;
+        const hint = skippedForTime
+          ? "L'alba è già passata per oggi: non suggerita, riparti dalla tappa centrale."
+          : slot.hint;
+        return `<div class="planner-slot tap"><div class="planner-slot-head"><div class="planner-slot-title">${slot.title}</div></div><div class="planner-slot-sub">${hint}</div></div>`;
       }
       return `
         <div class="planner-slot tap">
