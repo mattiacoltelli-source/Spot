@@ -77,11 +77,6 @@
     markers:           [],
     markerBySpotId:    new Map(),
     userMarker:        null,
-    gpsWatchId:        null,
-    gpsPath:           [],
-    gpsLine:           null,
-    gpsMarker:         null,
-    liveGpsData:       null,
     _lightUpdateTimer: null,
     _weatherRefreshTimer: null,
     _nearbyCache:      null,
@@ -1056,7 +1051,6 @@
     if (!mapEl || typeof L === "undefined") return;
     APP.map = L.map("map", { zoomControl: true, touchZoom: true, dragging: true, tap: false, tapTolerance: 15 }).setView(APP_SPOTS.center || [38.9, 20.3], APP_SPOTS.zoom || 8);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap" }).addTo(APP.map);
-    APP.gpsLine = L.polyline([], { color: "#7dc4ff", weight: 4, opacity: 0.9 }).addTo(APP.map);
     renderMarkers();
   }
 
@@ -1177,70 +1171,6 @@
     const found = getBaseSpots().find(s => smartSearchMatch(s, q));
     if (found) { showSpotDetail(found); switchPage("detail"); toast("Spot trovato"); }
     else       { switchPage("spots"); toast("Nessuno spot trovato per quella ricerca"); }
-  }
-
-  function startGPSRoute() {
-    if (!navigator.geolocation || !APP.map) { toast("GPS non disponibile"); return; }
-    if (APP.gpsWatchId) return;
-    APP.gpsWatchId = navigator.geolocation.watchPosition(
-      pos => {
-        const lat      = pos.coords.latitude;
-        const lon      = pos.coords.longitude;
-        const speedMs  = typeof pos.coords.speed    === "number" ? pos.coords.speed    : null;
-        const heading  = typeof pos.coords.heading  === "number" ? pos.coords.heading  : null;
-        const altitude = typeof pos.coords.altitude === "number" ? pos.coords.altitude : null;
-
-        APP.liveGpsData = { lat, lon, speedMs, heading, altitude, timestamp: Date.now() };
-        APP.userPos     = { lat, lon, accuracy: pos.coords.accuracy, altitude };
-        saveLastPosition(APP.userPos);
-
-        APP.gpsPath.push([lat, lon]);
-        if (APP.gpsLine) APP.gpsLine.setLatLngs(APP.gpsPath);
-
-        if (!APP.gpsMarker) {
-          APP.gpsMarker = L.circleMarker([lat, lon], {
-            radius: 8, color: "#dff3ff", weight: 2, fillColor: "#59b6ff", fillOpacity: 1
-          }).addTo(APP.map);
-        } else {
-          const cur = APP.gpsMarker.getLatLng();
-          APP.gpsMarker.setLatLng([cur.lat + (lat - cur.lat) * 0.3, cur.lng + (lon - cur.lng) * 0.3]);
-        }
-
-        if (APP.map && APP.gpsMarker) {
-          const c = APP.map.getCenter();
-          if (Math.abs(c.lat - lat) + Math.abs(c.lng - lon) > 0.01) {
-            APP.map.panTo([lat, lon], { animate: true, duration: 0.5 });
-          }
-        }
-
-        updateUserMarker();
-        APP._nearbyCache = getClosestSpots(3);
-
-        if (!APP._lastUiUpdate || Date.now() - APP._lastUiUpdate > 15000) {
-          if (window.UI?.renderGpsBox) window.UI.renderGpsBox(APP, APP.liveGpsData);
-          APP._lastUiUpdate = Date.now();
-        }
-
-        if (!APP._lastMarkerUpdate || Date.now() - APP._lastMarkerUpdate > 4000) {
-          renderMarkers();
-          APP._lastMarkerUpdate = Date.now();
-        }
-      },
-      () => toast("Permesso GPS negato o posizione non disponibile"),
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
-    );
-  }
-
-  function stopGPSRoute() {
-    if (APP.gpsWatchId) { navigator.geolocation.clearWatch(APP.gpsWatchId); APP.gpsWatchId = null; }
-  }
-
-  function resetGPSRoute() {
-    stopGPSRoute();
-    APP.gpsPath = []; APP.liveGpsData = null; APP._nearbyCache = null;
-    if (APP.gpsLine)              APP.gpsLine.setLatLngs([]);
-    if (APP.gpsMarker && APP.map) { APP.map.removeLayer(APP.gpsMarker); APP.gpsMarker = null; }
-    if (window.UI?.renderGpsBox)  window.UI.renderGpsBox(APP, null);
   }
 
   function renderPlannerBox() { if (window.UI?.renderPlannerBox) window.UI.renderPlannerBox(APP); }
@@ -1364,10 +1294,6 @@
         });
       });
     }
-
-    $("gpsStartBtn")?.addEventListener("click", startGPSRoute);
-    $("gpsStopBtn")?.addEventListener("click",  stopGPSRoute);
-    $("gpsResetBtn")?.addEventListener("click", resetGPSRoute);
 
     window.addEventListener("orientationchange", () => {
       setTimeout(() => APP.map && APP.map.invalidateSize(), 300);

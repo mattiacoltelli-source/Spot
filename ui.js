@@ -962,39 +962,6 @@
     }
   }
 
-  UI.renderGpsBox = function (app, liveData) {
-    const gpsSpeed    = $("gpsSpeed");
-    const gpsHeading  = $("gpsHeading");
-    const gpsDistance = $("gpsDistance");
-    const gpsPoints   = $("gpsPoints");
-    if (!gpsSpeed || !gpsHeading || !gpsDistance || !gpsPoints) return;
-
-    if (!liveData) {
-      gpsSpeed.textContent = gpsHeading.textContent = gpsDistance.textContent = gpsPoints.textContent = "—";
-      return;
-    }
-
-    let totalDistance = 0;
-    for (let i = 1; i < app.gpsPath.length; i++) {
-      totalDistance += haversineKm(app.gpsPath[i-1][0], app.gpsPath[i-1][1], app.gpsPath[i][0], app.gpsPath[i][1]);
-    }
-    gpsDistance.textContent = `${totalDistance.toFixed(2)} km`;
-    gpsPoints.textContent   = String(app.gpsPath.length);
-    gpsSpeed.textContent    = liveData.speedMs  != null ? `${(liveData.speedMs * 3.6).toFixed(1)} km/h` : "—";
-    gpsHeading.textContent  = liveData.heading  != null ? `${toCompass(liveData.heading)} · ${liveData.heading.toFixed(0)}°` : "—";
-  };
-
-  function toCompass(deg) {
-    if (deg == null || isNaN(deg)) return "—";
-    return ["N","NE","E","SE","S","SW","W","NW"][Math.round(deg / 45) % 8];
-  }
-
-  function haversineKm(lat1, lon1, lat2, lon2) {
-    const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
-    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  }
-
   UI.toast = function (message) {
     const wrap = $("toastWrap");
     if (!wrap) return;
@@ -1037,7 +1004,6 @@
       renderFilterBars(app);
       renderLegend(app);
       renderTopLists(app);
-      UI.renderGpsBox(app, app.liveGpsData || null);
       renderNearbyPanel(app);
 
       if ($("weatherAlert")) {
