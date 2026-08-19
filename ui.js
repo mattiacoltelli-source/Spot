@@ -802,21 +802,37 @@
     if (!box) return;
     const slots = [
       { key: "alba",     title: "Alba / mattina",      hint: "Tappa iniziale della giornata." },
-      { key: "main",     title: "Tappa centrale",       hint: "Cuore della giornata." },
+      { key: "tappa2",   title: "Tappa 2",              hint: "Seconda tappa del giro." },
+      { key: "tappa3",   title: "Tappa 3",              hint: "Terza tappa del giro." },
+      { key: "tappa4",   title: "Tappa 4",              hint: "Quarta tappa del giro." },
       { key: "tramonto", title: "Tramonto / chiusura",  hint: "Finale forte o rilassato." }
     ];
+
+    let prevSpot = null;
     box.innerHTML = slots.map(slot => {
       const spot = slot.key in app.planner && app.planner[slot.key]
         ? APP_SPOTS.spots.find(s => s.id === app.planner[slot.key])
         : null;
+
       if (!spot) {
         const skippedForTime = slot.key === "alba" && new Date().getHours() >= 10;
         const hint = skippedForTime
-          ? "L'alba è già passata per oggi: non suggerita, riparti dalla tappa centrale."
+          ? "L'alba è già passata per oggi: non suggerita, riparti dalla tappa successiva."
           : slot.hint;
         return `<div class="planner-slot tap"><div class="planner-slot-head"><div class="planner-slot-title">${slot.title}</div></div><div class="planner-slot-sub">${hint}</div></div>`;
       }
+
+      let distanceRow = "";
+      if (prevSpot) {
+        const [lat1, lon1] = window.APP_UTILS.getCoords(prevSpot);
+        const [lat2, lon2] = window.APP_UTILS.getCoords(spot);
+        const nm = window.APP_UTILS.distKm(lat1, lon1, lat2, lon2) / 1.852;
+        distanceRow = `<div class="planner-distance">⛵ ${nm.toFixed(1)} NM dalla tappa precedente</div>`;
+      }
+      prevSpot = spot;
+
       return `
+        ${distanceRow}
         <div class="planner-slot tap">
           <div class="planner-slot-head">
             <div class="planner-slot-title">${slot.title}</div>

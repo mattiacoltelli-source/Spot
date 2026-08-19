@@ -253,6 +253,7 @@ h1{ font-size:clamp(30px, 7vw, 44px); line-height:1.02; margin:14px 0 10px; word
 .planner-slot-title{ font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
 .planner-slot-name{ font-size:17px; font-weight:800; margin-bottom:4px; }
 .planner-slot-sub{ color:var(--muted); font-size:13px; line-height:1.45; }
+.planner-distance{ display:flex; justify-content:center; align-items:center; gap:6px; color:var(--muted); font-size:12px; font-weight:700; padding:2px 0; }
 .planner-actions{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
 
 .sail-only{ display:none; }
