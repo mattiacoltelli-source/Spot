@@ -250,7 +250,7 @@ h1{ font-size:clamp(30px, 7vw, 44px); line-height:1.02; margin:14px 0 10px; word
 .action-grid{ display:grid; gap:10px; margin-top:12px; }
 
 .planner-box{ display:grid; gap:10px; }
-.planner-slot{ padding:13px; background:#13385a; border:1px solid var(--line); border-radius:16px; transition: border-color var(--normal), transform var(--normal) var(--ease), box-shadow var(--normal), background var(--normal); }
+.planner-slot{ padding:13px; background:#13385a; border:1px solid var(--line); border-radius:16px; cursor:pointer; transition: border-color var(--normal), transform var(--normal) var(--ease), box-shadow var(--normal), background var(--normal); }
 .planner-slot:hover{ border-color:#4d83af; background:#174164; box-shadow:var(--shadow-soft); }
 .planner-slot-head{ display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom:8px; }
 .planner-slot-title{ font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
@@ -266,6 +266,15 @@ h1{ font-size:clamp(30px, 7vw, 44px); line-height:1.02; margin:14px 0 10px; word
 .planner-picker-row-state{ font-size:12px; color:var(--muted); text-align:right; }
 .planner-picker-row.is-current{ background:rgba(69,211,154,.14); border-color:rgba(69,211,154,.38); }
 .planner-picker-row.is-current .planner-picker-row-state{ color:#45d39a; }
+
+.planner-picker-panel{ padding:12px; margin-bottom:10px; background:#0e2f4c; border:1px solid var(--line); border-radius:16px; }
+.planner-picker-panel-head{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:4px; }
+.planner-picker-panel-title{ font-size:14px; font-weight:800; }
+.planner-picker-close{ flex:none; width:32px; height:32px; border-radius:10px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:var(--text); font-size:14px; line-height:1; cursor:pointer; }
+.planner-picker-panel .planner-picker{ max-height:min(50vh,360px); overflow-y:auto; padding-right:2px; }
+
+.map-popup-add-btn{ width:100%; padding:8px 10px; border-radius:10px; border:1px solid #346890; background:#174263; color:#fff; font-size:12px; font-weight:700; cursor:pointer; }
+.map-popup-add-btn:hover{ background:#1b4d74; }
 
 .sail-only{ display:none; }
 body.mode-sail .sail-only{ display:block; }

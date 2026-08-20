@@ -732,36 +732,7 @@
     `;
   }
 
-  function renderPlannerPickerToggle(app, spot) {
-    const currentSlot = window.APP_UTILS.findPlannerSlotForSpot(spot.id);
-    const currentTitle = currentSlot && PLANNER_SLOT_META.find(s => s.key === currentSlot)?.title;
-    const label = currentTitle
-      ? `📍 Nell'itinerario — ${esc(currentTitle)} (tocca per cambiare)`
-      : "📍 Aggiungi a una tappa dell'itinerario";
-    return `<button class="btn btn-secondary tap" id="detailPlannerToggle" type="button">${label}</button>`;
-  }
-
-  function renderPlannerPickerRows(app, spot) {
-    return PLANNER_SLOT_META.map(slot => {
-      const occupantId = app.planner[slot.key];
-      const isCurrent  = occupantId === spot.id;
-      const occupant   = !isCurrent && occupantId ? window.APP_UTILS.getSpotById(occupantId) : null;
-
-      let state;
-      if (isCurrent)      state = "Qui ora — tocca per togliere";
-      else if (occupant)  state = `Occupata: ${esc(occupant.name)}`;
-      else                state = "Libera — tocca per assegnare";
-
-      return `
-        <button class="planner-picker-row tap${isCurrent ? " is-current" : ""}" data-assign-slot="${slot.key}" type="button">
-          <span class="planner-picker-row-title">${esc(slot.title)}</span>
-          <span class="planner-picker-row-state">${state}</span>
-        </button>
-      `;
-    }).join("");
-  }
-
-  UI.renderSpotDetail = function (app, spot, keepPlannerPickerOpen) {
+  UI.renderSpotDetail = function (app, spot) {
     const box = $("spotDetail") || $("detailBox");
     if (!box || !spot) return;
 
@@ -818,42 +789,10 @@
           <a class="btn btn-secondary tap" href="https://www.google.com/search?q=${encodeURIComponent(spot.name + " " + (APP_SPOTS.region || ""))}&tbm=isch" target="_blank" rel="noopener noreferrer">Vedi foto reali</a>
         </div>
       </div>
-
-      <div class="detail-section"><h3>Itinerario</h3>
-        ${renderPlannerPickerToggle(app, spot)}
-        <div class="planner-picker" id="detailPlannerPicker"${keepPlannerPickerOpen ? "" : " hidden"}>
-          ${renderPlannerPickerRows(app, spot)}
-        </div>
-      </div>
     `;
 
     $("detailMapBtn")?.addEventListener("click", () => window.APP_UTILS.centerSpot(spot.id));
     $("detailFavBtn")?.addEventListener("click", () => window.APP_UTILS.toggleFavorite(spot.id));
-
-    $("detailPlannerToggle")?.addEventListener("click", () => {
-      const picker = $("detailPlannerPicker");
-      if (picker) picker.hidden = !picker.hidden;
-    });
-
-    $("detailPlannerPicker")?.querySelectorAll("[data-assign-slot]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const slotKey     = btn.dataset.assignSlot;
-        const occupantId  = app.planner[slotKey];
-
-        if (occupantId === spot.id) {
-          window.APP_UTILS.clearPlannerSlot(slotKey);
-        } else {
-          if (occupantId) {
-            const occupant = window.APP_UTILS.getSpotById(occupantId);
-            const label = PLANNER_SLOT_META.find(s => s.key === slotKey)?.title || slotKey;
-            const ok = confirm(`"${label}" contiene già "${occupant ? occupant.name : "un altro spot"}". Sostituirlo con "${spot.name}"?`);
-            if (!ok) return;
-          }
-          window.APP_UTILS.setPlannerSlot(slotKey, spot.id);
-        }
-        UI.renderSpotDetail(app, spot, true);
-      });
-    });
 
     $("detailVisitedBtn")?.addEventListener("click", () => {
       window.APP_UTILS.toggleVisited(spot.id);
@@ -875,22 +814,110 @@
     { key: "tramonto", title: "Tramonto / chiusura",  hint: "Finale forte o rilassato." }
   ];
 
+  // Menu di assegnazione integrato nella tabella itinerario: null, oppure
+  // { type:"forSlot", slotKey } (scegli uno spot per una tappa) oppure
+  // { type:"forSpot", spotId } (scegli una tappa per uno spot, es. dalla mappa).
+  let plannerPickerMode = null;
+
+  function assignPlannerSlot(app, slotKey, spotId) {
+    const occupantId = app.planner[slotKey];
+    if (occupantId === spotId) {
+      plannerPickerMode = null;
+      window.APP_UTILS.clearPlannerSlot(slotKey);
+      return;
+    }
+    if (occupantId) {
+      const occupant  = window.APP_UTILS.getSpotById(occupantId);
+      const newSpot   = window.APP_UTILS.getSpotById(spotId);
+      const slotTitle = PLANNER_SLOT_META.find(s => s.key === slotKey)?.title || slotKey;
+      const ok = confirm(`"${slotTitle}" contiene già "${occupant ? occupant.name : "un altro spot"}". Sostituirlo con "${newSpot ? newSpot.name : "questo spot"}"?`);
+      if (!ok) return;
+    }
+    plannerPickerMode = null;
+    window.APP_UTILS.setPlannerSlot(slotKey, spotId);
+  }
+
+  function plannerSlotPickerHtml(app, slotKey) {
+    const occupantId = app.planner[slotKey];
+    const rows = APP_SPOTS.spots.map(s => {
+      const isCurrent = s.id === occupantId;
+      return `
+        <button class="planner-picker-row tap${isCurrent ? " is-current" : ""}" data-pick-spot="${s.id}" type="button">
+          <span class="planner-picker-row-title">${esc(s.name)}</span>
+          <span class="planner-picker-row-state">${isCurrent ? "Qui ora — tocca per togliere" : esc(pretty(s.zone))}</span>
+        </button>
+      `;
+    }).join("");
+    return `
+      <div class="planner-picker-panel">
+        <div class="planner-picker-panel-head">
+          <div class="planner-picker-panel-title">Scegli uno spot per «${esc(PLANNER_SLOT_META.find(s => s.key === slotKey)?.title || slotKey)}»</div>
+          <button class="planner-picker-close tap" data-close-picker type="button">✕</button>
+        </div>
+        <div class="planner-picker">${rows}</div>
+      </div>
+    `;
+  }
+
+  function plannerSpotPickerHtml(app, spotId) {
+    const spot = window.APP_UTILS.getSpotById(spotId);
+    if (!spot) return "";
+    const rows = PLANNER_SLOT_META.map(slot => {
+      const occupantId = app.planner[slot.key];
+      const isCurrent  = occupantId === spotId;
+      const occupant   = !isCurrent && occupantId ? window.APP_UTILS.getSpotById(occupantId) : null;
+      let state;
+      if (isCurrent)      state = "Qui ora — tocca per togliere";
+      else if (occupant)  state = `Occupata: ${esc(occupant.name)}`;
+      else                state = "Libera — tocca per assegnare";
+      return `
+        <button class="planner-picker-row tap${isCurrent ? " is-current" : ""}" data-assign-slot="${slot.key}" type="button">
+          <span class="planner-picker-row-title">${esc(slot.title)}</span>
+          <span class="planner-picker-row-state">${state}</span>
+        </button>
+      `;
+    }).join("");
+    return `
+      <div class="planner-picker-panel">
+        <div class="planner-picker-panel-head">
+          <div class="planner-picker-panel-title">Scegli una tappa per «${esc(spot.name)}»</div>
+          <button class="planner-picker-close tap" data-close-picker type="button">✕</button>
+        </div>
+        <div class="planner-picker">${rows}</div>
+      </div>
+    `;
+  }
+
   UI.renderPlannerBox = function (app) {
-    const box = $("plannerBox");
-    if (!box) return;
+    const boxes = [$("plannerBox"), $("plannerBoxMap")].filter(Boolean);
+    if (!boxes.length) return;
+
+    if (plannerPickerMode?.type === "forSpot" && !window.APP_UTILS.getSpotById(plannerPickerMode.spotId)) {
+      plannerPickerMode = null;
+    }
+    const topPickerHtml = plannerPickerMode?.type === "forSpot" ? plannerSpotPickerHtml(app, plannerPickerMode.spotId) : "";
 
     let prevSpot = null;
-    box.innerHTML = PLANNER_SLOT_META.map(slot => {
+    const slotsHtml = PLANNER_SLOT_META.map(slot => {
       const spot = slot.key in app.planner && app.planner[slot.key]
         ? APP_SPOTS.spots.find(s => s.id === app.planner[slot.key])
         : null;
+
+      const isOpenHere = plannerPickerMode?.type === "forSlot" && plannerPickerMode.slotKey === slot.key;
+      const pickerHtml = isOpenHere ? plannerSlotPickerHtml(app, slot.key) : "";
 
       if (!spot) {
         const skippedForTime = slot.key === "alba" && new Date().getHours() >= 10;
         const hint = skippedForTime
           ? "L'alba è già passata per oggi: non suggerita, riparti dalla tappa successiva."
           : slot.hint;
-        return `<div class="planner-slot tap"><div class="planner-slot-head"><div class="planner-slot-title">${slot.title}</div></div><div class="planner-slot-sub">${hint}</div></div>`;
+        return `
+          <div class="planner-slot tap" data-open-slot="${slot.key}">
+            <div class="planner-slot-head"><div class="planner-slot-title">${slot.title}</div></div>
+            <div class="planner-slot-sub">${hint}</div>
+          </div>
+          ${pickerHtml}
+        `;
       }
 
       let distanceRow = "";
@@ -904,7 +931,7 @@
 
       return `
         ${distanceRow}
-        <div class="planner-slot tap">
+        <div class="planner-slot tap" data-open-slot="${slot.key}">
           <div class="planner-slot-head">
             <div class="planner-slot-title">${slot.title}</div>
             <button class="btn btn-secondary tap" data-clear-slot="${slot.key}" type="button" style="width:auto;padding:8px 12px">Rimuovi</button>
@@ -912,11 +939,60 @@
           <div class="planner-slot-name">${esc(spot.name)}</div>
           <div class="planner-slot-sub">${esc(spot.tip || spot.desc || "")}</div>
         </div>
+        ${pickerHtml}
       `;
     }).join("");
-    box.querySelectorAll("[data-clear-slot]").forEach(btn => {
-      btn.addEventListener("click", () => window.APP_UTILS.clearPlannerSlot(btn.dataset.clearSlot));
+
+    const html = topPickerHtml + slotsHtml;
+    boxes.forEach(box => { box.innerHTML = html; });
+
+    boxes.forEach(box => {
+      box.querySelectorAll("[data-clear-slot]").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          plannerPickerMode = null;
+          window.APP_UTILS.clearPlannerSlot(btn.dataset.clearSlot);
+        });
+      });
+
+      box.querySelectorAll("[data-open-slot]").forEach(card => {
+        card.addEventListener("click", () => {
+          const key = card.dataset.openSlot;
+          plannerPickerMode = (plannerPickerMode?.type === "forSlot" && plannerPickerMode.slotKey === key)
+            ? null
+            : { type: "forSlot", slotKey: key };
+          UI.renderPlannerBox(app);
+        });
+      });
+
+      box.querySelectorAll("[data-close-picker]").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          plannerPickerMode = null;
+          UI.renderPlannerBox(app);
+        });
+      });
+
+      box.querySelectorAll("[data-assign-slot]").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          assignPlannerSlot(app, btn.dataset.assignSlot, plannerPickerMode.spotId);
+        });
+      });
+
+      box.querySelectorAll("[data-pick-spot]").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          assignPlannerSlot(app, plannerPickerMode.slotKey, btn.dataset.pickSpot);
+        });
+      });
     });
+  };
+
+  UI.openPlannerPickerForSpot = function (app, spotId) {
+    plannerPickerMode = { type: "forSpot", spotId };
+    UI.renderPlannerBox(app);
+    $("plannerPanelMap")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   function renderNearbyPanel(app) {

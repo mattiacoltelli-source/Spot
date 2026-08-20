@@ -787,8 +787,8 @@
     toast("Rimosso dall'itinerario");
   }
 
-  function findPlannerSlotForSpot(spotId) {
-    return PLANNER_SLOTS.find(slot => APP.planner[slot] === spotId) || null;
+  function openPlannerPickerForSpot(spotId) {
+    if (window.UI?.openPlannerPickerForSpot) window.UI.openPlannerPickerForSpot(APP, spotId);
   }
 
   function clearPlannerAll() {
@@ -1110,8 +1110,18 @@
 
     items.forEach(spot => {
       const marker = L.marker([spot.lat, spot.lon], { icon: createMarkerIcon(markerColor(spot)) }).addTo(APP.map);
-      marker.bindPopup(`<div style="min-width:180px"><div style="font-weight:800;font-size:15px;margin-bottom:6px">${escapeHtml(spot.name)}</div><div style="font-size:12px;color:#cfe0ef">${escapeHtml(spot.desc || "")}</div></div>`);
+      marker.bindPopup(`<div style="min-width:180px"><div style="font-weight:800;font-size:15px;margin-bottom:6px">${escapeHtml(spot.name)}</div><div style="font-size:12px;color:#cfe0ef;margin-bottom:8px">${escapeHtml(spot.desc || "")}</div><button type="button" class="map-popup-add-btn" data-add-to-planner="${spot.id}">➕ Aggiungi all'itinerario</button></div>`);
       marker.on("click", () => showSpotDetail(spot));
+      marker.on("popupopen", (e) => {
+        const btn = e.popup.getElement()?.querySelector("[data-add-to-planner]");
+        if (btn && !btn._wired) {
+          btn._wired = true;
+          btn.addEventListener("click", () => {
+            marker.closePopup();
+            openPlannerPickerForSpot(spot.id);
+          });
+        }
+      });
       APP.markers.push(marker);
       APP.markerBySpotId.set(spot.id, marker);
       latlngs.push([spot.lat, spot.lon]);
@@ -1306,6 +1316,8 @@
     $("autofillPlannerBtn")?.addEventListener("click", buildDayPlanner);
     $("plannerOpenBtn")?.addEventListener("click",     () => switchPage("home"));
     $("clearPlannerBtn")?.addEventListener("click",    clearPlannerAll);
+    $("autofillPlannerBtnMap")?.addEventListener("click", buildDayPlanner);
+    $("clearPlannerBtnMap")?.addEventListener("click",    clearPlannerAll);
 
     const trigger = $("cosaOraTrigger");
     const menu    = $("cosaOraMenu");
@@ -1378,6 +1390,7 @@
 
     if (APP.userPos) updateUserMarker();
     smartRender("full");
+    renderPlannerBox();
 
     setTimeout(() => loadWeather(), 0);
 
@@ -1434,7 +1447,7 @@
     getSunPhaseInfo,
 
     isFavorite, toggleFavorite, setPlannerSlot, clearPlannerSlot, clearPlannerAll,
-    findPlannerSlotForSpot, PLANNER_SLOTS, PLANNER_SLOT_TITLES,
+    openPlannerPickerForSpot, PLANNER_SLOTS, PLANNER_SLOT_TITLES,
 
     isVisited, toggleVisited, markVisited,
 
