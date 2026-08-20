@@ -943,9 +943,22 @@
       saveWeatherCache();
 
     } catch {
-      APP.weatherData = null; APP._weatherStamp = null; APP.marineData = null; APP.hourlyData = []; APP.sunTimes = null;
+      // Non azzeriamo dati meteo validi (es. appena ripristinati da cache,
+      // fino a 3 ore) solo perché QUESTO aggiornamento è fallito: altrimenti
+      // il pannello meteo mostra ancora i vecchi numeri (aggiornati solo nei
+      // render "full", vedi sotto) mentre i punteggi "meteo adesso" calcolati
+      // sui singoli spot userebbero già dati azzerati — due parti della
+      // stessa schermata in disaccordo tra loro. Azzeriamo solo se non
+      // avevamo già nulla di valido.
+      if (!APP.weatherData) {
+        APP.weatherData = null; APP._weatherStamp = null; APP.marineData = null; APP.hourlyData = []; APP.sunTimes = null;
+      }
     }
-    smartRender("light");
+    // "full" e non "light": è l'unico render che aggiorna il pannello
+    // meteo/mare (#weatherAlert, statistiche, orario) — con "light" quel
+    // pannello resterebbe fermo al testo iniziale finché non capita, per
+    // altri motivi, un render "full".
+    smartRender("full");
     startSunsetCountdown();
   }
 
@@ -1165,12 +1178,26 @@
     const input = $("searchInput");
     if (!input) return;
     const q = input.value.trim();
-    if (!q) return;
+    if (!q) { toast("Scrivi qualcosa da cercare"); return; }
     APP.search = q;
     smartRender("light");
-    const found = getBaseSpots().find(s => smartSearchMatch(s, q));
-    if (found) { showSpotDetail(found); switchPage("detail"); toast("Spot trovato"); }
-    else       { switchPage("spots"); toast("Nessuno spot trovato per quella ricerca"); }
+    // Stesso esito di quando si digita nel campo (filtra la lista Spot):
+    // prima il bottone "Cerca" saltava dritto al dettaglio del primo
+    // risultato, un comportamento diverso e sorprendente rispetto a quello
+    // che l'utente vede già scrivendo.
+    switchPage("spots");
+    const count = getFilteredSpots().length;
+    toast(count ? `${count} spot trovat${count === 1 ? "o" : "i"}` : "Nessuno spot trovato per quella ricerca");
+  }
+
+  // Il campo di ricerca è visibile solo in Home: da qualunque altra pagina
+  // (es. Spot, dopo una ricerca senza risultati) non c'è altrimenti modo di
+  // svuotare il filtro attivo.
+  function clearSearch() {
+    APP.search = "";
+    const input = $("searchInput");
+    if (input) input.value = "";
+    smartRender("light");
   }
 
   function renderPlannerBox() { if (window.UI?.renderPlannerBox) window.UI.renderPlannerBox(APP); }
@@ -1399,7 +1426,7 @@
     isVisited, toggleVisited, markVisited,
 
     showSpotDetail, switchPage, centerSpot, renderPlannerBox, renderAll,
-    renderMarkers, updateUserMarker, toggleMode
+    renderMarkers, updateUserMarker, toggleMode, clearSearch
   };
 
   document.addEventListener("DOMContentLoaded", initApp);

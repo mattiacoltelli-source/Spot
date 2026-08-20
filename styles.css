@@ -230,8 +230,11 @@ h1{ font-size:clamp(30px, 7vw, 44px); line-height:1.02; margin:14px 0 10px; word
 .tag.pink{ background:rgba(255,171,197,.14); border-color:rgba(255,171,197,.26); }
 .tag.spot-tag{ background:rgba(255,255,255,.04); border-color:rgba(255,255,255,.07); color:var(--muted); font-size:10px; padding:4px 7px; }
 
+.result-note-clear{ margin-left:8px; font-size:11px; padding:4px 9px; border-radius:999px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); color:#e1edf7; cursor:pointer; }
+.result-note-clear:hover{ background:rgba(255,255,255,.12); }
+
 .detail-empty{ color:var(--muted); font-size:14px; line-height:1.55; }
-.detail-hero{ min-height:228px; border-radius:18px; overflow:hidden; position:relative; margin-bottom:12px; border:1px solid rgba(255,255,255,.07); background-size:cover; background-position:center; background-repeat:no-repeat; box-shadow:var(--shadow-soft); }
+.detail-hero{ min-height:228px; border-radius:18px; overflow:hidden; position:relative; margin-bottom:12px; border:1px solid rgba(255,255,255,.07); background-color:var(--panel-solid); background-size:cover; background-position:center; background-repeat:no-repeat; box-shadow:var(--shadow-soft); }
 .detail-hero::after{ content:""; position:absolute; inset:0; background: linear-gradient(180deg, rgba(4,8,14,.08), rgba(4,8,14,.82)), radial-gradient(circle at top right, rgba(244,203,116,.14), transparent 30%); }
 .detail-hero-inner{ position:absolute; left:14px; right:14px; bottom:14px; z-index:1; }
 .detail-title{ margin:0 0 6px; font-size:24px; font-weight:800; word-break:break-word; line-height:1.08; }

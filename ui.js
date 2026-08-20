@@ -605,9 +605,18 @@
     const items = window.APP_UTILS.getFilteredSpots();
 
     if (note) {
-      note.textContent = app.search
-        ? (items.length ? `${items.length} risultato${items.length !== 1 ? "i" : ""} per "${app.search}"` : `Nessuno spot trovato per "${app.search}"`)
-        : `${items.length} spot${app.level !== "all" || app.zone !== "all" || app.activity !== "all" ? " (filtrati)" : ""}`;
+      if (app.search) {
+        const countText = items.length
+          ? `${items.length} risultato${items.length !== 1 ? "i" : ""} per "${esc(app.search)}"`
+          : `Nessuno spot trovato per "${esc(app.search)}"`;
+        // Il campo di ricerca è visibile solo in Home: qui offriamo un modo
+        // di azzerare il filtro anche da questa pagina.
+        note.innerHTML = `${countText} <button type="button" class="result-note-clear tap" id="clearSearchBtn">✕ cancella ricerca</button>`;
+        const clearBtn = $("clearSearchBtn");
+        if (clearBtn) clearBtn.addEventListener("click", () => window.APP_UTILS.clearSearch());
+      } else {
+        note.textContent = `${items.length} spot${app.level !== "all" || app.zone !== "all" || app.activity !== "all" ? " (filtrati)" : ""}`;
+      }
     }
 
     if (!items.length) {
@@ -977,9 +986,9 @@
 
   let lastFullRender = 0;
 
-  UI.renderAll = function (app) {
+  UI.renderAll = function (app, force) {
     const now    = Date.now();
-    const doFull = (now - lastFullRender) > 1500;
+    const doFull = force || (now - lastFullRender) > 1500;
 
     if (doFull) {
       lastFullRender = now;
@@ -1032,7 +1041,11 @@
   };
 
   UI.smartRender = function (app, type = "light") {
-    if (type === "full") UI.renderAll(app);
+    // Una richiesta esplicita di render "full" (es. cambio Sail/Travel mode)
+    // deve sempre applicarsi subito: il throttle qui sopra serve solo a
+    // evitare full-render involontari troppo ravvicinati, non a ignorare
+    // un cambio di stato che il chiamante ha chiesto apposta di mostrare.
+    if (type === "full") UI.renderAll(app, true);
     else                 UI.renderLight(app);
   };
 
