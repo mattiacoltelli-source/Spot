@@ -259,6 +259,14 @@ h1{ font-size:clamp(30px, 7vw, 44px); line-height:1.02; margin:14px 0 10px; word
 .planner-distance{ display:flex; justify-content:center; align-items:center; gap:6px; color:var(--muted); font-size:12px; font-weight:700; padding:2px 0; }
 .planner-actions{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
 
+.planner-picker{ display:grid; gap:8px; margin-top:10px; }
+.planner-picker-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; text-align:left; padding:12px 14px; border-radius:14px; border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.05); color:var(--text); cursor:pointer; transition: background var(--fast), border-color var(--fast); }
+.planner-picker-row:hover{ background:rgba(255,255,255,.09); border-color:rgba(255,255,255,.18); }
+.planner-picker-row-title{ font-size:14px; font-weight:800; }
+.planner-picker-row-state{ font-size:12px; color:var(--muted); text-align:right; }
+.planner-picker-row.is-current{ background:rgba(69,211,154,.14); border-color:rgba(69,211,154,.38); }
+.planner-picker-row.is-current .planner-picker-row-state{ color:#45d39a; }
+
 .sail-only{ display:none; }
 body.mode-sail .sail-only{ display:block; }
 

@@ -41,6 +41,13 @@
 
   const PLANNER_SLOTS   = ["alba", "tappa2", "tappa3", "tappa4", "tramonto"];
   const DEFAULT_PLANNER = { alba: null, tappa2: null, tappa3: null, tappa4: null, tramonto: null };
+  const PLANNER_SLOT_TITLES = {
+    alba:     "Alba / mattina",
+    tappa2:   "Tappa 2",
+    tappa3:   "Tappa 3",
+    tappa4:   "Tappa 4",
+    tramonto: "Tramonto / chiusura"
+  };
 
   function loadPlanner() {
     const loaded = loadJson(STORAGE_KEYS.planner, DEFAULT_PLANNER);
@@ -770,13 +777,18 @@
     APP.planner[slot] = spotId;
     saveJson(STORAGE_KEYS.planner, APP.planner);
     renderPlannerBox();
-    toast("Planner aggiornato");
+    toast(`Aggiunto a "${PLANNER_SLOT_TITLES[slot] || slot}"`);
   }
 
   function clearPlannerSlot(slot) {
     APP.planner[slot] = null;
     saveJson(STORAGE_KEYS.planner, APP.planner);
     renderPlannerBox();
+    toast("Rimosso dall'itinerario");
+  }
+
+  function findPlannerSlotForSpot(spotId) {
+    return PLANNER_SLOTS.find(slot => APP.planner[slot] === spotId) || null;
   }
 
   function clearPlannerAll() {
@@ -1422,6 +1434,7 @@
     getSunPhaseInfo,
 
     isFavorite, toggleFavorite, setPlannerSlot, clearPlannerSlot, clearPlannerAll,
+    findPlannerSlotForSpot, PLANNER_SLOTS, PLANNER_SLOT_TITLES,
 
     isVisited, toggleVisited, markVisited,
 

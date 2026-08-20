@@ -732,7 +732,36 @@
     `;
   }
 
-  UI.renderSpotDetail = function (app, spot) {
+  function renderPlannerPickerToggle(app, spot) {
+    const currentSlot = window.APP_UTILS.findPlannerSlotForSpot(spot.id);
+    const currentTitle = currentSlot && PLANNER_SLOT_META.find(s => s.key === currentSlot)?.title;
+    const label = currentTitle
+      ? `📍 Nell'itinerario — ${esc(currentTitle)} (tocca per cambiare)`
+      : "📍 Aggiungi a una tappa dell'itinerario";
+    return `<button class="btn btn-secondary tap" id="detailPlannerToggle" type="button">${label}</button>`;
+  }
+
+  function renderPlannerPickerRows(app, spot) {
+    return PLANNER_SLOT_META.map(slot => {
+      const occupantId = app.planner[slot.key];
+      const isCurrent  = occupantId === spot.id;
+      const occupant   = !isCurrent && occupantId ? window.APP_UTILS.getSpotById(occupantId) : null;
+
+      let state;
+      if (isCurrent)      state = "Qui ora — tocca per togliere";
+      else if (occupant)  state = `Occupata: ${esc(occupant.name)}`;
+      else                state = "Libera — tocca per assegnare";
+
+      return `
+        <button class="planner-picker-row tap${isCurrent ? " is-current" : ""}" data-assign-slot="${slot.key}" type="button">
+          <span class="planner-picker-row-title">${esc(slot.title)}</span>
+          <span class="planner-picker-row-state">${state}</span>
+        </button>
+      `;
+    }).join("");
+  }
+
+  UI.renderSpotDetail = function (app, spot, keepPlannerPickerOpen) {
     const box = $("spotDetail") || $("detailBox");
     if (!box || !spot) return;
 
@@ -789,10 +818,42 @@
           <a class="btn btn-secondary tap" href="https://www.google.com/search?q=${encodeURIComponent(spot.name + " " + (APP_SPOTS.region || ""))}&tbm=isch" target="_blank" rel="noopener noreferrer">Vedi foto reali</a>
         </div>
       </div>
+
+      <div class="detail-section"><h3>Itinerario</h3>
+        ${renderPlannerPickerToggle(app, spot)}
+        <div class="planner-picker" id="detailPlannerPicker"${keepPlannerPickerOpen ? "" : " hidden"}>
+          ${renderPlannerPickerRows(app, spot)}
+        </div>
+      </div>
     `;
 
     $("detailMapBtn")?.addEventListener("click", () => window.APP_UTILS.centerSpot(spot.id));
     $("detailFavBtn")?.addEventListener("click", () => window.APP_UTILS.toggleFavorite(spot.id));
+
+    $("detailPlannerToggle")?.addEventListener("click", () => {
+      const picker = $("detailPlannerPicker");
+      if (picker) picker.hidden = !picker.hidden;
+    });
+
+    $("detailPlannerPicker")?.querySelectorAll("[data-assign-slot]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const slotKey     = btn.dataset.assignSlot;
+        const occupantId  = app.planner[slotKey];
+
+        if (occupantId === spot.id) {
+          window.APP_UTILS.clearPlannerSlot(slotKey);
+        } else {
+          if (occupantId) {
+            const occupant = window.APP_UTILS.getSpotById(occupantId);
+            const label = PLANNER_SLOT_META.find(s => s.key === slotKey)?.title || slotKey;
+            const ok = confirm(`"${label}" contiene già "${occupant ? occupant.name : "un altro spot"}". Sostituirlo con "${spot.name}"?`);
+            if (!ok) return;
+          }
+          window.APP_UTILS.setPlannerSlot(slotKey, spot.id);
+        }
+        UI.renderSpotDetail(app, spot, true);
+      });
+    });
 
     $("detailVisitedBtn")?.addEventListener("click", () => {
       window.APP_UTILS.toggleVisited(spot.id);
@@ -806,19 +867,20 @@
     });
   };
 
+  const PLANNER_SLOT_META = [
+    { key: "alba",     title: "Alba / mattina",      hint: "Tappa iniziale della giornata." },
+    { key: "tappa2",   title: "Tappa 2",              hint: "Seconda tappa del giro." },
+    { key: "tappa3",   title: "Tappa 3",              hint: "Terza tappa del giro." },
+    { key: "tappa4",   title: "Tappa 4",              hint: "Quarta tappa del giro." },
+    { key: "tramonto", title: "Tramonto / chiusura",  hint: "Finale forte o rilassato." }
+  ];
+
   UI.renderPlannerBox = function (app) {
     const box = $("plannerBox");
     if (!box) return;
-    const slots = [
-      { key: "alba",     title: "Alba / mattina",      hint: "Tappa iniziale della giornata." },
-      { key: "tappa2",   title: "Tappa 2",              hint: "Seconda tappa del giro." },
-      { key: "tappa3",   title: "Tappa 3",              hint: "Terza tappa del giro." },
-      { key: "tappa4",   title: "Tappa 4",              hint: "Quarta tappa del giro." },
-      { key: "tramonto", title: "Tramonto / chiusura",  hint: "Finale forte o rilassato." }
-    ];
 
     let prevSpot = null;
-    box.innerHTML = slots.map(slot => {
+    box.innerHTML = PLANNER_SLOT_META.map(slot => {
       const spot = slot.key in app.planner && app.planner[slot.key]
         ? APP_SPOTS.spots.find(s => s.id === app.planner[slot.key])
         : null;
