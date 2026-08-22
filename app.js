@@ -1318,7 +1318,6 @@
     $("autofillPlannerBtn")?.addEventListener("click", buildDayPlanner);
     $("plannerOpenBtn")?.addEventListener("click",     () => switchPage("home"));
     $("clearPlannerBtn")?.addEventListener("click",    clearPlannerAll);
-    $("autofillPlannerBtnMap")?.addEventListener("click", buildDayPlanner);
     $("clearPlannerBtnMap")?.addEventListener("click",    clearPlannerAll);
 
     const trigger = $("cosaOraTrigger");
