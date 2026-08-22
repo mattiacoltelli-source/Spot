@@ -87,7 +87,8 @@
     _lightUpdateTimer: null,
     _weatherRefreshTimer: null,
     _nearbyCache:      null,
-    _weatherStamp:     null
+    _weatherStamp:     null,
+    _weatherLoading:   false
   };
 
   window.APP = APP;
@@ -966,6 +967,7 @@
         APP.weatherData = null; APP._weatherStamp = null; APP.marineData = null; APP.hourlyData = []; APP.sunTimes = null;
       }
     }
+    APP._weatherLoading = false;
     // "full" e non "light": è l'unico render che aggiorna il pannello
     // meteo/mare (#weatherAlert, statistiche, orario) — con "light" quel
     // pannello resterebbe fermo al testo iniziale finché non capita, per
@@ -1388,6 +1390,7 @@
     loadWeatherFromCache();
     loadLastPosition();
 
+    APP._weatherLoading = !APP.weatherData;
     if (APP.userPos) updateUserMarker();
     smartRender("full");
     renderPlannerBox();

@@ -297,6 +297,12 @@
   function renderStatsGrid(app) {
     const box = $("statsGrid");
     if (!box) return;
+    if (app._weatherLoading) {
+      box.innerHTML = Array.from({ length: 4 }).map(() => `
+        <div class="stat"><div class="skel skel-k"></div><div class="skel skel-v"></div></div>
+      `).join("");
+      return;
+    }
     if (!app.weatherData) {
       box.innerHTML = `
         <div class="stat"><div class="k">Temperatura</div><div class="v">—</div></div>
@@ -372,6 +378,20 @@
     const main  = $("hourlySummaryMain");
     const sub   = $("hourlySummarySub");
     if (!strip) return;
+    if (app._weatherLoading) {
+      strip.innerHTML = Array.from({ length: 5 }).map(() => `
+        <div class="hour-card">
+          <div class="skel skel-title"></div>
+          <div class="skel skel-row"></div>
+          <div class="skel skel-row"></div>
+          <div class="skel skel-row"></div>
+          <div class="skel skel-pill"></div>
+        </div>
+      `).join("");
+      if (main) main.textContent = "Sto leggendo la finestra migliore della giornata.";
+      if (sub)  sub.textContent  = "Fra poco trovi una lettura rapida delle prossime ore.";
+      return;
+    }
     if (!app.hourlyData.length) {
       strip.innerHTML = `<div class="detail-empty">Previsione non disponibile.</div>`;
       if (main) main.textContent = "Previsione oraria non disponibile.";
@@ -1154,7 +1174,10 @@
       renderNearbyPanel(app);
 
       if ($("weatherAlert")) {
-        if (!app.weatherData) {
+        if (app._weatherLoading) {
+          $("weatherAlert").className   = "alert skel-alert";
+          $("weatherAlert").textContent = " ";
+        } else if (!app.weatherData) {
           $("weatherAlert").className   = "alert warn";
           $("weatherAlert").textContent = "Meteo non disponibile.";
         } else {
