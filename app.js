@@ -1073,6 +1073,31 @@
     });
   }
 
+  // Leaflet (43KB JS + CSS) pesava sul primo caricamento di OGNI pagina
+  // dell'app, anche se la mappa è una sola delle 5 tab e non è quella
+  // aperta di default (misurato con Performance Agent: era tra le risorse
+  // che bloccavano il primo render). Caricato ora solo alla prima apertura
+  // reale della tab Mappa, non più da <head> né da initApp().
+  let leafletLoadPromise = null;
+  function loadLeaflet() {
+    if (typeof L !== "undefined") return Promise.resolve();
+    if (leafletLoadPromise) return leafletLoadPromise;
+
+    leafletLoadPromise = new Promise((resolve, reject) => {
+      const css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = "vendor/leaflet/leaflet.css";
+      document.head.appendChild(css);
+
+      const script = document.createElement("script");
+      script.src = "vendor/leaflet/leaflet.js";
+      script.onload = resolve;
+      script.onerror = () => reject(new Error("Impossibile caricare Leaflet"));
+      document.head.appendChild(script);
+    });
+    return leafletLoadPromise;
+  }
+
   function initMap() {
     const mapEl = $("map");
     if (!mapEl || typeof L === "undefined") return;
@@ -1173,8 +1198,17 @@
     }
 
     window.scrollTo({ top: 0, behavior: "smooth" });
-    if (pageName === "map" && APP.map) {
-      setTimeout(() => { APP.map.invalidateSize(); updateUserMarker(); }, 220);
+    if (pageName === "map") {
+      if (APP.map) {
+        setTimeout(() => { APP.map.invalidateSize(); updateUserMarker(); }, 220);
+      } else {
+        loadLeaflet()
+          .then(() => {
+            initMap();
+            setTimeout(() => { if (APP.map) { APP.map.invalidateSize(); updateUserMarker(); } }, 220);
+          })
+          .catch(e => console.warn("Mappa non disponibile:", e));
+      }
     }
   }
 
@@ -1372,7 +1406,8 @@
   function initApp() {
     updateModeUI();
     bindEvents();
-    initMap();
+    // La mappa (Leaflet) si carica e inizializza solo alla prima apertura
+    // reale della tab Mappa, vedi switchPage() — non più qui.
 
     const fadeStyle = document.createElement("style");
     fadeStyle.textContent = ".page { transition: opacity 150ms ease; }";
