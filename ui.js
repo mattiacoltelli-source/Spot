@@ -3,6 +3,20 @@
 
   const UI = {};
 
+  const ICON_PIN = '<svg class="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.4 7-11.5A7 7 0 0 0 5 9.5C5 14.6 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.3"/></svg>';
+  const ICON_ACT = {
+    spiaggia: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M6 20c0-6 3-10 6-10s6 4 6 10"/><path d="M12 10V4"/><path d="M12 4l3 1.4"/></svg>',
+    view:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="13" r="4"/><circle cx="16" cy="13" r="4"/><path d="M9 9 8 6"/><path d="M15 9l1-3"/></svg>',
+    borgo:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 9 7l5 4.5"/><path d="M5.5 10.5V19h7v-8.5"/><path d="M13 19v-6l3-2.5 4 3.5V19"/></svg>',
+    storico:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8 12 3l8 5"/><path d="M5 8v11M9.5 8v11M14.5 8v11M19 8v11"/><path d="M3 19h18"/></svg>',
+    natura:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19c8 1 13-4 14-14-9 1-14 6-14 14z"/><path d="M6.5 17.5C9 15 12 11.5 14.5 7"/></svg>'
+  };
+  const ICON_MOOD = {
+    good: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M5 5l1.4 1.4M17.6 17.6 19 19M3 12h2M19 12h2M5 19l1.4-1.4M17.6 6.4 19 5"/></svg>',
+    bad:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17" r=".3" fill="currentColor"/></svg>',
+    warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 17a4 4 0 1 1 1-7.9A5 5 0 0 1 17 11a3.5 3.5 0 0 1 0 7H6z"/></svg>'
+  };
+
   function $(id) { return document.getElementById(id); }
   function esc(v) { return window.APP_UTILS.escapeHtml(v); }
   function isFavorite(id) { return window.APP_UTILS.isFavorite(id); }
@@ -38,6 +52,10 @@
   function chipClassFromFit(fit) {
     if (!fit) return "blue";
     return fit.cls || "blue";
+  }
+
+  function fitTextClass(fit) {
+    return "fit-" + chipClassFromFit(fit);
   }
 
   function getDistanceLabel(spot) {
@@ -144,10 +162,10 @@
         <div class="go-now-title">${bestNow ? esc(bestNow.name) : "Lettura in corso…"}</div>
         ${mainSignals ? `<div class="quick-explain smart-signals">${esc(mainSignals)}</div>` : ""}
         <div class="quick-desc">${bestNow ? esc(getBestPracticalLine(bestNow)) : "Sto calcolando il miglior spot del momento."}</div>
-        <div class="sunset-chip-row">
-          ${bestNow && getDistanceLabel(bestNow) ? `<div class="mini-chip blue">📍 ${esc(getDistanceLabel(bestNow))}</div>` : ""}
-          <div class="mini-chip ${chipClassFromFit(bestNow?.weatherFit)}">${bestNow?.weatherFit?.label || "meteo in lettura"}</div>
-          ${bestNow?.experience?.wow ? `<div class="mini-chip gold">Wow ${esc(String(bestNow.experience.wow))}/10</div>` : ""}
+        <div class="meta-row">
+          <span class="${fitTextClass(bestNow?.weatherFit)}">${bestNow?.weatherFit?.label || "meteo in lettura"}</span>
+          ${bestNow && getDistanceLabel(bestNow) ? `<span>${ICON_PIN}${esc(getDistanceLabel(bestNow))}</span>` : ""}
+          ${bestNow?.experience?.wow ? `<span class="on">Wow ${esc(String(bestNow.experience.wow))}/10</span>` : ""}
         </div>
       </div>
     `;
@@ -163,10 +181,10 @@
             <div class="go-now-alt-name">${esc(alt1.name)}</div>
             ${alt1Signals ? `<div class="go-now-alt-explain smart-signals">${esc(alt1Signals)}</div>` : ""}
             <div class="quick-desc go-now-alt-desc">${esc(getBestPracticalLine(alt1))}</div>
-            <div class="sunset-chip-row">
-              ${getDistanceLabel(alt1) ? `<div class="mini-chip blue">${esc(getDistanceLabel(alt1))}</div>` : ""}
-              ${alt1.weatherFit ? `<div class="mini-chip ${chipClassFromFit(alt1.weatherFit)}">${esc(alt1.weatherFit.label)}</div>` : ""}
-              ${alt1.experience?.wow ? `<div class="mini-chip gold">Wow ${esc(String(alt1.experience.wow))}</div>` : ""}
+            <div class="meta-row">
+              ${alt1.weatherFit ? `<span class="${fitTextClass(alt1.weatherFit)}">${esc(alt1.weatherFit.label)}</span>` : ""}
+              ${getDistanceLabel(alt1) ? `<span>${ICON_PIN}${esc(getDistanceLabel(alt1))}</span>` : ""}
+              ${alt1.experience?.wow ? `<span class="on">Wow ${esc(String(alt1.experience.wow))}</span>` : ""}
             </div>
           </div>
         ` : ""}
@@ -179,10 +197,10 @@
             <div class="go-now-alt-name">${esc(alt2.name)}</div>
             ${alt2Signals ? `<div class="go-now-alt-explain smart-signals">${esc(alt2Signals)}</div>` : ""}
             <div class="quick-desc go-now-alt-desc">${esc(getBestPracticalLine(alt2))}</div>
-            <div class="sunset-chip-row">
-              ${getDistanceLabel(alt2) ? `<div class="mini-chip blue">${esc(getDistanceLabel(alt2))}</div>` : ""}
-              ${alt2.weatherFit ? `<div class="mini-chip ${chipClassFromFit(alt2.weatherFit)}">${esc(alt2.weatherFit.label)}</div>` : ""}
-              ${alt2.experience?.wow ? `<div class="mini-chip gold">Wow ${esc(String(alt2.experience.wow))}</div>` : ""}
+            <div class="meta-row">
+              ${alt2.weatherFit ? `<span class="${fitTextClass(alt2.weatherFit)}">${esc(alt2.weatherFit.label)}</span>` : ""}
+              ${getDistanceLabel(alt2) ? `<span>${ICON_PIN}${esc(getDistanceLabel(alt2))}</span>` : ""}
+              ${alt2.experience?.wow ? `<span class="on">Wow ${esc(String(alt2.experience.wow))}</span>` : ""}
             </div>
           </div>
         ` : ""}
@@ -197,10 +215,10 @@
         </div>
         <div class="quick-title">${bestSunset ? esc(bestSunset.name) : "—"}</div>
         <div class="quick-desc">${bestSunset ? esc(bestSunset.tip || bestSunset.whenToGo?.note || bestSunset.desc || "") : "In attesa della lettura luce."}</div>
-        <div class="sunset-chip-row" style="margin-top:12px">
-          <div class="mini-chip gold" id="sunsetClockChip">Tramonto —</div>
-          <div class="mini-chip blue" id="sunPhaseChip">Luce da leggere</div>
-          ${bestSunset?.experience?.wow ? `<div class="mini-chip gold">Wow ${esc(String(bestSunset.experience.wow))}/10</div>` : ""}
+        <div class="meta-row" style="margin-top:12px">
+          <span class="on" id="sunsetClockChip">Tramonto —</span>
+          <span id="sunPhaseChip">Luce da leggere</span>
+          ${bestSunset?.experience?.wow ? `<span class="on">Wow ${esc(String(bestSunset.experience.wow))}/10</span>` : ""}
         </div>
         <div class="sunset-countdown" style="margin-top:12px">
           <div style="min-width:0;flex:1 1 auto">
@@ -228,9 +246,9 @@
         <div class="quick-label">Spot vela oggi</div>
         <div class="quick-title">${bestToday ? esc(bestToday.name) : "—"}</div>
         <div class="quick-desc">${bestToday?.sailMeta?.enabled ? esc(bestToday.sailMeta.detailText || "Compatibilità live") : "Nessun dato vela negli spot attuali."}</div>
-        <div class="sunset-chip-row">
-          <div class="mini-chip blue">Sail</div>
-          ${bestToday?.sailMeta?.label ? `<div class="mini-chip gold">${esc(bestToday.sailMeta.label)}</div>` : ""}
+        <div class="meta-row">
+          <span>Sail</span>
+          ${bestToday?.sailMeta?.label ? `<span class="on">${esc(bestToday.sailMeta.label)}</span>` : ""}
         </div>
       </div>
 
@@ -244,9 +262,9 @@
         <div class="quick-label">Spot serale</div>
         <div class="quick-title">${bestSunset ? esc(bestSunset.name) : "—"}</div>
         <div class="quick-desc">${bestSunset?.sailMeta?.enabled ? esc(bestSunset.sailMeta.sunsetText || "Spot forte per serata e luce.") : "Nessun dato sail sunset nei dati attuali."}</div>
-        <div class="sunset-chip-row" style="margin-top:12px">
-          <div class="mini-chip gold">Onde ${app.marineData ? Number(app.marineData.waveHeight || 0).toFixed(1) + " m" : "—"}</div>
-          <div class="mini-chip blue">Dir ${app.weatherData ? Math.round(app.weatherData.windDir || 0) + "°" : "—"}</div>
+        <div class="meta-row" style="margin-top:12px">
+          <span class="on">Onde ${app.marineData ? Number(app.marineData.waveHeight || 0).toFixed(1) + " m" : "—"}</span>
+          <span>Dir ${app.weatherData ? Math.round(app.weatherData.windDir || 0) + "°" : "—"}</span>
         </div>
         <div class="sunset-countdown" style="margin-top:12px">
           <div style="min-width:0;flex:1 1 auto">
@@ -368,9 +386,9 @@
     else if (item.cloud >= 80) score -= 2;
     if (item.wind <= 18)       score += 2;
     else if (item.wind > 28)   score -= 2;
-    if (score >= 4)  return { cls: "good", label: "finestra buona",  emoji: "✨" };
-    if (score <= -1) return { cls: "bad",  label: "finestra debole", emoji: "⚠️" };
-    return { cls: "warn", label: "così così", emoji: "⛅" };
+    if (score >= 4)  return { cls: "good", label: "finestra buona",  icon: ICON_MOOD.good };
+    if (score <= -1) return { cls: "bad",  label: "finestra debole", icon: ICON_MOOD.bad };
+    return { cls: "warn", label: "così così", icon: ICON_MOOD.warn };
   }
 
   function renderHourly(app) {
@@ -418,7 +436,7 @@
         <div class="hour-card ${mood.cls}">
           <div class="hour-top">
             <span class="hour-time">${hStr}</span>
-            <span class="hour-emoji">${mood.emoji}</span>
+            <span class="hour-emoji">${mood.icon}</span>
           </div>
           <div class="hour-line"><span class="hour-label">Temp</span><strong>${Math.round(item.temp)}°</strong></div>
           <div class="hour-line"><span class="hour-label">Vento</span><strong>${Math.round(item.wind)} km/h</strong></div>
@@ -506,7 +524,7 @@
       const activities = getAvailableActivities();
       activityChips.innerHTML =
         `<button class="chip ${app.activity === "all" ? "active" : ""}" data-activity="all" type="button">Tutte</button>` +
-        activities.map(a => `<button class="chip ${app.activity === a.id ? "active" : ""}" data-activity="${esc(a.id)}" type="button">${a.emoji ? a.emoji + " " : ""}${esc(a.label)}</button>`).join("");
+        activities.map(a => `<button class="chip ${app.activity === a.id ? "active" : ""}" data-activity="${esc(a.id)}" type="button">${ICON_ACT[a.id] || ""}${esc(a.label)}</button>`).join("");
       activityChips.querySelectorAll("[data-activity]").forEach(btn => {
         btn.addEventListener("click", () => { app.activity = btn.dataset.activity; UI.smartRender(app, "light"); });
       });
@@ -595,9 +613,11 @@
             <div class="featured-card-name">${esc(spot.name)}</div>
             <div class="featured-card-sub">${esc(spot.tip || spot.desc || "")}</div>
             <div class="featured-card-chips">
-              ${fit ? `<div class="mini-chip ${chipClassFromFit(fit)}">${esc(fit.label)}</div>` : ""}
-              ${spot.experience?.wow ? `<div class="mini-chip gold">Wow ${esc(String(spot.experience.wow))}/10</div>` : ""}
-              <div class="mini-chip blue">${esc(pretty(spot.activity))}</div>
+              <div class="tag blue">${esc(pretty(spot.activity))}</div>
+            </div>
+            <div class="meta-row">
+              ${fit ? `<span class="${fitTextClass(fit)}">${esc(fit.label)}</span>` : ""}
+              ${spot.experience?.wow ? `<span class="on">Wow ${esc(String(spot.experience.wow))}/10</span>` : ""}
             </div>
           </div>
         </div>
@@ -1032,7 +1052,7 @@
     if (!app.userPos || !Number.isFinite(app.userPos.lat) || !Number.isFinite(app.userPos.lon)) {
       panel.innerHTML = `
         <div class="panel-head">
-          <h2>📍 Vicino a te</h2>
+          <h2>${ICON_PIN} Vicino a te</h2>
           <span class="tiny muted">GPS</span>
         </div>
         <div class="detail-empty" style="padding:12px 0">Attiva il GPS per vedere gli spot vicini</div>
@@ -1045,7 +1065,7 @@
     if (!allClosest.length) {
       panel.innerHTML = `
         <div class="panel-head">
-          <h2>📍 Vicino a te</h2>
+          <h2>${ICON_PIN} Vicino a te</h2>
           <span class="tiny muted">GPS attivo</span>
         </div>
         <div class="detail-empty" style="padding:12px 0">Sto cercando spot vicini...</div>
@@ -1067,11 +1087,11 @@
         <div class="nearby-card glass tap" data-nearby-id="${esc(spot.id)}">
           <div class="nearby-card-top">
             <div class="nearby-card-name">${esc(spot.name)}</div>
-            ${fit ? `<div class="mini-chip ${chipClassFromFit(fit)}">${esc(fit.label)}</div>` : ""}
           </div>
           ${(zoneLbl || actLbl) ? `<div class="nearby-card-sub">${[zoneLbl, actLbl].filter(Boolean).map(esc).join(" · ")}</div>` : ""}
-          <div class="nearby-card-badges">
-            <div class="mini-chip blue">📍 ${esc(distLbl)}</div>
+          <div class="meta-row">
+            <span>${ICON_PIN}${esc(distLbl)}</span>
+            ${fit ? `<span class="${fitTextClass(fit)}">${esc(fit.label)}</span>` : ""}
           </div>
           ${shortDesc ? `<div class="nearby-card-desc">${esc(shortDesc)}</div>` : ""}
         </div>
@@ -1084,7 +1104,7 @@
 
     panel.innerHTML = `
       <div class="panel-head">
-        <h2>📍 Vicino a te</h2>
+        <h2>${ICON_PIN} Vicino a te</h2>
         <span class="tiny muted">Spot più vicini</span>
       </div>
       <div class="nearby-list" id="nearbyList">
