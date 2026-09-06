@@ -1406,6 +1406,7 @@
   function initApp() {
     updateModeUI();
     bindEvents();
+    registerServiceWorker();
     // La mappa (Leaflet) si carica e inizializza solo alla prima apertura
     // reale della tab Mappa, vedi switchPage() — non più qui.
 
@@ -1491,6 +1492,45 @@
     showSpotDetail, switchPage, centerSpot, renderPlannerBox, renderAll,
     renderMarkers, updateUserMarker, toggleMode, clearSearch
   };
+
+  function showUpdateBanner(worker) {
+    if ($("updateBanner")) return;
+    const banner = document.createElement("div");
+    banner.id = "updateBanner";
+    banner.className = "update-banner";
+    banner.innerHTML = `
+      <span>Nuova versione disponibile</span>
+      <button type="button" id="updateBannerBtn">Aggiorna</button>
+    `;
+    document.body.appendChild(banner);
+    $("updateBannerBtn").addEventListener("click", () => {
+      worker.postMessage({ type: "SKIP_WAITING" });
+    });
+  }
+
+  function registerServiceWorker() {
+    if (!("serviceWorker" in navigator)) return;
+
+    navigator.serviceWorker.register("sw.js").then(reg => {
+      if (reg.waiting) showUpdateBanner(reg.waiting);
+      reg.addEventListener("updatefound", () => {
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener("statechange", () => {
+          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+            showUpdateBanner(newWorker);
+          }
+        });
+      });
+    }).catch(() => { /* offline al primo avvio: nessun problema, si registrerà al giro dopo */ });
+
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+  }
 
   document.addEventListener("DOMContentLoaded", initApp);
 })();

@@ -300,6 +300,21 @@ body.mode-sail .sail-only{ display:block; }
 .toast{ min-width:220px; max-width:min(360px,90vw); background:#163d5f; border:1px solid rgba(255,255,255,.08); color:#edf5fb; padding:12px 14px; border-radius:14px; box-shadow:0 12px 24px rgba(0,0,0,.28); animation:toastIn .18s ease both; }
 @keyframes toastIn{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
 
+.update-banner{
+  position:fixed; left:50%; right:auto; bottom:calc(var(--nav-h) + 14px + var(--safe-bottom));
+  z-index:10000; display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:center;
+  background:linear-gradient(160deg, rgba(15,52,82,.97), rgba(10,38,62,.98));
+  border:1px solid rgba(108,199,255,.28); box-shadow:0 16px 40px rgba(0,0,0,.4), var(--glow-blue);
+  border-radius:16px; padding:12px 14px; color:var(--text); font-size:13px; font-weight:700;
+  animation:updateBannerIn .2s var(--ease) both; width:min(320px,90vw); box-sizing:border-box;
+}
+.update-banner button{
+  border:none; border-radius:999px; padding:7px 14px; font-size:12px; font-weight:800; cursor:pointer;
+  background:linear-gradient(135deg,var(--accent),#93daff); color:#08131d; flex:0 0 auto; white-space:nowrap;
+}
+@keyframes updateBannerIn{ from{ opacity:0; transform:translate(-50%, 8px); } to{ opacity:1; transform:translate(-50%, 0); } }
+@media (prefers-reduced-motion:reduce){ .update-banner{ animation:none; transform:translateX(-50%); } }
+
 .leaflet-container{ background:#123556; font:inherit; }
 .leaflet-control-zoom a{ background:#123556; color:#eef4fb; border-color:#295c86; }
 .leaflet-control-zoom a:hover{ background:#19456b; color:#fff; }
