@@ -1102,7 +1102,7 @@
     const mapEl = $("map");
     if (!mapEl || typeof L === "undefined") return;
     APP.map = L.map("map", { zoomControl: true, touchZoom: true, dragging: true, tap: false, tapTolerance: 15 }).setView(APP_SPOTS.center || [38.9, 20.3], APP_SPOTS.zoom || 8);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 18, subdomains: "abcd", attribution: "&copy; OpenStreetMap &copy; CARTO" }).addTo(APP.map);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap" }).addTo(APP.map);
     renderMarkers();
   }
 
