@@ -1524,8 +1524,25 @@
       });
     }).catch(() => { /* offline al primo avvio: nessun problema, si registrerà al giro dopo */ });
 
+    // self.clients.claim() in sw.js (attivazione) fa scattare "controllerchange"
+    // anche quando NON c'era nessun controller prima — cioè al primissimo
+    // avvio in assoluto su un dispositivo/browser che non aveva ancora
+    // installato il service worker, non solo quando un aggiornamento vero
+    // sostituisce un controller già esistente. Senza questa distinzione la
+    // pagina si ricaricava da sola anche al primo avvio, un reload a
+    // sorpresa mai richiesto da nessuno (e che in CI faceva fallire quasi
+    // tutta la suite Playwright, "Execution context was destroyed": il
+    // reload arrivava a metà di ogni test). Un controller già presente al
+    // load, invece, significa che la pagina era già sotto controllo di UN
+    // service worker precedente: quel caso resta un aggiornamento vero
+    // (anche quello innescato dal banner "Aggiorna") e va comunque ricaricato.
+    let hadControllerAtLoad = !!navigator.serviceWorker.controller;
     let refreshing = false;
     navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!hadControllerAtLoad) {
+        hadControllerAtLoad = true;
+        return;
+      }
       if (refreshing) return;
       refreshing = true;
       window.location.reload();
