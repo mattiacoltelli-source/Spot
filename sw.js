@@ -1,5 +1,5 @@
 // Bump questa versione a ogni deploy per far comparire il banner "nuova versione disponibile".
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const CACHE_NAME = `ionio-cache-${CACHE_VERSION}`;
 
 const APP_SHELL = [
